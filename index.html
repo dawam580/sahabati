@@ -369,30 +369,22 @@
                             <span>اختر وسيلة الدفع الليبية:</span>
                         </h3>
 
-                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                            <div onclick="selectPaymentMethod('telecom_libyana')" data-method="telecom_libyana" class="payment-option-card border-emerald-500 bg-emerald-50/80 ring-2 ring-emerald-400 p-3 rounded-2xl cursor-pointer text-center transition flex flex-col items-center justify-center gap-1.5 border">
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                            <div onclick="selectPaymentMethod('one_pay')" data-method="one_pay" class="payment-option-card border-emerald-500 bg-emerald-50/80 ring-2 ring-emerald-400 p-3 rounded-2xl cursor-pointer text-center transition flex flex-col items-center justify-center gap-1.5 border">
+                                <i class="fa-solid fa-mobile-screen-button text-2xl text-indigo-600"></i>
+                                <span class="text-xs font-bold text-slate-800">ون باي (OnePay)</span>
+                            </div>
+                            <div onclick="selectPaymentMethod('telecom_libyana')" data-method="telecom_libyana" class="payment-option-card border-slate-200 bg-white/70 p-3 rounded-2xl cursor-pointer text-center transition flex flex-col items-center justify-center gap-1.5 border">
                                 <i class="fa-solid fa-sim-card text-2xl text-amber-600"></i>
-                                <span class="text-xs font-bold text-slate-800">شفرة / كرت ليبيانا</span>
+                                <span class="text-xs font-bold text-slate-800">رصيد ليبيانا</span>
                             </div>
                             <div onclick="selectPaymentMethod('telecom_madar')" data-method="telecom_madar" class="payment-option-card border-slate-200 bg-white/70 p-3 rounded-2xl cursor-pointer text-center transition flex flex-col items-center justify-center gap-1.5 border">
                                 <i class="fa-solid fa-sim-card text-2xl text-blue-600"></i>
-                                <span class="text-xs font-bold text-slate-800">شفرة / كرت مدار</span>
-                            </div>
-                            <div onclick="selectPaymentMethod('sadad')" data-method="sadad" class="payment-option-card border-slate-200 bg-white/70 p-3 rounded-2xl cursor-pointer text-center transition flex flex-col items-center justify-center gap-1.5 border">
-                                <i class="fa-solid fa-mobile-screen-button text-2xl text-emerald-600"></i>
-                                <span class="text-xs font-bold text-slate-800">خدمة سداد (Sadad)</span>
-                            </div>
-                            <div onclick="selectPaymentMethod('tadawul')" data-method="tadawul" class="payment-option-card border-slate-200 bg-white/70 p-3 rounded-2xl cursor-pointer text-center transition flex flex-col items-center justify-center gap-1.5 border">
-                                <i class="fa-solid fa-qrcode text-2xl text-indigo-600"></i>
-                                <span class="text-xs font-bold text-slate-800">خدمة تداول (Tadawul)</span>
+                                <span class="text-xs font-bold text-slate-800">رصيد مدار</span>
                             </div>
                             <div onclick="selectPaymentMethod('bank_transfer')" data-method="bank_transfer" class="payment-option-card border-slate-200 bg-white/70 p-3 rounded-2xl cursor-pointer text-center transition flex flex-col items-center justify-center gap-1.5 border">
                                 <i class="fa-solid fa-building-columns text-2xl text-slate-700"></i>
-                                <span class="text-xs font-bold text-slate-800">تحويل مصرفي ليبي</span>
-                            </div>
-                            <div onclick="selectPaymentMethod('cash')" data-method="cash" class="payment-option-card border-slate-200 bg-white/70 p-3 rounded-2xl cursor-pointer text-center transition flex flex-col items-center justify-center gap-1.5 border">
-                                <i class="fa-brands fa-whatsapp text-2xl text-emerald-500"></i>
-                                <span class="text-xs font-bold text-slate-800">اتفاق مباشر عبر واتساب</span>
+                                <span class="text-xs font-bold text-slate-800">تحويل مصرفي</span>
                             </div>
                         </div>
 

@@ -15,7 +15,7 @@ let state = {
     cart: JSON.parse(localStorage.getItem('sahabati_cart') || '[]'),
     orders: JSON.parse(localStorage.getItem('sahabati_orders') || '[]'),
     appliedPromo: null,
-    paymentMethod: 'sadad'};
+    paymentMethod: 'one_pay'};
 
 // ========== SECURITY: XSS Protection & Price Integrity ==========
 function escapeHtml(str) {

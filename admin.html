@@ -194,12 +194,12 @@
                             <input type="text" id="setting-admin-pin" placeholder="admin2026" class="glass-input w-full rounded-xl py-2.5 px-3 text-xs font-bold font-mono text-slate-800">
                         </div>
                     </div>
-                    <h4 class="font-extrabold text-slate-900 text-sm pt-3 border-t border-slate-100 flex items-center gap-2"><i class="fa-solid fa-building-columns text-emerald-600"></i><span>وسائل الدفع الليبية:</span></h4>
+                    <h4 class="font-extrabold text-slate-900 text-sm pt-3 border-t border-slate-100 flex items-center gap-2"><i class="fa-solid fa-building-columns text-emerald-600"></i><span>وسائل الدفع (ون باي + رصيد + مصرفي فقط):</span></h4>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div><label class="text-xs font-bold text-slate-700 block mb-1">ليبيانا:</label><input type="text" id="setting-libyana-info" class="glass-input w-full rounded-xl py-2 px-3 text-xs font-medium text-slate-800"></div>
-                        <div><label class="text-xs font-bold text-slate-700 block mb-1">مدار:</label><input type="text" id="setting-madar-info" class="glass-input w-full rounded-xl py-2 px-3 text-xs font-medium text-slate-800"></div>
-                        <div><label class="text-xs font-bold text-slate-700 block mb-1">سداد:</label><input type="text" id="setting-sadad-info" class="glass-input w-full rounded-xl py-2 px-3 text-xs font-medium text-slate-800"></div>
-                        <div><label class="text-xs font-bold text-slate-700 block mb-1">تداول:</label><input type="text" id="setting-tadawul-info" class="glass-input w-full rounded-xl py-2 px-3 text-xs font-medium text-slate-800"></div>
+                        <div><label class="text-xs font-bold text-slate-700 block mb-1">ون باي (OnePay):</label><input type="text" id="setting-onepay-info" placeholder="حساب ون باي" class="glass-input w-full rounded-xl py-2 px-3 text-xs font-medium text-slate-800"></div>
+                        <div><label class="text-xs font-bold text-slate-700 block mb-1">تحويل مصرفي:</label><input type="text" id="setting-bank-info" placeholder="اسم الحساب - رقم الحساب" class="glass-input w-full rounded-xl py-2 px-3 text-xs font-medium text-slate-800"></div>
+                        <div><label class="text-xs font-bold text-slate-700 block mb-1">رصيد ليبيانا:</label><input type="text" id="setting-libyana-info" class="glass-input w-full rounded-xl py-2 px-3 text-xs font-medium text-slate-800"></div>
+                        <div><label class="text-xs font-bold text-slate-700 block mb-1">رصيد مدار:</label><input type="text" id="setting-madar-info" class="glass-input w-full rounded-xl py-2 px-3 text-xs font-medium text-slate-800"></div>
                     </div>
                     <div class="flex justify-end pt-2">
                         <button onclick="saveStoreSettings()" class="px-6 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md transition flex items-center gap-2"><i class="fa-solid fa-floppy-disk"></i><span>حفظ الإعدادات</span></button>

@@ -208,16 +208,16 @@ function populateSettingsForm(){
     const s=APP_DATA.settings;
     const wa=document.getElementById('setting-whatsapp-number');
     const pin=document.getElementById('setting-admin-pin');
-    const sadad=document.getElementById('setting-sadad-info');
-    const tadawul=document.getElementById('setting-tadawul-info');
+    const onePay=document.getElementById('setting-onepay-info');
     const libyana=document.getElementById('setting-libyana-info');
     const madar=document.getElementById('setting-madar-info');
+    const bank=document.getElementById('setting-bank-info');
     if(wa) wa.value=s.whatsappNumber||'218920541749';
     if(pin) pin.value=s.adminPin||'admin2026';
-    if(sadad) sadad.value=s.paymentMethodsInfo?.sadad?.accountInfo||'';
-    if(tadawul) tadawul.value=s.paymentMethodsInfo?.tadawul?.accountInfo||'';
+    if(onePay) onePay.value=s.paymentMethodsInfo?.one_pay?.accountInfo||'';
     if(libyana) libyana.value=s.paymentMethodsInfo?.telecom_libyana?.accountInfo||'';
     if(madar) madar.value=s.paymentMethodsInfo?.telecom_madar?.accountInfo||'';
+    if(bank) bank.value=s.paymentMethodsInfo?.bank_transfer?.accountInfo||'';
 }
 function saveStoreSettings(){
     if(!APP_DATA.settings) APP_DATA.settings=DEFAULT_STORE_SETTINGS;
@@ -228,12 +228,12 @@ function saveStoreSettings(){
     APP_DATA.settings.whatsappNumber=wa.replace(/[^0-9]/g,'');
     APP_DATA.settings.adminPin=pin;
     if(!APP_DATA.settings.paymentMethodsInfo){ APP_DATA.settings.paymentMethodsInfo=JSON.parse(JSON.stringify(DEFAULT_STORE_SETTINGS.paymentMethodsInfo)); }
-    APP_DATA.settings.paymentMethodsInfo.sadad.accountInfo=(document.getElementById('setting-sadad-info')?.value.trim()||'').slice(0,200);
-    APP_DATA.settings.paymentMethodsInfo.tadawul.accountInfo=(document.getElementById('setting-tadawul-info')?.value.trim()||'').slice(0,200);
+    APP_DATA.settings.paymentMethodsInfo.one_pay.accountInfo=(document.getElementById('setting-onepay-info')?.value.trim()||'').slice(0,200);
     const lb=(document.getElementById('setting-libyana-info')?.value.trim()||'').slice(0,200);
     const md=(document.getElementById('setting-madar-info')?.value.trim()||'').slice(0,200);
     if(lb) APP_DATA.settings.paymentMethodsInfo.telecom_libyana.accountInfo=lb;
     if(md) APP_DATA.settings.paymentMethodsInfo.telecom_madar.accountInfo=md;
+    APP_DATA.settings.paymentMethodsInfo.bank_transfer.accountInfo=(document.getElementById('setting-bank-info')?.value.trim()||'').slice(0,200);
     saveAppData(APP_DATA);
     showToast('تم حفظ إعدادات المتجر ورقم الواتساب بنجاح! 💾');
 }
