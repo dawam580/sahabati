@@ -1,0 +1,19 @@
+{
+  "name": "سحّابتي - Sahabati Cloud",
+  "short_name": "سحّابتي",
+  "description": "منصة شحن ألعاب واشتراكات وبطاقات رقمية بالدينار الليبي - ببجي، فري فاير، نتفليكس، شاهد، تيك توك، مدار وليبيانا",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#e0f2fe",
+  "theme_color": "#0284c7",
+  "dir": "rtl",
+  "lang": "ar",
+  "icons": [
+    {
+      "src": "08_sahabati_app_icon_1024x1024.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

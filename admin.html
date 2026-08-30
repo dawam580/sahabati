@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>لوحة تحكم سحّابتي - Admin Dashboard</title>
+    <meta name="robots" content="noindex, nofollow, noarchive">
+    <meta name="description" content="لوحة تحكم سحّابتي لإدارة الألعاب والاشتراكات بالدينار الليبي - وصول مقيد">
+    <link rel="icon" href="08_sahabati_app_icon_1024x1024.png" type="image/png">
+    <meta name="theme-color" content="#4f46e5">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Readex+Pro:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/tailwind.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* منع فهرسة والتركيز على الأدمن فقط */
+        body { background: radial-gradient(circle at 50% 0%, #e0e7ff 0%, #c7d2fe 40%, #a5b4fc 100%); }
+    </style>
+</head>
+<body class="antialiased min-h-screen" dir="rtl">
+
+    <!-- Header مخصص للأدمن -->
+    <header class="w-full bg-white/90 backdrop-blur-md border-b border-indigo-200 sticky top-0 z-40 shadow-sm">
+        <div class="max-w-5xl mx-auto px-3 sm:px-4 py-3 flex items-center justify-between gap-2 text-xs">
+            <a href="index.html" class="flex items-center gap-2.5 hover:opacity-90 transition">
+                <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-700 p-1.5 shadow-md flex items-center justify-center flex-shrink-0 text-white text-xl">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="font-black text-indigo-900 text-base sm:text-lg">لوحة تحكم سحّابتي</span>
+                        <span class="bg-amber-100 text-amber-800 text-[10px] font-black px-2 py-0.5 rounded-full">Admin Only</span>
+                    </div>
+                    <span class="text-[10px] text-slate-500 font-bold block">إدارة آمنة - واتساب: 0920541749</span>
+                </div>
+            </a>
+            <div class="flex items-center gap-2">
+                <a href="index.html" class="px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 text-xs font-bold hover:bg-slate-50 transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-store"></i><span class="hidden sm:inline">العودة للمتجر</span><span class="sm:hidden">المتجر</span>
+                </a>
+                <button id="admin-logout-btn" onclick="logoutAdmin()" class="hidden px-3.5 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i><span>خروج</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
+
+        <!-- شاشة تسجيل الدخول - منفصلة تماماً عن المتجر -->
+        <div id="admin-login-view" class="max-w-md mx-auto mt-10">
+            <div class="glass-panel bg-white/95 rounded-3xl p-7 sm:p-8 shadow-2xl border-2 border-indigo-300 text-center space-y-5">
+                <div class="w-16 h-16 rounded-2xl bg-indigo-100 text-indigo-600 flex items-center justify-center text-3xl mx-auto shadow-inner">
+                    <i class="fa-solid fa-lock"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-black text-slate-900">دخول لوحة التحكم</h1>
+                    <p class="text-xs text-slate-500 mt-1">هذه الصفحة منفصلة عن المتجر للحماية - لا يتم تحميلها في index.html</p>
+                    <p class="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5 mt-3">رقم واتساب المتجر الحالي: <span class="font-mono font-black">0920541749</span> (218920541749)</p>
+                </div>
+                <form onsubmit="handleAdminLogin(event)" class="space-y-3 text-right">
+                    <label class="text-xs font-bold text-slate-700 block">كلمة سر الأدمن (PIN)</label>
+                    <input type="password" id="admin-pin-input" placeholder="أدخل كلمة السر" required autofocus
+                           class="glass-input w-full rounded-2xl py-3 px-4 text-center font-mono font-black text-sm text-slate-900 tracking-widest">
+                    <button type="submit" class="w-full py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-sm shadow-lg shadow-indigo-600/25 transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-right-to-bracket"></i><span>دخول آمن</span>
+                    </button>
+                </form>
+                <p class="text-[10px] text-slate-400">محمي بـ sessionStorage + فصل كامل عن واجهة الزبون</p>
+            </div>
+        </div>
+
+        <!-- لوحة التحكم - تظهر فقط بعد تسجيل الدخول -->
+        <div id="admin-dashboard-view" class="hidden space-y-5">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-indigo-100 pb-4">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center text-sm shadow-md"><i class="fa-solid fa-sliders"></i></span>
+                        <h2 class="text-2xl font-black text-slate-900">لوحة تحكم المدير</h2>
+                        <span class="bg-emerald-100 text-emerald-800 text-[10px] font-black px-2 py-0.5 rounded-full">منفصلة</span>
+                    </div>
+                    <p class="text-xs text-slate-500 font-medium mt-1">إدارة كاملة لمنصة سحّابتي - واتساب المتجر: 0920541749</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span id="admin-session-badge" class="hidden bg-emerald-500 text-white text-[10px] font-black px-2.5 py-1 rounded-full">جلسة آمنة ✓</span>
+                </div>
+            </div>
+
+            <!-- تبويبات الأدمن -->
+            <div class="flex items-center gap-2 border-b border-slate-200 pb-3 overflow-x-auto no-scrollbar">
+                <button onclick="switchAdminTab('products')" id="adm-tab-btn-products" class="admin-tab-btn px-4 py-2 rounded-xl text-xs font-extrabold bg-indigo-600 text-white shadow-sm transition"><i class="fa-solid fa-boxes-stacked ml-1"></i> إدارة الأصناف</button>
+                <button onclick="switchAdminTab('settings')" id="adm-tab-btn-settings" class="admin-tab-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 transition"><i class="fa-solid fa-gear ml-1"></i> إعدادات واتساب والدفع</button>
+                <button onclick="switchAdminTab('backup')" id="adm-tab-btn-backup" class="admin-tab-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 transition"><i class="fa-solid fa-file-export ml-1"></i> تصدير/استيراد</button>
+            </div>
+
+            <!-- TAB 1: PRODUCTS -->
+            <div id="adm-view-products" class="space-y-5">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                    <div class="glass-card rounded-2xl p-4 border border-indigo-200 bg-indigo-50/50">
+                        <span class="text-xs text-indigo-700 font-bold block">إجمالي ألعاب وعملات الشحن</span>
+                        <span id="admin-stat-games" class="text-2xl font-black text-indigo-900 mt-1 block">-</span>
+                    </div>
+                    <div class="glass-card rounded-2xl p-4 border border-sky-200 bg-sky-50/50">
+                        <span class="text-xs text-sky-700 font-bold block">إجمالي الاشتراكات والبطاقات</span>
+                        <span id="admin-stat-cards" class="text-2xl font-black text-sky-900 mt-1 block">-</span>
+                    </div>
+                    <div class="glass-card rounded-2xl p-4 border border-emerald-200 bg-emerald-50/50">
+                        <span class="text-xs text-emerald-700 font-bold block">إجمالي طلبات واتساب المسجلة</span>
+                        <span id="admin-stat-orders" class="text-2xl font-black text-emerald-900 mt-1 block">-</span>
+                    </div>
+                </div>
+
+                <div class="glass-panel rounded-3xl p-5 sm:p-6 shadow-xl border border-white space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                        <h3 class="font-extrabold text-slate-900 text-base flex items-center gap-2"><i class="fa-solid fa-plus-circle text-emerald-600"></i><span>إضافة صنف أو باقة جديد</span></h3>
+                        <span class="text-xs font-bold text-emerald-700 bg-emerald-100 px-2.5 py-0.5 rounded-full">نشر فوري</span>
+                    </div>
+                    <form id="admin-add-item-form" onsubmit="handleAdminAddItem(event)" class="space-y-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                            <div>
+                                <label class="text-xs font-bold text-slate-700 block mb-1">نوع الصنف:</label>
+                                <select id="admin-item-type" onchange="toggleAdminFormType(this.value)" class="glass-input w-full rounded-xl py-2.5 px-3 text-xs font-bold text-slate-800">
+                                    <option value="game_package">🎮 باقة شحن لعبة</option>
+                                    <option value="streaming">🎬 اشتراك بث (نتفليكس، شاهد...)</option>
+                                    <option value="social">🔥 سوشيال (تيك توك، سناب...)</option>
+                                    <option value="telecom">📱 كرت اتصالات (مدار، ليبيانا...)</option>
+                                    <option value="new_game">🕹️ لعبة / تطبيق جديد</option>
+                                </select>
+                            </div>
+                            <div id="admin-game-select-group">
+                                <label class="text-xs font-bold text-slate-700 block mb-1">اختر اللعبة التابع لها:</label>
+                                <select id="admin-target-game" class="glass-input w-full rounded-xl py-2.5 px-3 text-xs font-bold text-slate-800"></select>
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-slate-700 block mb-1">اسم الصنف بالعربية:</label>
+                                <input type="text" id="admin-item-name" placeholder="مثال: 660 شدة أو نتفليكس شهر" required class="glass-input w-full rounded-xl py-2 px-3 text-xs font-bold text-slate-800">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                            <div>
+                                <label class="text-xs font-bold text-slate-700 block mb-1">السعر بالدينار (د.ل):</label>
+                                <div class="relative"><input type="number" step="0.5" id="admin-item-price" placeholder="45.00" required class="glass-input w-full rounded-xl py-2 px-3 font-mono font-bold text-xs text-slate-800"><span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">د.ل</span></div>
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-slate-700 block mb-1">شارة العرض (اختياري):</label>
+                                <input type="text" id="admin-item-badge" placeholder="4K UHD 🔥 أو حساب كامل" class="glass-input w-full rounded-xl py-2 px-3 text-xs font-medium text-slate-800">
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-slate-700 block mb-1">التصنيف:</label>
+                                <select id="admin-item-category" class="glass-input w-full rounded-xl py-2 px-3 text-xs font-bold text-slate-800">
+                                    <option value="streaming">🎬 اشتراكات البث</option>
+                                    <option value="social">🔥 تيك توك وسناب</option>
+                                    <option value="telecom">📱 كروت مدار وليبيانا</option>
+                                    <option value="gaming">🎮 ألعاب</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                            <div>
+                                <label class="text-xs font-bold text-slate-700 block mb-1">رابط صورة (اختياري):</label>
+                                <input type="text" id="admin-item-image" placeholder="https://... أو فارغ" class="glass-input w-full rounded-xl py-2 px-3 text-xs font-medium text-slate-800">
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-slate-700 block mb-1">تعليمات الشحن:</label>
+                                <input type="text" id="admin-item-instructions" placeholder="يعمل على جميع الأجهزة" class="glass-input w-full rounded-xl py-2 px-3 text-xs font-medium text-slate-800">
+                            </div>
+                        </div>
+                        <div class="flex justify-end pt-2">
+                            <button type="submit" class="px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs shadow-lg shadow-emerald-600/30 transition flex items-center gap-2"><i class="fa-solid fa-cloud-arrow-up"></i><span>حفظ ونشر فوراً</span></button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="glass-panel rounded-3xl p-5 sm:p-6 shadow-xl space-y-4">
+                    <h3 class="font-extrabold text-slate-900 text-base border-b border-slate-100 pb-3 flex items-center gap-2"><i class="fa-solid fa-list text-sky-600"></i><span>الأصناف المعروضة حالياً:</span></h3>
+                    <div id="admin-items-table-container" class="space-y-2"></div>
+                </div>
+            </div>
+
+            <!-- TAB 2: SETTINGS -->
+            <div id="adm-view-settings" class="hidden space-y-5">
+                <div class="glass-panel rounded-3xl p-5 sm:p-6 shadow-xl space-y-5">
+                    <h3 class="font-extrabold text-slate-900 text-base border-b border-slate-100 pb-3 flex items-center gap-2"><i class="fa-solid fa-sliders text-indigo-600"></i><span>إعدادات واتساب والدفع</span></h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-xs font-bold text-slate-700 block mb-1">رقم واتساب المتجر (218...):</label>
+                            <input type="text" id="setting-whatsapp-number" placeholder="218920541749" class="glass-input w-full rounded-xl py-2.5 px-3 text-xs font-bold font-mono text-slate-800">
+                            <span class="text-[10px] text-emerald-600 font-bold block mt-1">الحالي: 0920541749</span>
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold text-slate-700 block mb-1">كلمة سر الأدمن (PIN):</label>
+                            <input type="text" id="setting-admin-pin" placeholder="admin2026" class="glass-input w-full rounded-xl py-2.5 px-3 text-xs font-bold font-mono text-slate-800">
+                        </div>
+                    </div>
+                    <h4 class="font-extrabold text-slate-900 text-sm pt-3 border-t border-slate-100 flex items-center gap-2"><i class="fa-solid fa-building-columns text-emerald-600"></i><span>وسائل الدفع الليبية:</span></h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div><label class="text-xs font-bold text-slate-700 block mb-1">ليبيانا:</label><input type="text" id="setting-libyana-info" class="glass-input w-full rounded-xl py-2 px-3 text-xs font-medium text-slate-800"></div>
+                        <div><label class="text-xs font-bold text-slate-700 block mb-1">مدار:</label><input type="text" id="setting-madar-info" class="glass-input w-full rounded-xl py-2 px-3 text-xs font-medium text-slate-800"></div>
+                        <div><label class="text-xs font-bold text-slate-700 block mb-1">سداد:</label><input type="text" id="setting-sadad-info" class="glass-input w-full rounded-xl py-2 px-3 text-xs font-medium text-slate-800"></div>
+                        <div><label class="text-xs font-bold text-slate-700 block mb-1">تداول:</label><input type="text" id="setting-tadawul-info" class="glass-input w-full rounded-xl py-2 px-3 text-xs font-medium text-slate-800"></div>
+                    </div>
+                    <div class="flex justify-end pt-2">
+                        <button onclick="saveStoreSettings()" class="px-6 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md transition flex items-center gap-2"><i class="fa-solid fa-floppy-disk"></i><span>حفظ الإعدادات</span></button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: BACKUP -->
+            <div id="adm-view-backup" class="hidden space-y-5">
+                <div class="glass-panel rounded-3xl p-5 sm:p-6 shadow-xl space-y-5">
+                    <h3 class="font-extrabold text-slate-900 text-base border-b border-slate-100 pb-3 flex items-center gap-2"><i class="fa-solid fa-file-export text-sky-600"></i><span>تصدير واستيراد الكتالوج</span></h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="p-4 sm:p-5 rounded-2xl bg-sky-50 border border-sky-200 space-y-2.5">
+                            <h4 class="font-bold text-sm text-sky-950 flex items-center gap-2"><i class="fa-solid fa-download text-sky-600"></i><span>تصدير نسخة احتياطية:</span></h4>
+                            <p class="text-xs text-sky-800 leading-relaxed">حمّل JSON بكل الألعاب والأسعار والإعدادات.</p>
+                            <button onclick="exportCatalogToFile()" class="px-4 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs shadow-md transition flex items-center gap-1.5 mt-2"><i class="fa-solid fa-file-arrow-down"></i><span>تحميل JSON</span></button>
+                        </div>
+                        <div class="p-4 sm:p-5 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-2.5">
+                            <h4 class="font-bold text-sm text-emerald-950 flex items-center gap-2"><i class="fa-solid fa-upload text-emerald-600"></i><span>استيراد كتالوج:</span></h4>
+                            <p class="text-xs text-emerald-800 leading-relaxed">اختر ملف JSON لتحديث الأسعار بضغطة.</p>
+                            <input type="file" id="import-json-file-input" accept=".json" class="text-xs text-slate-700 font-medium block pt-1">
+                            <button onclick="importCatalogFromFile()" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition flex items-center gap-1.5"><i class="fa-solid fa-file-arrow-up"></i><span>استيراد الآن</span></button>
+                        </div>
+                    </div>
+                    <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+                        <span class="text-xs text-slate-500 font-medium">استعادة الافتراضي:</span>
+                        <button onclick="resetCatalogToDefault()" class="px-4 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs border border-rose-200 transition flex items-center gap-1.5"><i class="fa-solid fa-rotate-left"></i><span>استعادة الافتراضي</span></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+    <script src="js/assets.js" defer></script>
+    <script src="js/data.js" defer></script>
+    <script src="js/admin.js" defer></script>
+</body>
+</html>
