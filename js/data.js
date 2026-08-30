@@ -72,14 +72,6 @@ const DEFAULT_APP_DATA = {
             subtitleAr: 'عملات تيك توك TikTok، وسناب شات بلس Snapchat+',
             icon: 'fa-coins',
             badge: 'تيك توك & سناب 🔥'
-        },
-        {
-            id: 'telecom',
-            titleAr: 'كروت مدار وليبيانا',
-            titleEn: 'Telecom Cards',
-            subtitleAr: 'طرق الدفع والشحن بكروت وتحويل شفرات مدار وليبيانا',
-            icon: 'fa-sim-card',
-            badge: 'ليبيانا & مدار 🇱🇾'
         }
     ],
     games: [
@@ -291,71 +283,10 @@ const DEFAULT_APP_DATA = {
             instructionsAr: 'شحن مباشر على اسم المستخدم (@Username) الخاص بك على تيك توك فور تأكيد الطلب.'
         },
 
-        // ================= TELECOM RECHARGE VOUCHERS (LIBYANA & MADAR) =================
-        {
-            id: 'card_libyana_10',
-            brand: 'libyana',
-            category: 'telecom',
-            nameAr: 'كرت تعبئة ليبيانا 10 دينار',
-            nominal: '10 LYD Voucher',
-            priceLYD: 10.00,
-            badge: 'ليبيانا 🇱🇾',
-            instructionsAr: 'كود تعبئة رصيد كرت ليبيانا 10 د.ل فوري صالح للاستخدام فوراً.'
-        },
-        {
-            id: 'card_libyana_20',
-            brand: 'libyana',
-            category: 'telecom',
-            nameAr: 'كرت تعبئة ليبيانا 20 دينار',
-            nominal: '20 LYD Voucher',
-            priceLYD: 20.00,
-            badge: 'ليبيانا 🇱🇾',
-            instructionsAr: 'كود تعبئة رصيد كرت ليبيانا 20 د.ل فوري صالح للاستخدام فوراً.'
-        },
-        {
-            id: 'card_libyana_50',
-            brand: 'libyana',
-            category: 'telecom',
-            nameAr: 'كرت تعبئة ليبيانا 50 دينار',
-            nominal: '50 LYD Voucher',
-            priceLYD: 50.00,
-            badge: 'ليبيانا 🇱🇾',
-            instructionsAr: 'كود تعبئة رصيد كرت ليبيانا 50 د.ل فوري صالح للاستخدام فوراً.'
-        },
-        {
-            id: 'card_madar_10',
-            brand: 'madar',
-            category: 'telecom',
-            nameAr: 'كرت تعبئة مدار 10 دينار',
-            nominal: '10 LYD Voucher',
-            priceLYD: 10.00,
-            badge: 'مدار 🇱🇾',
-            instructionsAr: 'كود تعبئة رصيد كرت مدار الجديد 10 د.ل فوري صالح للاستخدام فوراً.'
-        },
-        {
-            id: 'card_madar_20',
-            brand: 'madar',
-            category: 'telecom',
-            nameAr: 'كرت تعبئة مدار 20 دينار',
-            nominal: '20 LYD Voucher',
-            priceLYD: 20.00,
-            badge: 'مدار 🇱🇾',
-            instructionsAr: 'كود تعبئة رصيد كرت مدار الجديد 20 د.ل فوري صالح للاستخدام فوراً.'
-        },
-        {
-            id: 'card_madar_50',
-            brand: 'madar',
-            category: 'telecom',
-            nameAr: 'كرت تعبئة مدار 50 دينار',
-            nominal: '50 LYD Voucher',
-            priceLYD: 50.00,
-            badge: 'مدار 🇱🇾',
-            instructionsAr: 'كود تعبئة رصيد كرت مدار الجديد 50 د.ل فوري صالح للاستخدام فوراً.'
-        }
     ]
 };
 
-// LocalStorage Persistence Layer
+// LocalStorage Persistence Layer - مع ترحيل لإزالة كروت ليبيانا/مدار من البيع (يبقى الدفع فقط)
 function loadAppData() {
     try {
         const stored = localStorage.getItem('sahabati_catalog_data');
@@ -363,6 +294,21 @@ function loadAppData() {
             const parsed = JSON.parse(stored);
             if (parsed && parsed.games && parsed.giftCards) {
                 parsed.settings = { ...DEFAULT_STORE_SETTINGS, ...(parsed.settings || {}) };
+                // ترحيل: احذف كروت الاتصالات من البيع (لم يعد يباع) - يبقى الدفع عبر الرصيد فقط
+                if (parsed.giftCards.some(c => c.category === 'telecom' || c.id.includes('libyana') || c.id.includes('madar'))) {
+                    parsed.giftCards = parsed.giftCards.filter(c => c.category !== 'telecom' && !c.id.includes('libyana') && !c.id.includes('madar'));
+                    // احذف فئة telecom من التصنيفات إذا وجدت
+                    if (parsed.categories) parsed.categories = parsed.categories.filter(cat => cat.id !== 'telecom');
+                    // احفظ الترحيل فوراً
+                    try { localStorage.setItem('sahabati_catalog_data', JSON.stringify(parsed)); } catch(e){}
+                }
+                // تأكد من وجود ون باي في طرق الدفع
+                if (!parsed.settings.paymentMethodsInfo.one_pay) {
+                    parsed.settings.paymentMethodsInfo.one_pay = JSON.parse(JSON.stringify(DEFAULT_STORE_SETTINGS.paymentMethodsInfo.one_pay));
+                    try { localStorage.setItem('sahabati_catalog_data', JSON.stringify(parsed)); } catch(e){}
+                }
+                // احذف طرق الدفع القديمة المحذوفة (سداد، تداول، كاش) إذا كانت مخزنة
+                ['sadad','tadawul','cash','telecom_cards'].forEach(k=>{ if(parsed.settings.paymentMethodsInfo[k]) delete parsed.settings.paymentMethodsInfo[k]; });
                 return parsed;
             }
         }
