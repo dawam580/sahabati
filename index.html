@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سحابتي | Sahabati - شحن ألعاب وبطاقات رقمية بالدينار الليبي</title>
+    <meta name="description" content="منصة سحابتي لشحن ألعاب ببجي وفري فاير وروبلوكس وبيس وبطاقات أبل وبلايستيشن بالدينار الليبي والدفع المباشر عبر واتساب.">
+    <link rel="icon" href="08_sahabati_app_icon_1024x1024.png" type="image/png">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="antialiased selection:bg-emerald-500 selection:text-white" dir="rtl">
+
+    <!-- Top Announcement Bar (الشريط الإعلاني الترويجي) -->
+    <div class="announcement-bar w-full">
+        <div class="max-w-6xl mx-auto flex items-center justify-center gap-2 sm:gap-3 flex-wrap text-xs sm:text-sm font-bold">
+            <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-white/20 text-amber-300 text-xs shadow-inner animate-pulse">
+                <i class="fa-solid fa-bullhorn"></i>
+            </span>
+            <span class="tracking-wide text-white drop-shadow-sm font-black">
+                منصة سحابتي لخدمات وشحن الألعاب والبطاقات بالدينار الليبي
+            </span>
+            <span class="bg-emerald-500 text-white text-[11px] font-black px-2.5 py-0.5 rounded-full shadow-sm mr-1">
+                🇱🇾 دينار ليبي
+            </span>
+        </div>
+    </div>
+
+    <!-- Top Header Bar -->
+    <header class="w-full bg-white/70 backdrop-blur-md border-b border-white/60 sticky top-0 z-40 shadow-sm">
+        <div class="max-w-6xl mx-auto px-4 py-2.5 flex items-center justify-between gap-3 text-xs">
+            <!-- Brand & Tagline -->
+            <a href="#home" onclick="navigateTo('home')" class="flex items-center gap-2.5 hover:opacity-95 transition">
+                <img src="08_sahabati_app_icon_1024x1024.png" alt="Sahabati Logo" class="w-9 h-9 rounded-2xl shadow-md border-2 border-white object-contain flex-shrink-0">
+                <div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="font-black text-sky-800 text-base tracking-tight">سحابتي</span>
+                        <span class="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full">My Cloud</span>
+                    </div>
+                    <span class="text-[10px] text-slate-500 font-semibold block">شحن ألعاب وبطاقات بالدينار الليبي</span>
+                </div>
+            </a>
+
+            <!-- Controls (Currency Badge, Admin Panel, View Toggle) -->
+            <div class="flex items-center gap-2 sm:gap-3">
+                <!-- Single Libyan Dinar Currency Badge -->
+                <div class="bg-emerald-50 border border-emerald-300 text-emerald-900 text-xs font-black rounded-xl px-3 py-1.5 shadow-sm flex items-center gap-1.5">
+                    <span class="text-sm">🇱🇾</span>
+                    <span>دينار ليبي (د.ل)</span>
+                </div>
+
+                <!-- Admin Dashboard Button -->
+                <button onclick="openAdminAuthModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3.5 py-1.5 rounded-xl shadow-md shadow-indigo-600/20 transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-lock text-xs"></i>
+                    <span>لوحة الأدمن</span>
+                </button>
+
+                <!-- Phone Frame Simulation Toggle -->
+                <button id="frame-toggle-btn" onclick="togglePhoneFrame()" class="bg-white/80 hover:bg-white text-slate-700 border border-sky-200 font-bold px-3 py-1.5 rounded-xl shadow-sm transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-mobile-screen-button text-sky-600"></i>
+                    <span class="hidden md:inline">معاينة الهاتف</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Wrapper -->
+    <main id="app-main-wrapper" class="transition-all duration-300 py-4 sm:py-6 px-2 sm:px-4">
+        <div id="phone-screen-container" class="max-w-5xl mx-auto pb-24 sm:pb-12">
+
+            <!-- iPhone Dynamic Island (Simulation mode only) -->
+            <div id="phone-island-notch" class="phone-island hidden flex items-center justify-center">
+                <div class="w-3 h-3 rounded-full bg-slate-900 border border-slate-700 ml-2"></div>
+                <div class="w-2 h-2 rounded-full bg-blue-900/60"></div>
+            </div>
+
+            <!-- Main App Glass Header with Search & Navigation -->
+            <section class="glass-panel rounded-3xl p-4 sm:p-6 mb-6 shadow-xl relative overflow-hidden">
+                <!-- Floating decorative circles -->
+                <div class="absolute -top-12 -right-12 w-40 h-40 rounded-full bg-sky-300/40 blur-2xl pointer-events-none"></div>
+                <div class="absolute -bottom-12 -left-12 w-40 h-40 rounded-full bg-emerald-300/30 blur-2xl pointer-events-none"></div>
+
+                <!-- Navigation Tabs Bar -->
+                <div class="nav-tabs-container mb-5 border-b border-sky-100/80 pb-3 flex items-center gap-2 overflow-x-auto no-scrollbar">
+                    <button onclick="navigateTo('home')" data-tab="home" class="nav-item-btn nav-tab-active flex items-center gap-2 px-3.5 sm:px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition flex-shrink-0">
+                        <i class="fa-solid fa-house nav-icon"></i>
+                        <span>الرئيسية</span>
+                    </button>
+                    <button onclick="navigateTo('games')" data-tab="games" class="nav-item-btn text-slate-600 hover:text-sky-600 bg-white/60 flex items-center gap-2 px-3.5 sm:px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition flex-shrink-0 border border-sky-100">
+                        <i class="fa-solid fa-gamepad nav-icon"></i>
+                        <span>شحن الألعاب</span>
+                    </button>
+                    <button onclick="navigateTo('giftcards')" data-tab="giftcards" class="nav-item-btn text-slate-600 hover:text-sky-600 bg-white/60 flex items-center gap-2 px-3.5 sm:px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition flex-shrink-0 border border-sky-100">
+                        <i class="fa-solid fa-credit-card nav-icon"></i>
+                        <span>بطاقات الدفع</span>
+                    </button>
+                    <button onclick="navigateTo('giftcards'); filterGiftCards('telecom');" data-tab="telecom" class="nav-item-btn text-slate-600 hover:text-sky-600 bg-white/60 flex items-center gap-2 px-3.5 sm:px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition flex-shrink-0 border border-sky-100">
+                        <i class="fa-solid fa-sim-card nav-icon"></i>
+                        <span>شراء رصيد</span>
+                    </button>
+                    <button onclick="navigateTo('checkout')" data-tab="checkout" class="nav-item-btn text-slate-600 hover:text-sky-600 bg-white/60 flex items-center gap-2 px-3.5 sm:px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition relative flex-shrink-0 border border-sky-100">
+                        <i class="fa-solid fa-cart-shopping nav-icon"></i>
+                        <span>السلة والدفع</span>
+                        <span class="cart-count-badge hidden absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center shadow-md">0</span>
+                    </button>
+                    <button onclick="navigateTo('orders')" data-tab="orders" class="nav-item-btn text-slate-600 hover:text-sky-600 bg-white/60 flex items-center gap-2 px-3.5 sm:px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition flex-shrink-0 border border-sky-100">
+                        <i class="fa-solid fa-receipt nav-icon"></i>
+                        <span>طلباتي</span>
+                    </button>
+                    <button onclick="openAdminAuthModal()" data-tab="admin" class="nav-item-btn text-indigo-600 hover:text-indigo-800 bg-indigo-50/80 flex items-center gap-2 px-3.5 sm:px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition flex-shrink-0 border border-indigo-200">
+                        <i class="fa-solid fa-gear nav-icon"></i>
+                        <span>لوحة الأدمن</span>
+                    </button>
+                </div>
+
+                <!-- Global Search Box -->
+                <div class="relative max-w-2xl mx-auto mt-2">
+                    <div class="relative flex items-center w-full">
+                        <input type="text" id="global-search-input" dir="rtl" placeholder="ابحث عن لعبتك أو بطاقتك (ببجي، فري فاير، بيس، روبلوكس، أبل...)" 
+                               class="glass-input w-full rounded-2xl py-3.5 pr-12 pl-28 text-xs sm:text-sm font-bold text-slate-800 placeholder-slate-400 text-right shadow-sm focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all">
+                        <span class="absolute right-4 text-sky-600 text-base pointer-events-none flex items-center justify-center">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                        </span>
+                        <button onclick="handleSearch(document.getElementById('global-search-input').value)" 
+                                class="absolute left-2.5 bg-sky-600 hover:bg-sky-700 active:scale-95 text-white text-xs sm:text-sm font-bold px-4 sm:px-5 py-2 rounded-xl transition shadow-md shadow-sky-600/20 flex items-center gap-1.5">
+                            <span>بحث</span>
+                            <i class="fa-solid fa-arrow-left text-[10px]"></i>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= PAGE 1: HOME ================= -->
+            <section id="page-home" class="view-page space-y-6" dir="rtl">
+
+                <!-- Crisp High-Res Hero Banner -->
+                <div class="glass-panel rounded-3xl p-4 sm:p-7 shadow-2xl relative overflow-hidden border-2 border-white">
+                    <div class="relative rounded-2xl overflow-hidden shadow-xl border border-sky-200 mb-6 bg-slate-900 flex items-center justify-center">
+                        <img src="header_hero.jpg" alt="سحابتي - Sahabati Hero" class="w-full h-auto max-h-[380px] object-contain object-center transform hover:scale-[1.01] transition duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-900/20 to-transparent flex items-end p-4 sm:p-6">
+                            <div class="text-white">
+                                <span class="bg-emerald-500 text-white text-[11px] font-black px-3 py-1 rounded-full mb-1 inline-block shadow-md">
+                                    🇱🇾 شحن فوري ومباشر بالدينار الليبي
+                                </span>
+                                <h2 class="text-2xl sm:text-3xl font-black drop-shadow-md">منصة سحابتي لخدمات وشحن الألعاب</h2>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-center max-w-2xl mx-auto space-y-3">
+                        <h1 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                            وجهتك الأولى لشحن الألعاب والبطاقات عبر <span class="text-emerald-600">واتساب</span>
+                        </h1>
+                        <p class="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed">
+                            اختر لعبتك أو بطاقتك المفضلة، حدد الباقة بالدينار الليبي، وسيتم فتح محادثة مبيعات مجهزة بفاتورتك لتأكيد الشحن فوراً.
+                        </p>
+
+                        <div class="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+                            <button onclick="navigateTo('games')" class="btn-shimmer w-full sm:w-auto px-6 py-3 rounded-2xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs sm:text-sm shadow-lg shadow-sky-600/30 transition flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-gamepad"></i>
+                                <span>شحن الألعاب فوراً</span>
+                            </button>
+                            <button onclick="navigateTo('giftcards')" class="w-full sm:w-auto px-6 py-3 rounded-2xl bg-white/90 hover:bg-white text-sky-800 font-bold text-xs sm:text-sm border border-sky-200 shadow-md transition flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-credit-card text-sky-600"></i>
+                                <span>تصفح بطاقات الدفع والهدايا</span>
+                            </button>
+                            <button onclick="openAdminAuthModal()" class="w-full sm:w-auto px-5 py-3 rounded-2xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs sm:text-sm border border-indigo-300 shadow-sm transition flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-plus-circle"></i>
+                                <span>إضافة صنف جديد (الأدمن)</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Promotional Banner (Roblox 20% OFF) -->
+                <div onclick="navigateTo('giftcards'); filterGiftCards('roblox');" class="glass-card-blue rounded-3xl p-5 sm:p-7 relative overflow-hidden cursor-pointer group shadow-lg">
+                    <div class="grid grid-cols-1 md:grid-cols-12 items-center gap-6 relative z-10">
+                        <div class="md:col-span-8 text-right">
+                            <span class="inline-block bg-orange-500 text-white text-xs font-black px-3 py-1 rounded-full shadow-sm mb-2 animate-bounce">
+                                🔥 عرض مميز ومحدود!
+                            </span>
+                            <h2 class="text-2xl sm:text-3xl font-black text-slate-900 mb-2">
+                                خصم 20% على شدات ورصيد روبلوكس Robux!
+                            </h2>
+                            <p class="text-xs sm:text-sm text-slate-600 font-semibold mb-4">
+                                استخدم كوبون الخصم <code class="bg-white/90 text-sky-700 px-2.5 py-1 rounded-lg border border-sky-300 font-mono font-bold select-all">SAHABATI20</code> عند الدفع بالدينار الليبي.
+                            </p>
+                            <button class="px-5 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs shadow-md transition flex items-center gap-2">
+                                <span>تسوق العرض الآن</span>
+                                <i class="fa-solid fa-arrow-left text-[10px]"></i>
+                            </button>
+                        </div>
+                        <div class="md:col-span-4 flex justify-center">
+                            <img src="07_roblox_promotion_banner.png" alt="Roblox Promo" class="w-48 sm:w-56 h-auto rounded-2xl shadow-xl group-hover:scale-105 transition duration-300 border-2 border-white/80 object-cover">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Categories Section (سحابة خدمات سحابتي) -->
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-xl font-extrabold text-slate-900 flex items-center gap-2">
+                            <i class="fa-solid fa-shapes text-sky-600"></i>
+                            <span>سحابة خدمات سحابتي</span>
+                        </h2>
+                        <span class="text-xs text-slate-500 font-bold">جميع الأسعار بالدينار الليبي (د.ل)</span>
+                    </div>
+
+                    <div id="categories-grid" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Features / Why Sahabati -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 pt-2">
+                    <div class="glass-card rounded-2xl p-4 text-center">
+                        <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center mx-auto mb-2 text-lg">
+                            <i class="fa-brands fa-whatsapp text-xl"></i>
+                        </div>
+                        <h4 class="font-bold text-slate-900 text-xs sm:text-sm">دفع وتأكيد واتساب</h4>
+                        <p class="text-[10px] sm:text-xs text-slate-500 mt-1">تواصل فوري مع خدمة العملاء</p>
+                    </div>
+
+                    <div class="glass-card rounded-2xl p-4 text-center">
+                        <div class="w-10 h-10 rounded-xl bg-sky-500/10 text-sky-600 flex items-center justify-center mx-auto mb-2 text-lg">
+                            <i class="fa-solid fa-bolt"></i>
+                        </div>
+                        <h4 class="font-bold text-slate-900 text-xs sm:text-sm">تسليم مباشر سريع</h4>
+                        <p class="text-[10px] sm:text-xs text-slate-500 mt-1">أكواد وبطاقات أصلية ومضمونة</p>
+                    </div>
+
+                    <div class="glass-card rounded-2xl p-4 text-center">
+                        <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center mx-auto mb-2 text-lg">
+                            <i class="fa-solid fa-money-bill-wave"></i>
+                        </div>
+                        <h4 class="font-bold text-slate-900 text-xs sm:text-sm">أسعار بالدينار الليبي</h4>
+                        <p class="text-[10px] sm:text-xs text-slate-500 mt-1">سداد، تداول، وتحويل مصرفي</p>
+                    </div>
+
+                    <div class="glass-card rounded-2xl p-4 text-center">
+                        <div class="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-600 flex items-center justify-center mx-auto mb-2 text-lg">
+                            <i class="fa-solid fa-headset"></i>
+                        </div>
+                        <h4 class="font-bold text-slate-900 text-xs sm:text-sm">دعم فني 24/7</h4>
+                        <p class="text-[10px] sm:text-xs text-slate-500 mt-1">متابعة طلبك حتى التفعيل</p>
+                    </div>
+                </div>
+
+            </section>
+
+            <!-- ================= PAGE 2: GAMES TOP-UP ================= -->
+            <section id="page-games" class="view-page hidden space-y-6">
+
+                <!-- Games Switcher Bar -->
+                <div class="glass-panel rounded-2xl p-2.5 flex items-center gap-2 overflow-x-auto no-scrollbar shadow-md">
+                    <div id="games-selector" class="flex items-center gap-2">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Selected Game Hero Card -->
+                <div class="glass-panel rounded-3xl overflow-hidden shadow-xl border border-white/80">
+                    <div class="relative h-48 sm:h-56 bg-slate-900 overflow-hidden">
+                        <img id="game-banner-img" src="04_pubg_mobile_top_up_page.png" alt="Game Banner" class="w-full h-full object-cover opacity-90">
+                        <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/40 to-transparent flex items-end p-6">
+                            <div>
+                                <span class="bg-emerald-500 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full mb-1 inline-block">شحن فوري بالمعرّف - دينار ليبي</span>
+                                <h2 id="game-title-text" class="text-2xl sm:text-3xl font-black text-white">ببجي موبايل (PUBG Mobile)</h2>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Player ID Verification Input Card -->
+                    <div class="p-6 bg-white/75 backdrop-blur-md space-y-3">
+                        <label id="player-id-label" class="font-extrabold text-slate-900 text-sm block">أدخل معرّف اللاعب (Player ID):</label>
+                        <div class="flex flex-col sm:flex-row gap-2">
+                            <div class="relative flex-1">
+                                <input type="text" id="player-id-input" placeholder="مثال: 5123456789" class="glass-input w-full rounded-2xl py-3 px-4 font-bold text-slate-900 text-sm">
+                                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                                    <i class="fa-solid fa-id-card"></i>
+                                </span>
+                            </div>
+                            <button onclick="verifyPlayerId()" class="px-6 py-3 rounded-2xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs transition shadow-md shadow-sky-600/30 flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-circle-check"></i>
+                                <span>تحقق من الحساب</span>
+                            </button>
+                        </div>
+
+                        <!-- Verification Status Box -->
+                        <div id="player-id-status"></div>
+                    </div>
+                </div>
+
+                <!-- Recharge Packages Grid -->
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-extrabold text-slate-900 flex items-center gap-2">
+                            <i class="fa-solid fa-boxes-stacked text-sky-600"></i>
+                            <span>باقات الشحن المتاحة بالدينار الليبي (د.ل)</span>
+                        </h3>
+                        <span class="text-xs text-emerald-800 font-bold bg-emerald-100 px-2.5 py-1 rounded-full">تسليم مباشر</span>
+                    </div>
+
+                    <div id="packages-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+            </section>
+
+            <!-- ================= PAGE 3: GIFT CARDS ================= -->
+            <section id="page-giftcards" class="view-page hidden space-y-6">
+
+                <!-- Categories Filter -->
+                <div class="glass-panel rounded-2xl p-2.5 flex items-center gap-2 overflow-x-auto no-scrollbar shadow-md">
+                    <button onclick="filterGiftCards('all')" data-category="all" class="giftcard-cat-btn bg-sky-600 text-white px-4 py-2 rounded-xl text-xs font-bold flex-shrink-0 transition">الكل</button>
+                    <button onclick="filterGiftCards('apple')" data-category="apple" class="giftcard-cat-btn bg-white/80 text-slate-700 px-4 py-2 rounded-xl text-xs font-bold flex-shrink-0 transition">أبل آيتونز</button>
+                    <button onclick="filterGiftCards('gaming')" data-category="gaming" class="giftcard-cat-btn bg-white/80 text-slate-700 px-4 py-2 rounded-xl text-xs font-bold flex-shrink-0 transition">بلايستيشن وستيم</button>
+                    <button onclick="filterGiftCards('social')" data-category="social" class="giftcard-cat-btn bg-white/80 text-slate-700 px-4 py-2 rounded-xl text-xs font-bold flex-shrink-0 transition">تيك توك TikTok</button>
+                    <button onclick="filterGiftCards('google')" data-category="google" class="giftcard-cat-btn bg-white/80 text-slate-700 px-4 py-2 rounded-xl text-xs font-bold flex-shrink-0 transition">جوجل بلاي</button>
+                    <button onclick="filterGiftCards('telecom')" data-category="telecom" class="giftcard-cat-btn bg-white/80 text-slate-700 px-4 py-2 rounded-xl text-xs font-bold flex-shrink-0 transition">مدار وليبيانا</button>
+                </div>
+
+                <!-- Gift Cards Grid -->
+                <div id="giftcards-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Populated by JS -->
+                </div>
+
+            </section>
+
+            <!-- ================= PAGE 4: CHECKOUT ================= -->
+            <section id="page-checkout" class="view-page hidden space-y-6">
+
+                <!-- Empty Cart State -->
+                <div id="checkout-empty-state" class="glass-panel rounded-3xl p-10 text-center shadow-xl">
+                    <div class="w-20 h-20 rounded-full bg-sky-100 text-sky-600 flex items-center justify-center text-3xl mx-auto mb-4">
+                        <i class="fa-solid fa-cart-shopping"></i>
+                    </div>
+                    <h3 class="text-2xl font-black text-slate-900 mb-2">سلة المشتريات فارغة</h3>
+                    <p class="text-sm text-slate-500 mb-6">لم تقم بإضافة أي باقات شحن أو بطاقات هدايا حتى الآن.</p>
+                    <button onclick="navigateTo('games')" class="px-6 py-3 rounded-2xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs shadow-md transition">
+                        تصفح الألعاب والبطاقات
+                    </button>
+                </div>
+
+                <!-- Checkout Form & Summary Container -->
+                <div id="checkout-form-container" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+                    <!-- Left Column: Payment Methods & Details -->
+                    <div class="lg:col-span-7 space-y-6">
+
+                        <!-- Order Items Card -->
+                        <div class="glass-panel rounded-3xl p-5 shadow-lg space-y-3">
+                            <h3 class="font-extrabold text-slate-900 text-sm flex items-center gap-2">
+                                <i class="fa-solid fa-list-check text-sky-600"></i>
+                                <span>العناصر المحددة بالسلة (بالدينار الليبي):</span>
+                            </h3>
+                            <div id="checkout-items-list" class="space-y-2.5">
+                                <!-- Populated by JS -->
+                            </div>
+                        </div>
+
+                        <!-- Payment Methods Selector Card -->
+                        <div class="glass-panel rounded-3xl p-5 shadow-lg space-y-4">
+                            <h3 class="font-extrabold text-slate-900 text-sm flex items-center gap-2">
+                                <i class="fa-solid fa-credit-card text-sky-600"></i>
+                                <span>اختر وسيلة الدفع الليبية:</span>
+                            </h3>
+
+                            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                                <div onclick="selectPaymentMethod('sadad')" data-method="sadad" class="payment-option-card border-emerald-500 bg-emerald-50/80 ring-2 ring-emerald-400 p-3 rounded-2xl cursor-pointer text-center transition flex flex-col items-center justify-center gap-1.5 border">
+                                    <i class="fa-solid fa-mobile-screen-button text-2xl text-emerald-600"></i>
+                                    <span class="text-xs font-bold text-slate-800">خدمة سداد (Sadad)</span>
+                                </div>
+                                <div onclick="selectPaymentMethod('tadawul')" data-method="tadawul" class="payment-option-card border-slate-200 bg-white/70 p-3 rounded-2xl cursor-pointer text-center transition flex flex-col items-center justify-center gap-1.5 border">
+                                    <i class="fa-solid fa-qrcode text-2xl text-blue-600"></i>
+                                    <span class="text-xs font-bold text-slate-800">خدمة تداول (Tadawul)</span>
+                                </div>
+                                <div onclick="selectPaymentMethod('bank_transfer')" data-method="bank_transfer" class="payment-option-card border-slate-200 bg-white/70 p-3 rounded-2xl cursor-pointer text-center transition flex flex-col items-center justify-center gap-1.5 border">
+                                    <i class="fa-solid fa-building-columns text-2xl text-indigo-700"></i>
+                                    <span class="text-xs font-bold text-slate-800">تحويل مصرفي ليبي</span>
+                                </div>
+                                <div onclick="selectPaymentMethod('telecom_cards')" data-method="telecom_cards" class="payment-option-card border-slate-200 bg-white/70 p-3 rounded-2xl cursor-pointer text-center transition flex flex-col items-center justify-center gap-1.5 border">
+                                    <i class="fa-solid fa-sim-card text-2xl text-amber-600"></i>
+                                    <span class="text-xs font-bold text-slate-800">شفرة مدار / ليبيانا</span>
+                                </div>
+                                <div onclick="selectPaymentMethod('cash')" data-method="cash" class="payment-option-card border-slate-200 bg-white/70 p-3 rounded-2xl cursor-pointer text-center transition flex flex-col items-center justify-center gap-1.5 border">
+                                    <i class="fa-solid fa-hand-holding-dollar text-2xl text-emerald-600"></i>
+                                    <span class="text-xs font-bold text-slate-800">كاش يدوي / نقطة بيع</span>
+                                </div>
+                                <div onclick="selectPaymentMethod('whatsapp_direct')" data-method="whatsapp_direct" class="payment-option-card border-slate-200 bg-white/70 p-3 rounded-2xl cursor-pointer text-center transition flex flex-col items-center justify-center gap-1.5 border">
+                                    <i class="fa-brands fa-whatsapp text-2xl text-emerald-500"></i>
+                                    <span class="text-xs font-bold text-slate-800">اتفاق مباشر مع الدعم</span>
+                                </div>
+                            </div>
+
+                            <!-- Dynamic Payment Gateway Information & Instructions -->
+                            <div id="payment-instructions-box" class="p-4 rounded-2xl bg-emerald-50/90 border border-emerald-300 space-y-3">
+                                <!-- Populated dynamically by JS -->
+                            </div>
+
+                            <!-- Customer Input Fields -->
+                            <div class="space-y-2.5 pt-2">
+                                <div>
+                                    <label class="text-xs font-bold text-slate-700 block mb-1">رقم هاتفك على واتساب (لإرسال كود الشحن):</label>
+                                    <input type="text" id="whatsapp-phone-input" placeholder="مثال: 091XXXXXXX أو 092XXXXXXX" class="glass-input w-full rounded-xl py-2.5 px-3 text-xs font-bold font-mono text-slate-800">
+                                </div>
+                                <div>
+                                    <label class="text-xs font-bold text-slate-700 block mb-1">رقم المعاملة / كود كرت الشحن / ملاحظاتك:</label>
+                                    <input type="text" id="whatsapp-note-input" placeholder="مثال: تم التحويل عبر سداد / كود الكرت: XXXX-XXXX" class="glass-input w-full rounded-xl py-2 px-3 text-xs font-medium text-slate-800">
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Order Summary & Complete Button -->
+                    <div class="lg:col-span-5 space-y-6">
+                        <div class="glass-panel rounded-3xl p-6 shadow-xl space-y-4 sticky top-20">
+                            <h3 class="font-extrabold text-slate-900 text-base border-b border-sky-100 pb-3">ملخص الطلب (بالدينار الليبي)</h3>
+
+                            <!-- Promo Code Box -->
+                            <div class="space-y-1.5">
+                                <label class="text-xs font-bold text-slate-700">كوبون الخصم:</label>
+                                <div class="flex gap-2">
+                                    <input type="text" id="promo-code-input" placeholder="SAHABATI20" class="glass-input flex-1 rounded-xl py-2 px-3 text-xs font-mono uppercase font-bold text-slate-800">
+                                    <button onclick="applyPromoCode()" class="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs transition">تطبيق</button>
+                                </div>
+                            </div>
+
+                            <div class="space-y-2.5 pt-2 text-xs font-bold text-slate-700 border-t border-sky-100">
+                                <div class="flex justify-between">
+                                    <span>المجموع الفرعي:</span>
+                                    <span id="checkout-subtotal" class="font-mono text-slate-900">0.00 د.ل</span>
+                                </div>
+                                <div class="flex justify-between text-emerald-600">
+                                    <span>الخصم المطبق:</span>
+                                    <span id="checkout-discount" class="font-mono">0.00 د.ل</span>
+                                </div>
+                                <div class="flex justify-between text-slate-500">
+                                    <span>رسوم الخدمة:</span>
+                                    <span class="text-emerald-600 font-bold">مجاناً (0.00 د.ل)</span>
+                                </div>
+                                <div class="flex justify-between text-base font-extrabold text-slate-900 pt-3 border-t border-sky-200">
+                                    <span>الإجمالي بالدينار الليبي:</span>
+                                    <span id="checkout-total" class="text-emerald-700 font-black text-xl">0.00 د.ل</span>
+                                </div>
+                            </div>
+
+                            <button id="complete-payment-btn" onclick="processPayment()" class="btn-shimmer w-full py-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm shadow-xl shadow-emerald-600/30 transition flex items-center justify-center gap-2">
+                                <i class="fa-brands fa-whatsapp text-xl"></i>
+                                <span>إرسال وتأكيد الطلب عبر واتساب 💬</span>
+                            </button>
+
+                            <p class="text-[10px] text-center text-slate-400">
+                                بالضغط على إتمام الطلب، سيتم فتح تطبيق ومحادثة واتساب المتجر مباشرة لتأكيد الدفع وشحن حسابك فوراً.
+                            </p>
+                        </div>
+                    </div>
+
+                </div>
+
+            </section>
+
+            <!-- ================= PAGE 5: ORDERS ================= -->
+            <section id="page-orders" class="view-page hidden space-y-6">
+
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-2xl font-black text-slate-900">سجل طلباتي (My Orders)</h2>
+                        <p class="text-xs text-slate-500 font-medium">عرض واسترجاع جميع الفواتير وأكواد الشحن السابقة</p>
+                    </div>
+                    <span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full">🇱🇾 دينار ليبي</span>
+                </div>
+
+                <div id="orders-empty-state" class="glass-panel rounded-3xl p-10 text-center shadow-xl">
+                    <div class="w-16 h-16 rounded-full bg-sky-100 text-sky-600 flex items-center justify-center text-2xl mx-auto mb-3">
+                        <i class="fa-solid fa-receipt"></i>
+                    </div>
+                    <h4 class="font-bold text-slate-900 text-base mb-1">لا توجد طلبات سابقة</h4>
+                    <p class="text-xs text-slate-500 mb-4">عند قيامك بأول عملية شحن أو شراء بطاقة ستظهر هنا تلقائياً.</p>
+                    <button onclick="navigateTo('games')" class="px-5 py-2.5 rounded-xl bg-sky-600 text-white font-bold text-xs">
+                        ابدأ التسوق الآن
+                    </button>
+                </div>
+
+                <div id="orders-list-container" class="space-y-4">
+                    <!-- Populated by JS -->
+                </div>
+
+            </section>
+
+            <!-- ================= PAGE 6: ADMIN DASHBOARD (لوحة تحكم المدير) ================= -->
+            <section id="page-admin" class="view-page hidden space-y-6">
+
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-indigo-100 pb-4">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center text-sm shadow-md">
+                                <i class="fa-solid fa-sliders"></i>
+                            </span>
+                            <h2 class="text-2xl font-black text-slate-900">لوحة تحكم المدير (Admin Dashboard)</h2>
+                        </div>
+                        <p class="text-xs text-slate-500 font-medium mt-1">إدارة كاملة للمتجر، إضافة وتعديل الباقات، ضبط رقم الواتساب، وتصدير واستيراد الكتالوج</p>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <button onclick="logoutAdmin()" class="px-3.5 py-2 rounded-xl bg-slate-200 hover:bg-rose-100 text-slate-700 hover:text-rose-700 text-xs font-bold transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                            <span>قفل اللوحة</span>
+                        </button>
+                        <button onclick="navigateTo('home')" class="px-4 py-2 rounded-xl bg-sky-600 text-white text-xs font-bold shadow-md hover:bg-sky-700 transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-store"></i>
+                            <span>العودة للمتجر</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Admin Navigation Sub-Tabs -->
+                <div class="flex items-center gap-2 border-b border-slate-200 pb-3 overflow-x-auto no-scrollbar">
+                    <button onclick="switchAdminTab('products')" id="adm-tab-btn-products" class="admin-tab-btn px-4 py-2 rounded-xl text-xs font-extrabold bg-indigo-600 text-white shadow-sm transition">
+                        <i class="fa-solid fa-boxes-stacked ml-1"></i> إدارة وإضافة الأصناف
+                    </button>
+                    <button onclick="switchAdminTab('settings')" id="adm-tab-btn-settings" class="admin-tab-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 transition">
+                        <i class="fa-solid fa-gear ml-1"></i> إعدادات الواتساب والدفع
+                    </button>
+                    <button onclick="switchAdminTab('backup')" id="adm-tab-btn-backup" class="admin-tab-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 transition">
+                        <i class="fa-solid fa-file-export ml-1"></i> تصدير واستيراد الكتالوج
+                    </button>
+                </div>
+
+                <!-- TAB 1: PRODUCTS & PACKAGES -->
+                <div id="adm-view-products" class="space-y-6">
+                    <!-- Quick Stats -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div class="glass-card rounded-2xl p-4 border border-indigo-200 bg-indigo-50/50">
+                            <span class="text-xs text-indigo-700 font-bold block">إجمالي ألعاب الشحن المعروضة</span>
+                            <span id="admin-stat-games" class="text-2xl font-black text-indigo-900 mt-1 block">4 ألعاب</span>
+                        </div>
+                        <div class="glass-card rounded-2xl p-4 border border-sky-200 bg-sky-50/50">
+                            <span class="text-xs text-sky-700 font-bold block">إجمالي بطاقات الهدايا الرقمية</span>
+                            <span id="admin-stat-cards" class="text-2xl font-black text-sky-900 mt-1 block">8 بطاقات</span>
+                        </div>
+                        <div class="glass-card rounded-2xl p-4 border border-emerald-200 bg-emerald-50/50">
+                            <span class="text-xs text-emerald-700 font-bold block">إجمالي طلبات واتساب المسجلة</span>
+                            <span id="admin-stat-orders" class="text-2xl font-black text-emerald-900 mt-1 block">0 طلب</span>
+                        </div>
+                    </div>
+
+                    <!-- Add New Item Form -->
+                    <div class="glass-panel rounded-3xl p-6 shadow-xl border border-white space-y-4">
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                            <h3 class="font-extrabold text-slate-900 text-base flex items-center gap-2">
+                                <i class="fa-solid fa-plus-circle text-emerald-600"></i>
+                                <span>إضافة صنف أو باقة شحن جديدة</span>
+                            </h3>
+                            <span class="text-xs font-bold text-emerald-700 bg-emerald-100 px-2.5 py-0.5 rounded-full">نشر فوري</span>
+                        </div>
+
+                        <form id="admin-add-item-form" onsubmit="handleAdminAddItem(event)" class="space-y-4">
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <div>
+                                    <label class="text-xs font-bold text-slate-700 block mb-1">نوع الصنف المراد إضافته:</label>
+                                    <select id="admin-item-type" onchange="toggleAdminFormType(this.value)" class="glass-input w-full rounded-xl py-2.5 px-3 text-xs font-bold text-slate-800">
+                                        <option value="game_package">🎮 باقة شحن لعبة (Game Package)</option>
+                                        <option value="gift_card">🎁 بطاقة هدايا رقمية (Gift Card)</option>
+                                        <option value="new_game">🕹️ لعبة جديدة بالكامل (New Game Title)</option>
+                                    </select>
+                                </div>
+
+                                <div id="admin-game-select-group">
+                                    <label class="text-xs font-bold text-slate-700 block mb-1">اختر اللعبة التابعة لها الباقة:</label>
+                                    <select id="admin-target-game" class="glass-input w-full rounded-xl py-2.5 px-3 text-xs font-bold text-slate-800">
+                                        <!-- Populated by JS -->
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label class="text-xs font-bold text-slate-700 block mb-1">اسم الصنف / الباقة بالعربية:</label>
+                                    <input type="text" id="admin-item-name" placeholder="مثال: 1000 كوينز + 100 مجاناً" required class="glass-input w-full rounded-xl py-2 px-3 text-xs font-bold text-slate-800">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <div>
+                                    <label class="text-xs font-bold text-slate-700 block mb-1">السعر بالدينار الليبي (د.ل):</label>
+                                    <div class="relative">
+                                        <input type="number" step="0.5" id="admin-item-price" placeholder="مثال: 35.00" required class="glass-input w-full rounded-xl py-2 px-3 font-mono font-bold text-xs text-slate-800">
+                                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">د.ل</span>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="text-xs font-bold text-slate-700 block mb-1">شارة العرض (Badge اختياري):</label>
+                                    <input type="text" id="admin-item-badge" placeholder="مثال: عرض خاص 🔥 أو خصم 15%" class="glass-input w-full rounded-xl py-2 px-3 text-xs font-medium text-slate-800">
+                                </div>
+
+                                <div>
+                                    <label class="text-xs font-bold text-slate-700 block mb-1">الفئة / القسم:</label>
+                                    <select id="admin-item-category" class="glass-input w-full rounded-xl py-2 px-3 text-xs font-bold text-slate-800">
+                                        <option value="gaming">ألعاب وبلايستيشن</option>
+                                        <option value="apple">أبل App Store</option>
+                                        <option value="google">جوجل بلاي</option>
+                                        <option value="social">تيك توك وتواصل</option>
+                                        <option value="telecom">مدار وليبيانا</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="text-xs font-bold text-slate-700 block mb-1">تعليمات أو ملاحظات الشحن (اختياري):</label>
+                                <input type="text" id="admin-item-instructions" placeholder="مثال: يتم الشحن فورا في حساب اللاعب عبر معرّف ID" class="glass-input w-full rounded-xl py-2 px-3 text-xs font-medium text-slate-800">
+                            </div>
+
+                            <div class="flex justify-end pt-2">
+                                <button type="submit" class="px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs shadow-lg shadow-emerald-600/30 transition flex items-center gap-2">
+                                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                                    <span>حفظ ونشر الصنف فوراً في المتجر</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Manage Current Products List -->
+                    <div class="glass-panel rounded-3xl p-6 shadow-xl space-y-4">
+                        <h3 class="font-extrabold text-slate-900 text-base border-b border-slate-100 pb-3 flex items-center gap-2">
+                            <i class="fa-solid fa-list text-sky-600"></i>
+                            <span>قائمة الأصناف المعروضة حالياً بالمتجر:</span>
+                        </h3>
+                        <div id="admin-items-table-container" class="space-y-2">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 2: STORE & PAYMENT SETTINGS -->
+                <div id="adm-view-settings" class="hidden space-y-6">
+                    <div class="glass-panel rounded-3xl p-6 shadow-xl space-y-5">
+                        <h3 class="font-extrabold text-slate-900 text-base border-b border-slate-100 pb-3 flex items-center gap-2">
+                            <i class="fa-solid fa-sliders text-indigo-600"></i>
+                            <span>إعدادات رقم واتساب المتجر وكلمة سر الأدمن</span>
+                        </h3>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-xs font-bold text-slate-700 block mb-1">رقم هاتف واتساب المتجر (مع الرمز الدولي 218):</label>
+                                <input type="text" id="setting-whatsapp-number" placeholder="21891XXXXXXX" class="glass-input w-full rounded-xl py-2.5 px-3 text-xs font-bold font-mono text-slate-800">
+                                <span class="text-[10px] text-slate-500 mt-1 block">الرقم الذي ستصل إليه فواتير الزبائن تلقائياً عبر واتساب.</span>
+                            </div>
+
+                            <div>
+                                <label class="text-xs font-bold text-slate-700 block mb-1">كلمة سر لوحة الأدمن (PIN Code):</label>
+                                <input type="text" id="setting-admin-pin" placeholder="admin2026" class="glass-input w-full rounded-xl py-2.5 px-3 text-xs font-bold font-mono text-slate-800">
+                                <span class="text-[10px] text-slate-500 mt-1 block">تُستخدم لتأمين الدخول إلى لوحة التحكم.</span>
+                            </div>
+                        </div>
+
+                        <h4 class="font-extrabold text-slate-900 text-sm pt-4 border-t border-slate-100 flex items-center gap-2">
+                            <i class="fa-solid fa-building-columns text-emerald-600"></i>
+                            <span>إعدادات الحسابات ووسائل الدفع الليبية (تظهر للزبون عند الدفع):</span>
+                        </h4>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-xs font-bold text-slate-700 block mb-1">رقم / تفاصيل خدمة سداد (Sadad):</label>
+                                <input type="text" id="setting-sadad-info" class="glass-input w-full rounded-xl py-2 px-3 text-xs font-medium text-slate-800">
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-slate-700 block mb-1">رمز / تفاصيل خدمة تداول (Tadawul):</label>
+                                <input type="text" id="setting-tadawul-info" class="glass-input w-full rounded-xl py-2 px-3 text-xs font-medium text-slate-800">
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-slate-700 block mb-1">بيانات الحساب المصرفي (اسم المصرف ورقم الحساب):</label>
+                                <input type="text" id="setting-bank-info" class="glass-input w-full rounded-xl py-2 px-3 text-xs font-medium text-slate-800">
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-slate-700 block mb-1">أرقام تحويل رصيد شفرات مدار وليبيانا:</label>
+                                <input type="text" id="setting-telecom-info" class="glass-input w-full rounded-xl py-2 px-3 text-xs font-medium text-slate-800">
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end pt-3">
+                            <button onclick="saveStoreSettings()" class="px-6 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md transition flex items-center gap-2">
+                                <i class="fa-solid fa-floppy-disk"></i>
+                                <span>حفظ جميع الإعدادات</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 3: BACKUP & EXPORT/IMPORT -->
+                <div id="adm-view-backup" class="hidden space-y-6">
+                    <div class="glass-panel rounded-3xl p-6 shadow-xl space-y-5">
+                        <h3 class="font-extrabold text-slate-900 text-base border-b border-slate-100 pb-3 flex items-center gap-2">
+                            <i class="fa-solid fa-file-export text-sky-600"></i>
+                            <span>تصدير واستيراد كتالوج المنتجات (JSON Backup)</span>
+                        </h3>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <!-- Export -->
+                            <div class="p-5 rounded-2xl bg-sky-50 border border-sky-200 space-y-3">
+                                <h4 class="font-bold text-sm text-sky-950 flex items-center gap-2">
+                                    <i class="fa-solid fa-download text-sky-600"></i>
+                                    <span>تصدير نسخة احتياطية من الكتالوج:</span>
+                                </h4>
+                                <p class="text-xs text-sky-800 leading-relaxed">
+                                    قم بتحميل ملف JSON يحتوي على جميع الألعاب والباقات والأسعار والإعدادات الحالية لحفظها أو نقلها لأجهزة أخرى.
+                                </p>
+                                <div class="flex gap-2 pt-2">
+                                    <button onclick="exportCatalogToFile()" class="px-4 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs shadow-md transition flex items-center gap-1.5">
+                                        <i class="fa-solid fa-file-arrow-down"></i>
+                                        <span>تحميل ملف الكتالوج (JSON)</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Import -->
+                            <div class="p-5 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-3">
+                                <h4 class="font-bold text-sm text-emerald-950 flex items-center gap-2">
+                                    <i class="fa-solid fa-upload text-emerald-600"></i>
+                                    <span>استيراد كتالوج من ملف خارجي:</span>
+                                </h4>
+                                <p class="text-xs text-emerald-800 leading-relaxed">
+                                    اختر ملف JSON محفوظ مسبقاً لتحديث جميع باقات وأسعار الموقع بالكامل بضغطة زر واحدة.
+                                </p>
+                                <input type="file" id="import-json-file-input" accept=".json" class="text-xs text-slate-700 font-medium block pt-1">
+                                <button onclick="importCatalogFromFile()" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition flex items-center gap-1.5">
+                                    <i class="fa-solid fa-file-arrow-up"></i>
+                                    <span>استيراد وتحديث المتجر الآن</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Reset -->
+                        <div class="pt-4 border-t border-slate-100 flex items-center justify-between">
+                            <span class="text-xs text-slate-500 font-medium">إذا أردت استعادة الكتالوج الافتراضي الأصلي:</span>
+                            <button onclick="resetCatalogToDefault()" class="px-4 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs border border-rose-200 transition flex items-center gap-1.5">
+                                <i class="fa-solid fa-rotate-left"></i>
+                                <span>استعادة الكتالوج الافتراضي الأصلي</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+
+        </div>
+    </main>
+
+    <!-- Bottom Floating Navigation Bar (Mobile) -->
+    <nav class="fixed bottom-0 left-0 right-0 z-40 bg-white/85 backdrop-blur-lg border-t border-white/60 py-2 px-4 sm:hidden">
+        <div class="flex items-center justify-around text-center">
+            <button onclick="navigateTo('home')" class="flex flex-col items-center text-sky-600 text-[10px] font-bold">
+                <i class="fa-solid fa-house text-lg mb-0.5"></i>
+                <span>الرئيسية</span>
+            </button>
+            <button onclick="navigateTo('games')" class="flex flex-col items-center text-slate-500 text-[10px] font-bold">
+                <i class="fa-solid fa-gamepad text-lg mb-0.5"></i>
+                <span>الألعاب</span>
+            </button>
+            <button onclick="navigateTo('giftcards')" class="flex flex-col items-center text-slate-500 text-[10px] font-bold">
+                <i class="fa-solid fa-gift text-lg mb-0.5"></i>
+                <span>البطاقات</span>
+            </button>
+            <button onclick="navigateTo('checkout')" class="flex flex-col items-center text-slate-500 text-[10px] font-bold relative">
+                <i class="fa-solid fa-cart-shopping text-lg mb-0.5"></i>
+                <span>السلة</span>
+                <span class="cart-count-badge hidden absolute -top-1 right-2 bg-rose-500 text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center">0</span>
+            </button>
+            <button onclick="openAdminAuthModal()" class="flex flex-col items-center text-indigo-600 text-[10px] font-bold">
+                <i class="fa-solid fa-gear text-lg mb-0.5"></i>
+                <span>الأدمن</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Modal: Admin Authentication (PIN/Password) -->
+    <div id="admin-auth-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-md z-50 hidden items-center justify-center p-4">
+        <div class="glass-panel bg-white/95 rounded-3xl max-w-sm w-full p-6 shadow-2xl border-2 border-indigo-300 animate-toastIn text-center space-y-4">
+            <div class="w-14 h-14 rounded-2xl bg-indigo-100 text-indigo-600 flex items-center justify-center text-2xl mx-auto shadow-inner">
+                <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <div>
+                <h3 class="text-xl font-black text-slate-900">تسجيل دخول الأدمن</h3>
+                <p class="text-xs text-slate-500 mt-1">أدخل كلمة سر لوحة التحكم للمتابعة</p>
+            </div>
+
+            <form onsubmit="handleAdminLogin(event)" class="space-y-3">
+                <input type="password" id="admin-pin-input" placeholder="أدخل كلمة السر (الافتراضية: admin2026)" required 
+                       class="glass-input w-full rounded-2xl py-3 px-4 text-center font-mono font-black text-sm text-slate-900 tracking-widest">
+                <button type="submit" class="w-full py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md transition">
+                    دخول إلى لوحة التحكم
+                </button>
+            </form>
+
+            <button onclick="closeModal('admin-auth-modal')" class="text-xs text-slate-400 hover:text-slate-600 font-bold block mx-auto">
+                إلغاء
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal: Gift Card Details -->
+    <div id="card-detail-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="glass-panel bg-white/95 rounded-3xl max-w-md w-full p-6 shadow-2xl animate-toastIn">
+            <div id="card-modal-body"></div>
+        </div>
+    </div>
+
+    <!-- Modal: Order Success & Voucher Output -->
+    <div id="order-success-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-md z-50 hidden items-center justify-center p-4">
+        <div class="glass-panel bg-white/95 rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border-2 border-emerald-400 animate-toastIn">
+            <div id="success-modal-body"></div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications Root -->
+    <div id="toast-container"></div>
+
+    <!-- Scripts -->
+    <script src="js/data.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
