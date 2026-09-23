@@ -67,6 +67,9 @@ function initApp() {
             navigateTo(hash);
         }
     } else if (hash === 'admin') {
+        window.location.href = 'admin.html';
+        return;
+    } else if (false) {
         if (state.isAdminAuth) {
             navigateTo('admin');
         } else {
