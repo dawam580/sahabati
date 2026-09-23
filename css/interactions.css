@@ -1,0 +1,184 @@
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Readex+Pro:wght@400;600;700&display=swap');
+
+/* === Sahabati Interactions - اقتباس من مواقع بيع الكروت (SEAGM / Midasbuy / Eneba) === */
+
+/* Cart Drawer - منزلقة مثل mdcard */
+#cart-drawer {
+  transition: transform 0.35s cubic-bezier(0.32, 0, 0.67, 0);
+}
+#cart-drawer.open {
+  transform: translateX(0);
+}
+#cart-drawer.closed {
+  transform: translateX(100%);
+}
+[dir="rtl"] #cart-drawer.closed {
+  transform: translateX(-100%);
+}
+#cart-drawer-overlay {
+  backdrop-filter: blur(2px);
+  transition: opacity 0.3s;
+}
+#cart-drawer-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+#cart-drawer-overlay.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Flying cart animation */
+.fly-item {
+  position: fixed;
+  z-index: 9999;
+  pointer-events: none;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  transition: all 0.8s cubic-bezier(0.2, 0, 0.2, 1);
+}
+
+/* Live search dropdown */
+#search-suggestions {
+  max-height: 380px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+#search-suggestions::-webkit-scrollbar { width: 4px; }
+#search-suggestions::-webkit-scrollbar-thumb { background: #38bdf8; border-radius: 4px; }
+.search-highlight {
+  background: #fef08a;
+  font-weight: 800;
+  padding: 0 2px;
+  border-radius: 3px;
+}
+
+/* Card hover - اقتباس من Eneba/SEAGM */
+.card-interactive {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.card-interactive:hover {
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 16px 32px -8px rgba(2,132,199,0.18), 0 0 0 1px rgba(56,189,248,0.3) inset;
+  border-color: #7dd3fc !important;
+}
+.card-interactive .card-img {
+  transition: transform 0.4s;
+}
+.card-interactive:hover .card-img {
+  transform: scale(1.05);
+}
+.quick-add-btn {
+  opacity: 0;
+  transform: translateY(8px);
+  transition: all 0.2s;
+}
+.card-interactive:hover .quick-add-btn {
+  opacity: 1;
+  transform: translateY(0);
+}
+@media (max-width: 640px) {
+  .quick-add-btn { opacity: 1; transform: none; }
+}
+
+/* Price pulse on payment change */
+.price-pulse {
+  animation: pricePulse 0.5s ease;
+}
+@keyframes pricePulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.08); color: #059669; }
+  100% { transform: scale(1); }
+}
+
+/* Skeleton loading */
+.skeleton {
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: shimmerSkeleton 1.4s infinite;
+}
+@keyframes shimmerSkeleton {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Fade-in on scroll - اقتباس من Eneba */
+.fade-in {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.5s, transform 0.5s;
+}
+.fade-in.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Stock urgency - اقتباس من Midasbuy */
+.stock-urgency {
+  animation: urgencyPulse 2s infinite;
+}
+@keyframes urgencyPulse {
+  0%,100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* Phone operator badge */
+.operator-badge {
+  font-size: 10px;
+  font-weight: 900;
+  padding: 2px 6px;
+  border-radius: 9999px;
+  border: 1px solid;
+}
+.operator-libyana { background: #fef3c7; color: #92400e; border-color: #fcd34d; }
+.operator-madar { background: #dbeafe; color: #1e40af; border-color: #93c5fd; }
+.operator-unknown { background: #f1f5f9; color: #475569; border-color: #e2e8f0; }
+
+/* Promo inline validation */
+.promo-valid { border-color: #10b981 !important; background: #ecfdf5 !important; }
+.promo-invalid { border-color: #ef4444 !important; background: #fef2f2 !important; animation: shake 0.3s; }
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+/* Confetti */
+.confetti-piece {
+  position: fixed;
+  width: 8px;
+  height: 8px;
+  z-index: 10000;
+  pointer-events: none;
+}
+
+/* Focus ring - accessible like card sites */
+*:focus-visible {
+  outline: 2px solid #0284c7;
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* Quantity stepper - hold to repeat like SEAGM */
+.qty-btn:active {
+  transform: scale(0.92);
+}
+
+/* Trust badges row - mdcard style */
+.trust-badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.trust-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 4px 8px;
+  border-radius: 9999px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #475569;
+}

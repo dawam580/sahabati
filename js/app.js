@@ -47,6 +47,11 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function initApp() {
+    // restore saved payment method (MDCard persist)
+    const savedPay = localStorage.getItem('sahabati_selected_payment');
+    if (savedPay && APP_DATA.settings.paymentMethodsInfo[savedPay]) {
+        state.paymentMethod = savedPay;
+    }
     updateWhatsAppLinks();
     renderCategories();
     renderGamesNav();
@@ -605,6 +610,7 @@ function applyPromoCode() {
 // Select Payment Method
 function selectPaymentMethod(method) {
     state.paymentMethod = method;
+    localStorage.setItem('sahabati_selected_payment', method);
     document.querySelectorAll('.payment-option-card').forEach(card => {
         if (card.dataset.method === method) {
             card.classList.add('border-emerald-500', 'bg-emerald-50/80', 'ring-2', 'ring-emerald-400');
@@ -615,6 +621,33 @@ function selectPaymentMethod(method) {
         }
     });
     renderPaymentInstructions();
+}
+
+// Global payment selector (MDCard quote) - persists choice
+function selectGlobalPayment(method) {
+    selectPaymentMethod(method);
+    showToast('تم اختيار طريقة الدفع: ' + (APP_DATA.settings.paymentMethodsInfo[method]?.title || method));
+}
+
+function sendSuggestion(platform) {
+    const input = document.getElementById('suggest-input');
+    const text = input ? input.value.trim() : '';
+    if (!text || text.length < 2) {
+        showToast('اكتب اسم اللعبة أو الاقتراح أولاً', 'fa-lightbulb');
+        return;
+    }
+    const msg = encodeURIComponent('مرحباً سحّابتي 👋 أقترح إضافة: ' + text);
+    const waNumber = (APP_DATA.settings?.whatsappNumber || '218920541749').replace(/[^0-9]/g,'');
+    if (platform === 'telegram') {
+        const tgUrl = APP_DATA.settings.telegramUrl || 'https://t.me/sabh';
+        window.open(tgUrl, '_blank');
+        showToast('تم نسخ اقتراحك، أرسله في تيليجرام: ' + text);
+    } else {
+        const waUrl = 'https://wa.me/' + waNumber + '?text=' + msg;
+        window.open(waUrl, '_blank');
+        showToast('تم إرسال اقتراحك عبر واتساب ✅');
+    }
+    if (input) input.value = '';
 }
 
 function renderPaymentInstructions() {

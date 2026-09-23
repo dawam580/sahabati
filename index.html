@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -20,69 +20,84 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Readex+Pro:wght@400;600;700&display=swap" rel="stylesheet">
     
     <!-- Tailwind CSS - Production Build (40KB minified) بديل CDN -->
-    <link rel="stylesheet" href="css/tailwind.css">
+    <link rel="stylesheet" href="css/tailwind.css?v=mdcard4">
     <!-- Font Awesome Icons - subset friendly -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
     <!-- Custom Styles fallback -->
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style.css?v=mdcard4">
+    <link rel="stylesheet" href="css/interactions.css?v=1">
 </head>
 <body class="antialiased selection:bg-emerald-500 selection:text-white pb-20 sm:pb-10" dir="rtl">
 
-    <!-- Top Announcement Bar (الشريط الإعلاني الترويجي) -->
-    <div class="announcement-bar w-full py-2 px-3 bg-gradient-to-r from-sky-800 via-sky-700 to-indigo-800 text-white shadow-md">
-        <div class="max-w-5xl mx-auto flex items-center justify-between gap-2 flex-wrap text-xs sm:text-sm font-bold">
-            <div class="flex items-center gap-2">
-                <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-white/20 text-amber-300 text-xs shadow-inner animate-pulse">
-                    <i class="fa-solid fa-bullhorn"></i>
-                </span>
-                <span class="tracking-wide text-white drop-shadow-sm font-extrabold text-xs sm:text-sm">
-                    منصة سحّابتي لخدمات وشحن الألعاب والبطاقات واشتراكات البث بالدينار الليبي
-                </span>
-                <span class="bg-emerald-500 text-white text-[10px] sm:text-xs font-black px-2.5 py-0.5 rounded-full shadow-sm hidden sm:inline-block">
-                    🇱🇾 دينار ليبي
-                </span>
-            </div>
+    <!-- MDCard Style: Wallet Bonus Bar -->
+    <div class="w-full bg-[#0f172a] text-white text-center py-2 px-3 text-xs font-bold border-b border-white/10">
+        <a href="#checkout" onclick="navigateTo('checkout')" class="inline-flex items-center gap-2 hover:opacity-90 transition">
+            <span class="hidden sm:inline text-amber-300">🎁</span>
+            <span>اشحن محفظتك واحصل على <span class="text-emerald-400">2% رصيداً إضافياً</span> يُضاف داخل محفظتك بعد 14 يوماً</span>
+            <span class="bg-white text-slate-900 px-2.5 py-0.5 rounded-full text-[11px] font-black hidden sm:inline-flex items-center gap-1">اشحن الآن <i class="fa-solid fa-arrow-left text-[10px]"></i></span>
+        </a>
+    </div>
 
-            <!-- WhatsApp Direct Support Link in Announcement -->
-            <a id="announcement-wa-btn" href="https://wa.me/218920541749" target="_blank" class="inline-flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-400 text-white px-3 py-1 rounded-full text-xs font-black shadow-sm transition border border-white/30">
-                <i class="fa-brands fa-whatsapp text-sm"></i>
-                <span>تواصل واتساب مباشر</span>
-            </a>
+    <!-- MDCard Style: Trust Ticker -->
+    <div class="w-full bg-white border-b border-slate-100 overflow-hidden">
+        <div class="flex items-center gap-6 py-2 px-3 text-[11px] font-bold text-slate-600 whitespace-nowrap overflow-x-auto no-scrollbar max-w-5xl mx-auto">
+            <span class="flex items-center gap-1.5 flex-shrink-0"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> +1200 عميل راضٍ</span>
+            <span class="w-px h-4 bg-slate-200 hidden sm:block"></span>
+            <span class="flex items-center gap-1.5 flex-shrink-0"><i class="fa-solid fa-bolt text-amber-500"></i> التسليم عادة خلال 5–30 دقيقة</span>
+            <span class="w-px h-4 bg-slate-200 hidden sm:block"></span>
+            <span class="flex items-center gap-1.5 flex-shrink-0"><i class="fa-solid fa-shield-halved text-sky-600"></i> خدمة موثوقة ومضمونة</span>
+            <span class="w-px h-4 bg-slate-200 hidden sm:block"></span>
+            <span class="flex items-center gap-1.5 flex-shrink-0">كاش · رصيد · حوالة · USDT</span>
+            <span class="w-px h-4 bg-slate-200 hidden sm:block"></span>
+            <span class="flex items-center gap-1.5 flex-shrink-0 text-amber-500">★★★★★ <span class="text-slate-800">تقييم 4.9 من 5</span></span>
         </div>
     </div>
 
-    <!-- Main Header -->
-    <header class="w-full bg-white/90 backdrop-blur-md border-b border-sky-100 sticky top-0 z-40 shadow-sm">
-        <div class="max-w-5xl mx-auto px-3 sm:px-4 py-2.5 flex items-center justify-between gap-2 text-xs">
-            <!-- Brand Logo & Title -->
-            <a href="#home" onclick="navigateTo('home')" class="flex items-center gap-2.5 hover:opacity-95 transition">
-                <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-sky-600 to-blue-700 p-1.5 shadow-md flex items-center justify-center flex-shrink-0 text-white text-xl">
+    <!-- MDCard Style: Main Header - Clean White -->
+    <header class="w-full bg-white sticky top-0 z-40 border-b border-slate-100 shadow-sm">
+        <div class="max-w-5xl mx-auto px-3 sm:px-4 py-2.5 flex items-center justify-between gap-3">
+            <!-- Brand -->
+            <a href="#home" onclick="navigateTo('home')" class="flex items-center gap-3 hover:opacity-95 transition flex-shrink-0">
+                <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-sky-600 to-blue-700 shadow-md flex items-center justify-center text-white text-xl">
                     <i class="fa-solid fa-cloud"></i>
                 </div>
-                <div>
+                <div class="hidden sm:block">
                     <div class="flex items-center gap-1.5">
-                        <span class="font-black text-sky-900 text-base sm:text-lg tracking-tight">سحّابتي</span>
-                        <span class="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full">Sahabati Cloud</span>
+                        <span class="font-black text-slate-900 text-[17px] tracking-tight">سحّابتي</span>
+                        <span class="text-[10px] bg-slate-900 text-white px-1.5 py-0.5 rounded font-bold">Sahabati</span>
                     </div>
-                    <span class="text-[10px] text-slate-500 font-bold block">شحن ألعاب واشتراكات (شاشات - هواتف)</span>
+                    <span class="text-[11px] text-slate-500 font-bold block -mt-0.5">اشتراكات رقمية · شحن ألعاب</span>
+                </div>
+                <div class="sm:hidden">
+                    <span class="font-black text-slate-900 text-base">سحّابتي</span>
                 </div>
             </a>
 
-            <!-- Controls (WhatsApp Contact, LYD Currency Badge, Admin Panel) -->
-            <div class="flex items-center gap-2 sm:gap-2.5">
-                <!-- WhatsApp Support Header Button -->
-                <a id="header-wa-btn" href="https://wa.me/218920541749" target="_blank" title="تواصل مع خدمة العملاء على واتساب" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded-xl shadow-md shadow-emerald-600/20 transition flex items-center gap-1.5">
-                    <i class="fa-brands fa-whatsapp text-base"></i>
-                    <span class="hidden sm:inline font-black">واتساب المبيعات</span>
+            <!-- Middle Nav - MDCard style -->
+            <nav class="hidden md:flex items-center gap-1 bg-slate-50 p-1 rounded-2xl border border-slate-100">
+                <a href="#products" onclick="navigateTo('home'); document.getElementById('categories-grid')?.scrollIntoView({behavior:'smooth'})" class="px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-700 hover:bg-white hover:shadow-sm transition">المنتجات</a>
+                <a href="#reviews" class="px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-700 hover:bg-white hover:shadow-sm transition">التقييمات</a>
+                <a href="#faq" class="px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-700 hover:bg-white hover:shadow-sm transition">الأسئلة الشائعة</a>
+            </nav>
+
+            <!-- Controls -->
+            <div class="flex items-center gap-1.5 sm:gap-2">
+                <a id="announcement-wa-btn" href="https://wa.me/218920541749" target="_blank" class="hidden lg:inline-flex items-center gap-1.5 bg-white border border-slate-200 text-slate-700 px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-slate-50 transition">
+                    <i class="fa-brands fa-whatsapp text-emerald-600"></i>
+                    <span>تواصل مباشر</span>
                 </a>
-
-                <!-- Libyan Dinar Currency Badge -->
-                <div class="bg-emerald-50 border border-emerald-300 text-emerald-900 text-xs font-black rounded-xl px-2.5 py-1.5 shadow-sm flex items-center gap-1">
-                    <span class="text-sm">🇱🇾</span>
-                    <span class="font-black">د.ل</span>
+                <a id="header-wa-btn" href="https://wa.me/218920541749" target="_blank" class="bg-emerald-600 hover:bg-emerald-700 text-white font-black px-3.5 py-2 rounded-xl text-xs shadow-md transition flex items-center gap-1.5">
+                    <i class="fa-brands fa-whatsapp text-sm"></i>
+                    <span class="hidden sm:inline">واتساب</span>
+                    <span class="sm:hidden">واتساب</span>
+                </a>
+                <button id="cart-drawer-btn" onclick="toggleCartDrawer()" class="relative bg-slate-900 hover:bg-black text-white p-2.5 rounded-xl transition flex items-center justify-center">
+                    <i class="fa-solid fa-bag-shopping text-sm"></i>
+                    <span class="cart-count-badge hidden absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center border-2 border-white animate-pulse">0</span>
+                </button>
+                <div class="hidden sm:flex bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-black rounded-xl px-2.5 py-2 items-center gap-1">
+                    <span>🇱🇾</span><span>د.ل</span>
                 </div>
-
-
             </div>
         </div>
     </header>
@@ -121,11 +136,11 @@
                 </button>
             </div>
 
-            <!-- Global Search Bar -->
+            <!-- Global Search Bar - Enhanced Live Search (اقتباس Eneba/SEAGM) -->
             <div class="relative max-w-2xl mx-auto">
                 <div class="relative flex items-center w-full">
                     <input type="text" id="global-search-input" dir="rtl" aria-label="بحث المنتجات" placeholder="ابحث عن شدات ببجي، جواهر فري فاير، نتفليكس، شاهد، تيك توك، سناب بلس..." 
-                           class="glass-input w-full rounded-2xl py-3 pr-11 pl-24 text-xs sm:text-sm font-bold text-slate-800 placeholder-slate-400 text-right shadow-sm focus:ring-2 focus:ring-sky-500">
+                           class="glass-input w-full rounded-2xl py-3 pr-11 pl-24 text-xs sm:text-sm font-bold text-slate-800 placeholder-slate-400 text-right shadow-sm focus:ring-2 focus:ring-sky-500" autocomplete="off">
                     <span class="absolute right-3.5 text-sky-600 text-base pointer-events-none flex items-center justify-center" aria-hidden="true">
                         <i class="fa-solid fa-magnifying-glass"></i>
                     </span>
@@ -135,59 +150,143 @@
                         <i class="fa-solid fa-arrow-left text-[10px]" aria-hidden="true"></i>
                     </button>
                 </div>
+                <!-- Live suggestions dropdown -->
+                <div id="search-suggestions" class="hidden absolute top-full mt-2 left-0 right-0 bg-white rounded-2xl border border-slate-200 shadow-xl z-30 overflow-hidden"></div>
             </div>
         </section>
 
         <!-- ================= PAGE 1: HOME ================= -->
         <section id="page-home" class="view-page space-y-5" dir="rtl">
 
-            <!-- Ultra Modern Hero Card -->
-            <div class="rounded-3xl p-5 sm:p-7 shadow-xl relative overflow-hidden text-white bg-gradient-to-br from-slate-900 via-sky-950 to-indigo-950 border border-sky-400/30">
-                <!-- Glowing ambient background lights -->
-                <div class="absolute -top-20 -right-20 w-60 h-60 rounded-full bg-sky-500/20 blur-3xl pointer-events-none"></div>
-                <div class="absolute -bottom-20 -left-20 w-60 h-60 rounded-full bg-emerald-500/20 blur-3xl pointer-events-none"></div>
-
-                <div class="relative z-10 space-y-4">
-                    <div class="flex items-center gap-2 flex-wrap">
-                        <span class="bg-emerald-500 text-white text-xs font-black px-3 py-1 rounded-full shadow-md flex items-center gap-1.5">
-                            <i class="fa-solid fa-bolt"></i>
-                            <span>شحن فوري بالدينار الليبي</span>
-                        </span>
-                        <span class="bg-sky-500/30 text-sky-200 border border-sky-400/30 text-xs font-bold px-3 py-1 rounded-full">
-                            📺 شاشات - هواتف - أجهزة لوحية
-                        </span>
-                        <span class="bg-amber-500/30 text-amber-200 border border-amber-400/30 text-xs font-bold px-3 py-1 rounded-full">
-                            🇱🇾 دفع ليبيانا & مدار
-                        </span>
+            <!-- MDCard Style Hero -->
+            <div class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 p-6 sm:p-8 items-center">
+                    <!-- Text -->
+                    <div class="space-y-4">
+                        <div class="inline-flex items-center gap-2 bg-slate-900 text-white text-[11px] font-bold px-3 py-1.5 rounded-full">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                            الأفضل في ليبيا — خدمة موثوقة ومضمونة
+                        </div>
+                        <h1 class="text-[28px] sm:text-[36px] font-black leading-[1.15] tracking-tight text-slate-900">
+                            اشتراكات رقمية<br>
+                            <span class="text-sky-600">سريعة وموثوقة</span> في ليبيا
+                        </h1>
+                        <p class="text-sm text-slate-600 leading-relaxed font-medium max-w-xl">
+                            نتفليكس، شاهد، ChatGPT Plus، سناب شات بلس، تيليجرام بريميوم، شحن شدات ببجي موبايل، عملات تيك توك والمزيد. الدفع نقداً أو رصيد ليبيانا/مدار أو حوالة مصرفية أو USDT.
+                        </p>
+                        <div class="flex flex-wrap gap-2.5 pt-2">
+                            <button onclick="document.getElementById('categories-grid')?.scrollIntoView({behavior:'smooth'})" class="px-6 py-3 rounded-xl bg-slate-900 hover:bg-black text-white font-black text-sm shadow-md transition flex items-center gap-2">
+                                <span>تصفح المنتجات</span>
+                                <i class="fa-solid fa-arrow-left text-xs"></i>
+                            </button>
+                            <a href="https://wa.me/218920541749" target="_blank" class="px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm shadow-md transition flex items-center gap-2">
+                                <i class="fa-brands fa-whatsapp text-base"></i>
+                                <span>واتساب</span>
+                            </a>
+                        </div>
+                        <div class="flex items-center gap-3 pt-2 text-xs font-bold text-slate-500">
+                            <span class="flex items-center gap-1.5"><span class="text-amber-500">★★★★★</span> 4.9/5</span>
+                            <span class="w-px h-4 bg-slate-200"></span>
+                            <span>+1200 عميل يثقون بنا</span>
+                            <span class="hidden sm:inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 px-2.5 py-1 rounded-full">التسليم 5–30 دقيقة <i class="fa-solid fa-bolt text-[10px]"></i></span>
+                        </div>
                     </div>
-
-                    <h1 class="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight leading-snug">
-                        منصة <span class="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-cyan-300 to-emerald-400">سحّابتي</span> لخدمات وشحن الألعاب والبطاقات واشتراكات البث
-                    </h1>
-
-                    <p class="text-xs sm:text-sm text-slate-300 font-medium max-w-2xl leading-relaxed">
-                        اختر لعبتك أو بطاقتك أو اشتراكك المفضل، حدد الباقة بالدينار الليبي، وسيتم فتح محادثة مبيعات مجهزة بفاتورتك لتأكيد الشحن والتسليم فوراً عبر واتساب.
-                    </p>
-
-                    <!-- Quick Action Buttons -->
-                    <div class="flex flex-col sm:flex-row items-center gap-2.5 pt-2 flex-wrap">
-                        <button onclick="navigateTo('games')" class="btn-shimmer w-full sm:w-auto px-5 py-3 rounded-2xl bg-sky-500 hover:bg-sky-600 text-white font-black text-xs sm:text-sm shadow-lg shadow-sky-500/30 transition flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-gamepad"></i>
-                            <span>شحن ببجي وفري فاير</span>
-                        </button>
-                        <button onclick="navigateTo('giftcards'); filterGiftCards('streaming');" class="w-full sm:w-auto px-5 py-3 rounded-2xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-700 text-white font-black text-xs sm:text-sm shadow-md transition flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-tv"></i>
-                            <span>نتفليكس (45 د.ل) & شاهد VIP (40 د.ل)</span>
-                        </button>
-                        <button onclick="navigateTo('giftcards'); filterGiftCards('social');" class="w-full sm:w-auto px-5 py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 text-white font-black text-xs sm:text-sm shadow-md transition flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-coins"></i>
-                            <span>تيك توك & سناب شات بلس</span>
-                        </button>
-                        <a href="https://wa.me/218920541749" target="_blank" class="w-full sm:w-auto px-4 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs sm:text-sm shadow-md transition flex items-center justify-center gap-2">
-                            <i class="fa-brands fa-whatsapp text-base"></i>
-                            <span>واتساب المبيعات المباشر</span>
-                        </a>
+                    <!-- Visual Cards Grid - MDCard style -->
+                    <div class="grid grid-cols-2 gap-3 sm:gap-4 relative">
+                        <div class="bg-white border border-slate-200 rounded-2xl p-3 shadow-sm flex flex-col gap-2 hover:shadow-md transition">
+                            <div class="w-full h-28 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-700 flex items-center justify-center text-white font-black text-sm relative overflow-hidden">
+                                <span class="z-10">ChatGPT Plus</span>
+                                <div class="absolute inset-0 bg-white/10"></div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-black text-slate-900">ChatGPT Plus</span>
+                                <span class="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold">متوفر</span>
+                            </div>
+                            <span class="text-xs text-slate-500">ابتداءً من 210 د.ل</span>
+                        </div>
+                        <div class="bg-white border border-slate-200 rounded-2xl p-3 shadow-sm flex flex-col gap-2 opacity-60">
+                            <div class="w-full h-28 rounded-xl bg-gradient-to-br from-zinc-900 to-red-950 flex items-center justify-center text-white font-black text-sm relative">
+                                <span>NETFLIX</span>
+                                <span class="absolute top-2 right-2 bg-rose-600 text-white text-[9px] px-1.5 py-0.5 rounded font-bold">موقوف مؤقتاً</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-black text-slate-900">نتفليكس</span>
+                                <span class="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-bold">قريباً</span>
+                            </div>
+                            <span class="text-xs text-slate-500">ابتداءً من 45 د.ل</span>
+                        </div>
+                        <div class="bg-white border border-slate-200 rounded-2xl p-3 shadow-sm flex flex-col gap-2 hover:shadow-md transition">
+                            <div class="w-full h-28 rounded-xl bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center text-white font-black text-sm">
+                                <i class="fa-brands fa-snapchat text-3xl drop-shadow"></i>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-black text-slate-900">سناب بلس</span>
+                                <span class="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold">متوفر</span>
+                            </div>
+                            <span class="text-xs text-slate-500">ابتداءً من 50 د.ل</span>
+                        </div>
+                        <div class="bg-white border border-slate-200 rounded-2xl p-3 shadow-sm flex flex-col gap-2 hover:shadow-md transition">
+                            <div class="w-full h-28 rounded-xl bg-gradient-to-br from-sky-700 to-indigo-800 flex items-center justify-center text-amber-300 font-black text-sm">
+                                <span>PUBG UC</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-black text-slate-900">شدات ببجي</span>
+                                <span class="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold">متوفر</span>
+                            </div>
+                            <span class="text-xs text-slate-500">ابتداءً من 9 د.ل</span>
+                        </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- MDCard Style: Payment Method Selector -->
+            <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 sm:p-5 space-y-3">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <h3 class="font-black text-slate-900 text-sm flex items-center gap-2">
+                        <i class="fa-solid fa-credit-card text-sky-600"></i>
+                        اختر طريقة الدفع
+                        <span class="text-[11px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">الأسعار تختلف حسب الطريقة</span>
+                    </h3>
+                    <span class="text-[11px] text-slate-500 font-medium">اختيارك يُحفظ ويُستخدم في كل طلباتك</span>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="selectGlobalPayment('bank_transfer')" data-global-method="bank_transfer" class="global-pay-btn bg-slate-900 text-white border border-slate-900 px-4 py-2 rounded-full text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
+                        <i class="fa-solid fa-building-columns text-[11px]"></i> حوالة مصرفية
+                    </button>
+                    <button onclick="selectGlobalPayment('telecom_libyana')" data-global-method="telecom_libyana" class="global-pay-btn bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 px-4 py-2 rounded-full text-xs font-bold transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-sim-card text-amber-600"></i> رصيد ليبيانا
+                    </button>
+                    <button onclick="selectGlobalPayment('telecom_madar')" data-global-method="telecom_madar" class="global-pay-btn bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 px-4 py-2 rounded-full text-xs font-bold transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-sim-card text-blue-600"></i> رصيد مدار
+                    </button>
+                    <button onclick="selectGlobalPayment('usdt')" data-global-method="usdt" class="global-pay-btn bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 px-4 py-2 rounded-full text-xs font-bold transition flex items-center gap-1.5">
+                        <i class="fa-brands fa-bitcoin text-emerald-600"></i> USDT / BUSD
+                    </button>
+                    <button onclick="selectGlobalPayment('one_pay')" data-global-method="one_pay" class="global-pay-btn bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 px-4 py-2 rounded-full text-xs font-bold transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-bolt text-indigo-600"></i> خدمات مصرفية (فوري)
+                    </button>
+                </div>
+                <!-- Banking icons row like MDCard ezone -->
+                <div class="flex items-center gap-2 flex-wrap pt-2 border-t border-slate-100">
+                    <span class="text-[11px] font-bold text-slate-500">دفع فوري عبر:</span>
+                    <span class="bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-lg text-[10px] font-black text-slate-700 flex items-center gap-1"><i class="fa-solid fa-credit-card text-sky-600"></i> بطاقة مصرفية</span>
+                    <span class="bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-lg text-[10px] font-black text-slate-700">موبي كاش</span>
+                    <span class="bg-indigo-50 border border-indigo-200 px-2.5 py-1 rounded-lg text-[10px] font-black text-indigo-700">OnePay</span>
+                    <span class="bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-lg text-[10px] font-black text-slate-700">مصرفي باي</span>
+                    <span class="bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg text-[10px] font-black text-emerald-700">ادفع لي</span>
+                    <span class="bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg text-[10px] font-black text-amber-700">سداد</span>
+                </div>
+                <div id="global-pay-hint" class="text-[11px] bg-sky-50 border border-sky-200 text-sky-800 rounded-xl px-3 py-2 font-medium hidden">
+                    ✅ تم اختيار <span id="global-pay-name" class="font-black"></span> — سيتم تحديث الأسعار وإظهارها عند الطلب
+                </div>
+            </div>
+
+            <!-- MDCard Style: Netflix Pause Notice (like MDCard) -->
+            <div class="bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3 flex items-start gap-3">
+                <span class="w-8 h-8 rounded-full bg-amber-500 text-white flex items-center justify-center flex-shrink-0 text-sm">⛔</span>
+                <div class="text-xs">
+                    <div class="font-black text-amber-900">تم إيقاف اشتراكات Netflix مؤقتاً — باقي المنتجات تعمل بشكل طبيعي</div>
+                    <div class="text-amber-800 mt-0.5">بسبب مشاكل حالية من جهة Netflix، أوقفنا بيع نتفليكس حتى إشعار آخر. نعتذر عن الإزعاج.</div>
                 </div>
             </div>
 
@@ -198,7 +297,7 @@
                         <i class="fa-solid fa-shapes text-sky-600"></i>
                         <span>سحابة خدمات سحّابتي</span>
                     </h2>
-                    <span class="text-xs text-slate-500 font-bold">جميع الأسعار بالدينار الليبي (د.ل)</span>
+                    <span class="text-xs text-slate-500 font-bold">الأسعار ابتداءً من أقل طريقة دفع — السعر النهائي حسب الطريقة</span>
                 </div>
 
                 <div id="categories-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -208,36 +307,164 @@
 
             <!-- Features / Why Sahabati -->
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
-                <div class="glass-card rounded-2xl p-3.5 text-center border border-white/80">
-                    <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center mx-auto mb-2 text-lg">
+                <div class="bg-white rounded-2xl p-3.5 text-center border border-slate-100 shadow-sm">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-2 text-lg border border-emerald-100">
                         <i class="fa-brands fa-whatsapp text-xl"></i>
                     </div>
                     <h4 class="font-extrabold text-slate-900 text-xs sm:text-sm">دفع وتأكيد واتساب</h4>
                     <p class="text-[10px] sm:text-xs text-slate-500 mt-0.5">تواصل فوري مع المبيعات</p>
                 </div>
 
-                <div class="glass-card rounded-2xl p-3.5 text-center border border-white/80">
-                    <div class="w-10 h-10 rounded-xl bg-sky-500/10 text-sky-600 flex items-center justify-center mx-auto mb-2 text-lg">
+                <div class="bg-white rounded-2xl p-3.5 text-center border border-slate-100 shadow-sm">
+                    <div class="w-10 h-10 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center mx-auto mb-2 text-lg border border-sky-100">
                         <i class="fa-solid fa-tv"></i>
                     </div>
                     <h4 class="font-extrabold text-slate-900 text-xs sm:text-sm">شاشات وهواتف</h4>
                     <p class="text-[10px] sm:text-xs text-slate-500 mt-0.5">اشتراكات تعمل بكافة الأجهزة</p>
                 </div>
 
-                <div class="glass-card rounded-2xl p-3.5 text-center border border-white/80">
-                    <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center mx-auto mb-2 text-lg">
+                <div class="bg-white rounded-2xl p-3.5 text-center border border-slate-100 shadow-sm">
+                    <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto mb-2 text-lg border border-amber-100">
                         <i class="fa-solid fa-sim-card"></i>
                     </div>
                     <h4 class="font-extrabold text-slate-900 text-xs sm:text-sm">دفع ليبيانا & مدار</h4>
                     <p class="text-[10px] sm:text-xs text-slate-500 mt-0.5">تحويل رصيد وكروت تعبئة</p>
                 </div>
 
-                <div class="glass-card rounded-2xl p-3.5 text-center border border-white/80">
-                    <div class="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-600 flex items-center justify-center mx-auto mb-2 text-lg">
+                <div class="bg-white rounded-2xl p-3.5 text-center border border-slate-100 shadow-sm">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto mb-2 text-lg border border-indigo-100">
                         <i class="fa-solid fa-bolt"></i>
                     </div>
                     <h4 class="font-extrabold text-slate-900 text-xs sm:text-sm">تسليم مباشر 24/7</h4>
                     <p class="text-[10px] sm:text-xs text-slate-500 mt-0.5">شحن فوري بالمعرف والأكواد</p>
+                </div>
+            </div>
+
+            <!-- MDCard Style: اطلب لعبتك أو اقترح علينا -->
+            <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 sm:p-6 space-y-3">
+                <h3 class="font-black text-slate-900 text-base flex items-center gap-2">
+                    <i class="fa-solid fa-lightbulb text-amber-500"></i>
+                    اطلب لعبتك أو اقترح علينا
+                </h3>
+                <p class="text-xs text-slate-600 font-medium">ما لقيتش اللي تدوّر عليه؟ اكتب اسم اللعبة أو الاشتراك أو أي اقتراح، وأرسله لنا — نردّ عليك ونضيفه للمتجر بأسرع وقت</p>
+                <div class="flex flex-col sm:flex-row gap-2">
+                    <input type="text" id="suggest-input" placeholder="مثال: شحن Free Fire  أو  اشتراك Shahid VIP  أو  بطاقة Google Play" class="flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs font-bold text-slate-800 focus:bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-100 outline-none">
+                    <div class="flex gap-2">
+                        <button onclick="sendSuggestion('whatsapp')" class="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black transition flex items-center justify-center gap-1.5">
+                            <i class="fa-brands fa-whatsapp"></i> واتساب
+                        </button>
+                        <button onclick="sendSuggestion('telegram')" class="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-black transition flex items-center justify-center gap-1.5">
+                            <i class="fa-brands fa-telegram"></i> تيليجرام
+                        </button>
+                    </div>
+                </div>
+                <div class="flex flex-wrap gap-1.5 pt-1">
+                    <button onclick="document.getElementById('suggest-input').value='شحن Free Fire'; sendSuggestion('whatsapp')" class="px-3 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition">شحن Free Fire</button>
+                    <button onclick="document.getElementById('suggest-input').value='اشتراك Shahid VIP'; sendSuggestion('whatsapp')" class="px-3 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition">اشتراك Shahid VIP</button>
+                    <button onclick="document.getElementById('suggest-input').value='بطاقة Google Play'; sendSuggestion('whatsapp')" class="px-3 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition">بطاقة Google Play</button>
+                    <button onclick="document.getElementById('suggest-input').value='جواهر Mobile Legends'; sendSuggestion('whatsapp')" class="px-3 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition">جواهر Mobile Legends</button>
+                </div>
+            </div>
+
+            <!-- MDCard Style: كيف تطلب؟ 4 خطوات -->
+            <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 sm:p-6">
+                <h3 class="font-black text-slate-900 text-base mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-list-ol text-sky-600"></i>
+                    كيف تطلب؟
+                    <span class="text-xs font-bold text-slate-500">٤ خطوات بسيطة وسهلة</span>
+                </h3>
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                    <div class="bg-slate-50 rounded-2xl p-4 border border-slate-100 text-center relative">
+                        <span class="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-slate-900 text-white text-xs font-black flex items-center justify-center">1</span>
+                        <div class="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center mx-auto mb-2 text-sky-600"><i class="fa-solid fa-credit-card"></i></div>
+                        <h4 class="font-black text-xs text-slate-900">اختر طريقة الدفع</h4>
+                        <p class="text-[11px] text-slate-500 mt-1">كاش أو رصيد أو حوالة أو USDT</p>
+                    </div>
+                    <div class="bg-slate-50 rounded-2xl p-4 border border-slate-100 text-center relative">
+                        <span class="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-sky-600 text-white text-xs font-black flex items-center justify-center">2</span>
+                        <div class="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center mx-auto mb-2 text-emerald-600"><i class="fa-solid fa-cart-plus"></i></div>
+                        <h4 class="font-black text-xs text-slate-900">أضف للسلة</h4>
+                        <p class="text-[11px] text-slate-500 mt-1">اختر المدة والكمية بضغطة واحدة</p>
+                    </div>
+                    <div class="bg-slate-50 rounded-2xl p-4 border border-slate-100 text-center relative">
+                        <span class="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-emerald-600 text-white text-xs font-black flex items-center justify-center">3</span>
+                        <div class="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center mx-auto mb-2 text-amber-600"><i class="fa-solid fa-paper-plane"></i></div>
+                        <h4 class="font-black text-xs text-slate-900">ادفع وأرسل السكرين</h4>
+                        <p class="text-[11px] text-slate-500 mt-1">أرسل إيصال الدفع عبر واتساب</p>
+                    </div>
+                    <div class="bg-emerald-50 rounded-2xl p-4 border border-emerald-200 text-center relative">
+                        <span class="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-emerald-600 text-white text-xs font-black flex items-center justify-center">4</span>
+                        <div class="w-10 h-10 rounded-xl bg-white border border-emerald-200 flex items-center justify-center mx-auto mb-2 text-emerald-600"><i class="fa-solid fa-bolt"></i></div>
+                        <h4 class="font-black text-xs text-emerald-900">التفعيل 5–30 دقيقة</h4>
+                        <p class="text-[11px] text-emerald-700 mt-1">نؤكد ونفعّل خدمتك فوراً</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MDCard Style: تقييمات عملائنا -->
+            <div id="reviews" class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 sm:p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-black text-slate-900 text-base flex items-center gap-2"><i class="fa-solid fa-star text-amber-500"></i> تقييمات عملائنا</h3>
+                    <a href="https://wa.me/218920541749" target="_blank" class="text-xs font-bold text-sky-600 hover:text-sky-700 flex items-center gap-1">عرض جميع التقييمات <i class="fa-solid fa-arrow-left text-[10px]"></i></a>
+                </div>
+                <div class="grid grid-cols-3 gap-3 mb-4 text-center">
+                    <div class="bg-slate-50 rounded-2xl p-3 border border-slate-100">
+                        <div class="text-lg font-black text-slate-900">4.9</div>
+                        <div class="text-amber-500 text-xs">★★★★★</div>
+                        <div class="text-[11px] text-slate-500 font-bold">متوسط التقييم</div>
+                    </div>
+                    <div class="bg-slate-50 rounded-2xl p-3 border border-slate-100">
+                        <div class="text-lg font-black text-slate-900">+1200</div>
+                        <div class="text-xs text-slate-600 font-bold">تقييم إجمالي</div>
+                        <div class="text-[11px] text-slate-500">عميل راضٍ</div>
+                    </div>
+                    <div class="bg-emerald-50 rounded-2xl p-3 border border-emerald-200">
+                        <div class="text-lg font-black text-emerald-700">5–30 د</div>
+                        <div class="text-xs text-emerald-700 font-bold">مدة التسليم</div>
+                        <div class="text-[11px] text-emerald-600">99% رضا العملاء</div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div class="border border-slate-100 rounded-2xl p-3 bg-slate-50/50">
+                        <div class="flex items-center gap-2 mb-1.5">
+                            <div class="w-8 h-8 rounded-full bg-sky-100 flex items-center justify-center text-xs font-black text-sky-700">أ</div>
+                            <div><div class="text-xs font-black text-slate-900">أحمد طرابلس</div><div class="text-[10px] text-amber-500">★★★★★</div></div>
+                        </div>
+                        <p class="text-xs text-slate-600 leading-relaxed">خدمة ممتازة وسريعة، شحن ببجي وصل في أقل من 10 دقائق والدفع برصيد ليبيانا سهل جداً.</p>
+                    </div>
+                    <div class="border border-slate-100 rounded-2xl p-3 bg-slate-50/50">
+                        <div class="flex items-center gap-2 mb-1.5">
+                            <div class="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-xs font-black text-emerald-700">م</div>
+                            <div><div class="text-xs font-black text-slate-900">محمد بنغازي</div><div class="text-[10px] text-amber-500">★★★★★</div></div>
+                        </div>
+                        <p class="text-xs text-slate-600 leading-relaxed">شاهد VIP حساب كامل يشتغل على الشاشة والهاتف بدون مشاكل، أنصح به بقوة.</p>
+                    </div>
+                    <div class="border border-slate-100 rounded-2xl p-3 bg-slate-50/50">
+                        <div class="flex items-center gap-2 mb-1.5">
+                            <div class="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center text-xs font-black text-amber-700">س</div>
+                            <div><div class="text-xs font-black text-slate-900">سارة مصراتة</div><div class="text-[10px] text-amber-500">★★★★★</div></div>
+                        </div>
+                        <p class="text-xs text-slate-600 leading-relaxed">سناب بلس تفعل بسرعة والدعم على واتساب متجاوب 24 ساعة.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MDCard Style: الأسئلة الشائعة -->
+            <div id="faq" class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 sm:p-6 space-y-3">
+                <h3 class="font-black text-slate-900 text-base flex items-center gap-2"><i class="fa-solid fa-circle-question text-sky-600"></i> الأسئلة الشائعة</h3>
+                <div class="space-y-2">
+                    <details class="group bg-slate-50 rounded-xl border border-slate-100 p-3">
+                        <summary class="font-bold text-xs text-slate-900 cursor-pointer flex items-center justify-between">كم يستغرق التفعيل؟ <i class="fa-solid fa-chevron-down text-[10px] text-slate-400 group-open:rotate-180 transition"></i></summary>
+                        <p class="text-xs text-slate-600 mt-2 leading-relaxed">عادة خلال 5–30 دقيقة بعد تأكيد الدفع عبر واتساب.</p>
+                    </details>
+                    <details class="group bg-slate-50 rounded-xl border border-slate-100 p-3">
+                        <summary class="font-bold text-xs text-slate-900 cursor-pointer flex items-center justify-between">هل تُوجد سياسة استرجاع؟ <i class="fa-solid fa-chevron-down text-[10px] text-slate-400 group-open:rotate-180 transition"></i></summary>
+                        <p class="text-xs text-slate-600 mt-2 leading-relaxed">إذا لم نقدّم الخدمة كما وُعدت، نعيد المبلغ أو نستبدل الخدمة (تطبق الشروط).</p>
+                    </details>
+                    <details class="group bg-slate-50 rounded-xl border border-slate-100 p-3">
+                        <summary class="font-bold text-xs text-slate-900 cursor-pointer flex items-center justify-between">ما طرق الدفع المتاحة؟ <i class="fa-solid fa-chevron-down text-[10px] text-slate-400 group-open:rotate-180 transition"></i></summary>
+                        <p class="text-xs text-slate-600 mt-2 leading-relaxed">حوالة مصرفية، رصيد ليبيانا، رصيد مدار، خدمات مصرفية فوري (OnePay وغيرها)، و USDT.</p>
+                    </details>
                 </div>
             </div>
 
@@ -362,10 +589,10 @@
                             <span>اختر وسيلة الدفع الليبية:</span>
                         </h3>
 
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
                             <div onclick="selectPaymentMethod('one_pay')" data-method="one_pay" class="payment-option-card border-emerald-500 bg-emerald-50/80 ring-2 ring-emerald-400 p-3 rounded-2xl cursor-pointer text-center transition flex flex-col items-center justify-center gap-1.5 border">
-                                <i class="fa-solid fa-mobile-screen-button text-2xl text-indigo-600"></i>
-                                <span class="text-xs font-bold text-slate-800">ون باي (OnePay)</span>
+                                <i class="fa-solid fa-bolt text-2xl text-indigo-600"></i>
+                                <span class="text-xs font-bold text-slate-800">ون باي (فوري)</span>
                             </div>
                             <div onclick="selectPaymentMethod('telecom_libyana')" data-method="telecom_libyana" class="payment-option-card border-slate-200 bg-white/70 p-3 rounded-2xl cursor-pointer text-center transition flex flex-col items-center justify-center gap-1.5 border">
                                 <i class="fa-solid fa-sim-card text-2xl text-amber-600"></i>
@@ -377,7 +604,11 @@
                             </div>
                             <div onclick="selectPaymentMethod('bank_transfer')" data-method="bank_transfer" class="payment-option-card border-slate-200 bg-white/70 p-3 rounded-2xl cursor-pointer text-center transition flex flex-col items-center justify-center gap-1.5 border">
                                 <i class="fa-solid fa-building-columns text-2xl text-slate-700"></i>
-                                <span class="text-xs font-bold text-slate-800">تحويل مصرفي</span>
+                                <span class="text-xs font-bold text-slate-800">حوالة مصرفية</span>
+                            </div>
+                            <div onclick="selectPaymentMethod('usdt')" data-method="usdt" class="payment-option-card border-slate-200 bg-white/70 p-3 rounded-2xl cursor-pointer text-center transition flex flex-col items-center justify-center gap-1.5 border">
+                                <i class="fa-brands fa-bitcoin text-2xl text-emerald-600"></i>
+                                <span class="text-xs font-bold text-slate-800">USDT / BUSD</span>
                             </div>
                         </div>
 
@@ -389,8 +620,9 @@
                         <!-- Customer Input Fields -->
                         <div class="space-y-2.5 pt-2">
                             <div>
-                                <label class="text-xs font-bold text-slate-700 block mb-1">رقم هاتفك على واتساب (لتسليم كود الشحن / بيانات الحساب):</label>
-                                <input type="text" id="whatsapp-phone-input" placeholder="مثال: 091XXXXXXX أو 092XXXXXXX" class="glass-input w-full rounded-xl py-2.5 px-3 text-xs font-bold font-mono text-slate-800">
+                                <label class="text-xs font-bold text-slate-700 block mb-1 flex items-center gap-2">رقم هاتفك على واتساب (لتسليم كود الشحن / بيانات الحساب): <span id="phone-operator-badge" class="operator-badge hidden"></span></label>
+                                <input type="text" id="whatsapp-phone-input" placeholder="مثال: 091XXXXXXX أو 092XXXXXXX" maxlength="10" inputmode="numeric" class="glass-input w-full rounded-xl py-2.5 px-3 text-xs font-bold font-mono text-slate-800">
+                                <div class="text-[10px] text-slate-500 mt-1">سيتم التواصل عبر واتساب على هذا الرقم فقط • ليبيانا / مدار</div>
                             </div>
                             <div>
                                 <label class="text-xs font-bold text-slate-700 block mb-1">كود كرت التعبئة / رقم المعاملة / ملاحظاتك:</label>
@@ -406,12 +638,17 @@
                     <div class="glass-panel rounded-3xl p-6 shadow-xl space-y-4 sticky top-20">
                         <h3 class="font-extrabold text-slate-900 text-base border-b border-sky-100 pb-3">ملخص الطلب (بالدينار الليبي)</h3>
 
-                        <!-- Promo Code Box -->
+                        <!-- Promo Code Box - Enhanced inline (اقتباس Eneba) -->
                         <div class="space-y-1.5">
                             <label class="text-xs font-bold text-slate-700">كوبون الخصم:</label>
                             <div class="flex gap-2">
                                 <input type="text" id="promo-code-input" placeholder="SAHABATI20" class="glass-input flex-1 rounded-xl py-2 px-3 text-xs font-mono uppercase font-bold text-slate-800">
                                 <button onclick="applyPromoCode()" class="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs transition">تطبيق</button>
+                            </div>
+                            <div id="promo-inline-hint" class="text-[11px] font-medium min-h-[14px]"></div>
+                            <div class="flex gap-1.5 flex-wrap">
+                                <button onclick="document.getElementById('promo-code-input').value='SAHABATI20'; document.getElementById('promo-code-input').dispatchEvent(new Event('input'))" class="px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-bold">SAHABATI20 -20%</button>
+                                <button onclick="document.getElementById('promo-code-input').value='WELCOME'; document.getElementById('promo-code-input').dispatchEvent(new Event('input'))" class="px-2.5 py-1 rounded-full bg-sky-50 border border-sky-200 text-sky-700 text-[10px] font-bold">WELCOME -15%</button>
                             </div>
                         </div>
 
@@ -739,6 +976,97 @@
 
     </main>
 
+    <!-- MDCard Style Footer -->
+    <footer class="mt-8 bg-slate-900 text-slate-300 border-t border-white/10">
+        <div class="max-w-5xl mx-auto px-4 py-8">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-8">
+                <div class="space-y-3">
+                    <div class="flex items-center gap-2">
+                        <div class="w-9 h-9 rounded-xl bg-sky-600 flex items-center justify-center text-white"><i class="fa-solid fa-cloud"></i></div>
+                        <span class="font-black text-white text-lg">سحّابتي</span>
+                        <span class="text-[11px] bg-white/10 px-2 py-0.5 rounded text-white font-bold">Sahabati</span>
+                    </div>
+                    <p class="text-xs leading-relaxed text-slate-400">متجر رائد في مجال الاشتراكات الرقمية في ليبيا. نوفر خدمات سريعة وآمنة لجميع احتياجاتك الرقمية بالدينار الليبي.</p>
+                    <div class="flex gap-2 pt-1">
+                        <a href="https://wa.me/218920541749" target="_blank" class="w-8 h-8 rounded-full bg-emerald-600 flex items-center justify-center text-white hover:bg-emerald-700 transition"><i class="fa-brands fa-whatsapp text-sm"></i></a>
+                        <a href="#" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition"><i class="fa-brands fa-facebook text-sm"></i></a>
+                        <a href="#" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition"><i class="fa-brands fa-instagram text-sm"></i></a>
+                        <a href="#" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition"><i class="fa-brands fa-tiktok text-sm"></i></a>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="font-black text-white text-sm mb-3">روابط سريعة</h4>
+                    <ul class="space-y-1.5 text-xs font-medium">
+                        <li><a href="#products" onclick="document.getElementById('categories-grid')?.scrollIntoView({behavior:'smooth'})" class="hover:text-white transition">المنتجات</a></li>
+                        <li><a href="#faq" class="hover:text-white transition">الأسئلة الشائعة</a></li>
+                        <li><a href="#reviews" class="hover:text-white transition">التقييمات</a></li>
+                        <li><a href="#" onclick="navigateTo('orders')" class="hover:text-white transition">سياسة الخصوصية</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-black text-white text-sm mb-3">تواصل معنا</h4>
+                    <ul class="space-y-1.5 text-xs font-medium">
+                        <li><a href="https://wa.me/218920541749" target="_blank" class="hover:text-white transition">واتساب: +218 920 541 749</a></li>
+                        <li><a href="https://t.me/sabh" target="_blank" class="hover:text-white transition">تيليجرام: @sabh</a></li>
+                        <li class="text-slate-400">جميع الروابط: linktr.ee/sahabati</li>
+                    </ul>
+                    <div class="mt-4">
+                        <h5 class="text-[11px] font-black text-white mb-2">طرق الدفع المقبولة</h5>
+                        <div class="flex flex-wrap gap-1.5">
+                            <span class="bg-white text-slate-900 px-2 py-1 rounded text-[10px] font-bold">حوالة مصرفية</span>
+                            <span class="bg-amber-500 text-white px-2 py-1 rounded text-[10px] font-bold">ليبيانا</span>
+                            <span class="bg-blue-600 text-white px-2 py-1 rounded text-[10px] font-bold">مدار</span>
+                            <span class="bg-emerald-600 text-white px-2 py-1 rounded text-[10px] font-bold">USDT</span>
+                            <span class="bg-indigo-600 text-white px-2 py-1 rounded text-[10px] font-bold">OnePay</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="border-t border-white/10 mt-6 pt-4 text-center text-[11px] text-slate-500">
+                © 2026 سحّابتي - Sahabati Cloud. جميع الحقوق محفوظة. جميع العلامات التجارية ملك لأصحابها.
+            </div>
+        </div>
+    </footer>
+
+
+    <!-- Cart Drawer - اقتباس mdcard / Midasbuy -->
+    <div id="cart-drawer-overlay" class="hidden fixed inset-0 bg-slate-900/40 z-40" onclick="closeCartDrawer()"></div>
+    <div id="cart-drawer" class="closed fixed top-0 right-0 bottom-0 w-[92%] max-w-[380px] bg-white z-50 shadow-2xl flex flex-col border-l border-slate-200">
+        <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+            <div class="flex items-center gap-2">
+                <div class="w-9 h-9 rounded-xl bg-slate-900 text-white flex items-center justify-center"><i class="fa-solid fa-bag-shopping"></i></div>
+                <div>
+                    <h3 class="font-black text-slate-900 text-sm">سلة المشتريات</h3>
+                    <p id="cart-drawer-count" class="text-[11px] text-slate-500 font-bold">0 عنصر</p>
+                </div>
+            </div>
+            <button onclick="closeCartDrawer()" class="w-9 h-9 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div id="cart-drawer-empty" class="flex-1 flex flex-col items-center justify-center p-8 text-center">
+            <div class="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center text-3xl mb-3">🛒</div>
+            <h4 class="font-black text-slate-900">سلتك فارغة</h4>
+            <p class="text-xs text-slate-500 mt-1">أضف بعض الباقات والاشتراكات لتظهر هنا</p>
+            <button onclick="closeCartDrawer(); navigateTo('games')" class="mt-4 px-5 py-2.5 rounded-xl bg-sky-600 text-white text-xs font-bold">تصفح المنتجات</button>
+        </div>
+        <div id="cart-drawer-body" class="hidden flex-1 flex flex-col overflow-hidden">
+            <div id="cart-drawer-items" class="flex-1 overflow-y-auto p-3 space-y-2"></div>
+            <div class="border-t border-slate-100 p-4 bg-slate-50 space-y-3">
+                <div class="flex justify-between text-xs font-bold text-slate-600"><span>المجموع الفرعي</span><span id="cart-drawer-subtotal" class="font-mono text-slate-900">0.00 د.ل</span></div>
+                <div id="cart-drawer-promo-hint" class="text-[11px]"></div>
+                <div class="flex justify-between text-sm font-black text-slate-900 pt-2 border-t border-slate-200"><span>الإجمالي</span><span id="cart-drawer-total" class="text-emerald-700 text-base">0.00 د.ل</span></div>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="closeCartDrawer(); navigateTo('checkout')" class="py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs shadow-md flex items-center justify-center gap-1"><i class="fa-brands fa-whatsapp"></i> إتمام عبر واتساب</button>
+                    <button onclick="closeCartDrawer()" class="py-3 rounded-xl bg-white border border-slate-200 text-slate-700 font-bold text-xs">متابعة التسوق</button>
+                </div>
+                <div class="trust-badges justify-center pt-1">
+                    <span class="trust-badge"><i class="fa-solid fa-lock text-emerald-600"></i> دفع آمن</span>
+                    <span class="trust-badge"><i class="fa-solid fa-bolt text-amber-500"></i> تسليم 5-30د</span>
+                    <span class="trust-badge"><i class="fa-brands fa-whatsapp text-emerald-600"></i> دعم 24/7</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Bottom Floating Navigation Bar - محسن للوصول (A11y) -->
     <nav aria-label="التنقل السفلي" class="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-xl border-t border-sky-100 py-2 px-2 shadow-2xl">
         <div class="max-w-lg mx-auto flex items-center justify-around text-center">
@@ -758,10 +1086,10 @@
                 <i class="fa-solid fa-coins text-lg mb-0.5 text-amber-500" aria-hidden="true"></i>
                 <span>تيك توك</span>
             </button>
-            <button onclick="navigateTo('checkout')" aria-label="السلة والدفع" class="flex flex-col items-center text-slate-600 hover:text-emerald-600 text-[10px] font-bold p-1 relative focus-visible:ring-2 focus-visible:ring-emerald-500 rounded-lg">
+            <button onclick="toggleCartDrawer()" aria-label="السلة والدفع" class="flex flex-col items-center text-slate-600 hover:text-emerald-600 text-[10px] font-bold p-1 relative focus-visible:ring-2 focus-visible:ring-emerald-500 rounded-lg">
                 <i class="fa-solid fa-cart-shopping text-lg mb-0.5 text-emerald-600" aria-hidden="true"></i>
                 <span>السلة</span>
-                <span class="cart-count-badge hidden absolute 0 right-2 bg-rose-500 text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center" aria-hidden="true">0</span>
+                <span class="cart-count-badge hidden absolute -top-1 right-2 bg-rose-500 text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center" aria-hidden="true">0</span>
             </button>
             <a id="nav-wa-btn" href="https://wa.me/218920541749" target="_blank" rel="noopener noreferrer" aria-label="تواصل واتساب" class="flex flex-col items-center text-emerald-600 text-[10px] font-bold p-1 focus-visible:ring-2 focus-visible:ring-emerald-500 rounded-lg">
                 <i class="fa-brands fa-whatsapp text-xl mb-0.5" aria-hidden="true"></i>
@@ -824,5 +1152,6 @@
     <script src="js/assets.js" defer></script>
     <script src="js/data.js" defer></script>
     <script src="js/app.js" defer></script>
+    <script src="js/interactions.js" defer></script>
 </body>
 </html>
