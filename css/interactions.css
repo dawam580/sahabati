@@ -271,3 +271,8 @@
 @media (prefers-reduced-motion: reduce) {
   .fly-item, .price-pulse, .stock-urgency { animation: none !important; transition: none !important; }
 }
+
+/* Section titles on night background */
+.sec-light { color: #fff !important; }
+.sec-light .fa-solid { color: #7dd3fc !important; }
+.sec-sub { color: #cbd5e1 !important; }

@@ -6,7 +6,7 @@
     <title>لوحة تحكم المدير العام - منصة سحّابتي</title>
     <meta name="robots" content="noindex, nofollow, noarchive">
     <meta name="description" content="لوحة تحكم المدير العام لمنصة سحّابتي لشحن الألعاب والاشتراكات بالدينار الليبي">
-    <link rel="icon" href="08_sahabati_app_icon_1024x1024.png" type="image/png">
+    <link rel="icon" href="logo.png" type="image/png">
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -256,9 +256,41 @@
                             <label class="text-xs font-bold text-slate-700 block mb-1">رقم تحويل رصيد ليبيانا (Libyana):</label>
                             <input type="text" id="setting-libyana-info" class="glass-input w-full rounded-xl py-2 px-3 text-xs font-medium text-slate-800">
                         </div>
-                        <div>
-                            <label class="text-xs font-bold text-slate-700 block mb-1">رقم تحويل رصيد مدار (Madar):</label>
-                            <input type="text" id="setting-madar-info" class="glass-input w-full rounded-xl py-2 px-3 text-xs font-medium text-slate-800">
+                        <div class="sm:col-span-2 pt-3 border-t border-slate-100">
+                            <h4 class="font-extrabold text-slate-900 text-sm mb-3 flex items-center gap-2">
+                                <i class="fa-solid fa-user-tie text-indigo-600"></i>
+                                <span>بيانات صاحب الموقع وحساباته وصوره</span>
+                            </h4>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="text-xs font-bold text-slate-700 block mb-1">اسم المالك / المتجر:</label>
+                                    <input type="text" id="setting-owner-name" placeholder="سحابتي" class="glass-input w-full rounded-xl py-2 px-3 text-xs font-bold text-slate-800">
+                                </div>
+                                <div>
+                                    <label class="text-xs font-bold text-slate-700 block mb-1">رابط تيليجرام:</label>
+                                    <input type="text" id="setting-telegram-url" placeholder="https://t.me/sabh" class="glass-input w-full rounded-xl py-2 px-3 text-xs font-medium text-slate-800">
+                                </div>
+                                <div>
+                                    <label class="text-xs font-bold text-slate-700 block mb-1">رابط فيسبوك:</label>
+                                    <input type="text" id="setting-facebook-url" placeholder="https://facebook.com/..." class="glass-input w-full rounded-xl py-2 px-3 text-xs font-medium text-slate-800">
+                                </div>
+                                <div>
+                                    <label class="text-xs font-bold text-slate-700 block mb-1">رابط انستغرام:</label>
+                                    <input type="text" id="setting-instagram-url" placeholder="https://instagram.com/..." class="glass-input w-full rounded-xl py-2 px-3 text-xs font-medium text-slate-800">
+                                </div>
+                                <div>
+                                    <label class="text-xs font-bold text-slate-700 block mb-1">رابط تيك توك:</label>
+                                    <input type="text" id="setting-tiktok-url" placeholder="https://tiktok.com/..." class="glass-input w-full rounded-xl py-2 px-3 text-xs font-medium text-slate-800">
+                                </div>
+                                <div>
+                                    <label class="text-xs font-bold text-slate-700 block mb-1">صورة الشعار (Logo):</label>
+                                    <input type="text" id="setting-logo-image" placeholder="logo.png" class="glass-input w-full rounded-xl py-2 px-3 text-xs font-medium text-slate-800">
+                                </div>
+                                <div class="sm:col-span-2">
+                                    <label class="text-xs font-bold text-slate-700 block mb-1">صورة الغلاف الرئيسية (Hero):</label>
+                                    <input type="text" id="setting-hero-image" placeholder="hero-banner.jpg" class="glass-input w-full rounded-xl py-2 px-3 text-xs font-medium text-slate-800">
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="flex justify-end pt-2">
@@ -318,7 +350,7 @@
     <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
 
     <script src="js/assets.js"></script>
-    <script src="js/data.js"></script>
-    <script src="js/admin.js"></script>
+    <script src="js/data.js?v=big5"></script>
+    <script src="js/admin.js?v=big5"></script>
 </body>
 </html>

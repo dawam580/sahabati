@@ -7,9 +7,7 @@
 const PAYMENT_MULTIPLIERS = {
   bank_transfer: 1.00,
   one_pay: 1.015,
-  telecom_libyana: 1.05,
-  telecom_madar: 1.05,
-  usdt: 0.97
+  telecom_libyana: 1.05
 };
 function getPriceForMethod(base, method) {
   const m = PAYMENT_MULTIPLIERS[method] || 1;
@@ -313,6 +311,7 @@ window.addGamePackageToCart = function(gameId, pkgId){
   };
   state.cart.push(item); saveCart(); updateCartUI(); renderCartDrawer();
   showToast('تمت إضافة '+pkg.nameAr+' إلى السلة 🛒');
+  playSound('add');
   // haptic
   if(navigator.vibrate) navigator.vibrate(20);
 };
@@ -331,6 +330,7 @@ window.addGiftCardToCart = function(cardId){
   };
   state.cart.push(item); saveCart(); updateCartUI(); renderCartDrawer();
   showToast('تمت إضافة '+card.nameAr+' إلى السلة 🎁');
+  playSound('add');
   if(navigator.vibrate) navigator.vibrate(20);
 };
 
@@ -346,12 +346,12 @@ function initPhoneMask(){
     // auto prefix 09 if starts with 9
     if(v.length===9 && !v.startsWith('0')) v='0'+v;
     e.target.value = v;
-    // operator
+    // operator: الدفع برصيد ليبيانا فقط
     if(!badge) return;
-    if(v.startsWith('092') || v.startsWith('091') || v.startsWith('094')) {
-      // libyana 92,93,94? actually libyana 92,94 - madar 91,92? simplified
-      if(v.startsWith('092') || v.startsWith('094')) { badge.textContent='ليبيانا'; badge.className='operator-badge operator-libyana'; }
-      else if(v.startsWith('091') || v.startsWith('092')) { badge.textContent='مدار'; badge.className='operator-badge operator-madar'; }
+    if(v.startsWith('092') || v.startsWith('094')) {
+      badge.textContent='ليبيانا'; badge.className='operator-badge operator-libyana';
+    } else if(v.length>=3) {
+      badge.textContent='رقم غير ليبيانا'; badge.className='operator-badge operator-unknown';
     } else if(v.length>=2) {
       badge.textContent = v.length===10 ? 'رقم صحيح ✓' : 'غير مكتمل';
       badge.className = 'operator-badge '+(v.length===10?'operator-libyana':'operator-unknown');
@@ -411,6 +411,7 @@ function enhancePriceLive(){
     setTimeout(()=>{
       renderGiftCards(document.querySelector('.giftcard-cat-btn.bg-sky-600')?.dataset.category || 'all');
       renderGameDetail(state.selectedGame);
+      if (typeof renderPubgHome === 'function') renderPubgHome();
     }, 100);
   };
   window.selectGlobalPayment = function(method){
@@ -459,7 +460,49 @@ if(origShowSuccess){
   window.showSuccessModal = function(order){
     origShowSuccess(order);
     setTimeout(launchConfetti, 200);
+    playSound('success');
   };
+}
+
+// Sound engine - Web Audio, يعمل بعد تفاعل المستخدم فقط
+let sahabatiSoundOn = (function(){ try { return localStorage.getItem('sahabati_sound') !== 'off'; } catch(e){ return true; } })();
+let sahabatiAudioCtx = null;
+function sahabatiBeep(freq, delay, dur, type, vol){
+  try{
+    sahabatiAudioCtx = sahabatiAudioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (sahabatiAudioCtx.state === 'suspended') sahabatiAudioCtx.resume();
+    const t0 = sahabatiAudioCtx.currentTime + (delay || 0);
+    const o = sahabatiAudioCtx.createOscillator();
+    const g = sahabatiAudioCtx.createGain();
+    o.type = type || 'sine';
+    o.frequency.setValueAtTime(freq, t0);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(vol || 0.12, t0 + 0.015);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + (dur || 0.12));
+    o.connect(g); g.connect(sahabatiAudioCtx.destination);
+    o.start(t0); o.stop(t0 + (dur || 0.12) + 0.05);
+  } catch(e){}
+}
+function playSound(kind){
+  if(!sahabatiSoundOn) return;
+  if(kind === 'add'){ sahabatiBeep(660, 0, 0.09, 'triangle', 0.1); sahabatiBeep(880, 0.07, 0.1, 'triangle', 0.08); }
+  else if(kind === 'success'){ sahabatiBeep(523, 0, 0.12, 'sine', 0.12); sahabatiBeep(659, 0.1, 0.12, 'sine', 0.12); sahabatiBeep(784, 0.2, 0.18, 'sine', 0.12); }
+  else if(kind === 'open'){ sahabatiBeep(440, 0, 0.07, 'sine', 0.06); }
+  else { sahabatiBeep(520, 0, 0.06, 'sine', 0.06); }
+}
+function toggleSound(){
+  sahabatiSoundOn = !sahabatiSoundOn;
+  try { localStorage.setItem('sahabati_sound', sahabatiSoundOn ? 'on' : 'off'); } catch(e){}
+  const ic = document.getElementById('sound-toggle-icon');
+  if(ic){ ic.classList.remove('fa-volume-high','fa-volume-xmark'); ic.classList.add(sahabatiSoundOn ? 'fa-volume-high' : 'fa-volume-xmark'); }
+  if(sahabatiSoundOn) playSound('open');
+  showToast(sahabatiSoundOn ? 'تم تفعيل الصوت' : 'تم كتم الصوت');
+}
+function initSound(){
+  const ic = document.getElementById('sound-toggle-icon');
+  if(ic && !sahabatiSoundOn){ ic.classList.remove('fa-volume-high'); ic.classList.add('fa-volume-xmark'); }
+  window.toggleSound = toggleSound;
+  window.playSound = playSound;
 }
 
 // Enhance checkout phone + promo on DOM ready
@@ -469,6 +512,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
   initPromoInline();
   enhancePriceLive();
   initFadeIn();
+  initSound();
   // patch updateCartUI to also render drawer
   const origUpdateCartUI = window.updateCartUI;
   window.updateCartUI = function(){

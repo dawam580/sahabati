@@ -151,6 +151,7 @@ function handleAdminAddItem(e){
     const badge=document.getElementById('admin-item-badge').value.trim();
     const category=document.getElementById('admin-item-category').value;
     const instructions=document.getElementById('admin-item-instructions').value.trim();
+    const image=(document.getElementById('admin-item-image')?.value||'').trim();
 
     if(!name || isNaN(price) || price<=0){
         showToast('يرجى إدخال اسم صحيح وسعر بالدينار الليبي','fa-triangle-exclamation'); return;
@@ -159,7 +160,7 @@ function handleAdminAddItem(e){
     if(type==='game_package'){
         const gameId=document.getElementById('admin-target-game').value;
         const game=APP_DATA.games.find(g=>g.id===gameId);
-        if(game){ const newId=gameId+'_pkg_'+Date.now(); game.packages.push({ id:newId, nameAr:name, priceLYD:price, popular:!!badge, icon:'💎' }); }
+        if(game){ const newId=gameId+'_pkg_'+Date.now(); game.packages.push({ id:newId, nameAr:name, priceLYD:price, popular:!!badge, icon:'💎', image:image }); }
     } else if(type==='streaming' || type==='social' || type==='telecom' || type==='gift_card'){
         const newId='card_'+Date.now(); let finalBrand=category;
         if(name.includes('نتفليكس')||name.toLowerCase().includes('netflix')) finalBrand='netflix';
@@ -168,10 +169,10 @@ function handleAdminAddItem(e){
         else if(name.includes('تيك توك')||name.toLowerCase().includes('tiktok')) finalBrand='tiktok';
         else if(name.includes('مدار')) finalBrand='madar';
         else if(name.includes('ليبيانا')) finalBrand='libyana';
-        APP_DATA.giftCards.push({ id:newId, brand:finalBrand, nameAr:name, nominal:name, priceLYD:price, category:category, badge:badge||'جديد ✨', instructionsAr: instructions||'يتم تسليم الكود وتفعيله فوراً بعد تأكيد الطلب بالدينار الليبي.' });
+        APP_DATA.giftCards.push({ id:newId, brand:finalBrand, nameAr:name, nominal:name, priceLYD:price, category:category, badge:badge||'جديد ✨', image:image, instructionsAr: instructions||'يتم تسليم الكود وتفعيله فوراً بعد تأكيد الطلب بالدينار الليبي.' });
     } else if(type==='new_game'){
         const newGameId='game_'+Date.now();
-        APP_DATA.games.push({ id:newGameId, nameAr:name, nameEn:name, badge:badge||'جديد 🔥', packages:[{ id:newGameId+'_1', nameAr:'باقة 1', priceLYD:price, popular:true, icon:'💎' }] });
+        APP_DATA.games.push({ id:newGameId, nameAr:name, nameEn:name, badge:badge||'جديد 🔥', image:image, packages:[{ id:newGameId+'_1', nameAr:'باقة 1', priceLYD:price, popular:true, icon:'💎' }] });
     }
     saveAppData(APP_DATA);
     renderAdminPanel();
@@ -209,14 +210,20 @@ function populateSettingsForm(){
     const pin=document.getElementById('setting-admin-pin');
     const onePay=document.getElementById('setting-onepay-info');
     const libyana=document.getElementById('setting-libyana-info');
-    const madar=document.getElementById('setting-madar-info');
     const bank=document.getElementById('setting-bank-info');
     if(wa) wa.value=s.whatsappNumber||'218920541749';
     if(pin) pin.value=s.adminPin||'admin2026';
     if(onePay) onePay.value=s.paymentMethodsInfo?.one_pay?.accountInfo||'';
     if(libyana) libyana.value=s.paymentMethodsInfo?.telecom_libyana?.accountInfo||'';
-    if(madar) madar.value=s.paymentMethodsInfo?.telecom_madar?.accountInfo||'';
     if(bank) bank.value=s.paymentMethodsInfo?.bank_transfer?.accountInfo||'';
+    const setV=(id,v)=>{ const el=document.getElementById(id); if(el) el.value=v||''; };
+    setV('setting-owner-name',s.ownerName);
+    setV('setting-telegram-url',s.telegramUrl);
+    setV('setting-facebook-url',s.facebookUrl);
+    setV('setting-instagram-url',s.instagramUrl);
+    setV('setting-tiktok-url',s.tiktokUrl);
+    setV('setting-logo-image',s.logoImage);
+    setV('setting-hero-image',s.heroImage);
 }
 function saveStoreSettings(){
     if(!APP_DATA.settings) APP_DATA.settings=DEFAULT_STORE_SETTINGS;
@@ -228,9 +235,15 @@ function saveStoreSettings(){
     if(!APP_DATA.settings.paymentMethodsInfo){ APP_DATA.settings.paymentMethodsInfo=JSON.parse(JSON.stringify(DEFAULT_STORE_SETTINGS.paymentMethodsInfo)); }
     APP_DATA.settings.paymentMethodsInfo.one_pay.accountInfo=(document.getElementById('setting-onepay-info')?.value.trim()||'');
     const lb=(document.getElementById('setting-libyana-info')?.value.trim()||'');
-    const md=(document.getElementById('setting-madar-info')?.value.trim()||'');
     if(lb) APP_DATA.settings.paymentMethodsInfo.telecom_libyana.accountInfo=lb;
-    if(md) APP_DATA.settings.paymentMethodsInfo.telecom_madar.accountInfo=md;
+    const getV=(id)=>document.getElementById(id)?.value.trim()||'';
+    APP_DATA.settings.ownerName=getV('setting-owner-name')||'سحابتي';
+    APP_DATA.settings.telegramUrl=getV('setting-telegram-url')||'https://t.me/sabh';
+    APP_DATA.settings.facebookUrl=getV('setting-facebook-url');
+    APP_DATA.settings.instagramUrl=getV('setting-instagram-url');
+    APP_DATA.settings.tiktokUrl=getV('setting-tiktok-url');
+    APP_DATA.settings.logoImage=getV('setting-logo-image')||'logo.png';
+    APP_DATA.settings.heroImage=getV('setting-hero-image')||'hero-banner.jpg';
     APP_DATA.settings.paymentMethodsInfo.bank_transfer.accountInfo=(document.getElementById('setting-bank-info')?.value.trim()||'');
     saveAppData(APP_DATA);
     showToast('تم حفظ إعدادات المتجر ورقم الواتساب بنجاح! 💾');

@@ -16,7 +16,7 @@ let state = {
     cart: JSON.parse(localStorage.getItem('sahabati_cart') || '[]'),
     orders: JSON.parse(localStorage.getItem('sahabati_orders') || '[]'),
     appliedPromo: null,
-    paymentMethod: 'telecom_libyana',
+    paymentMethod: 'one_pay',
     isAdminAuth: sessionStorage.getItem('sahabati_admin_auth') === 'true'
 };
 
@@ -39,6 +39,33 @@ function updateWhatsAppLinks() {
         const el = document.getElementById(id);
         if (el) el.href = waUrl;
     });
+    ['footer-wa-link', 'footer-wa-link2'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.href = waUrl;
+    });
+}
+
+// Brand owner: الشعار + الغلاف + حسابات المالك (تتحدث من الأدمن)
+function ownerLogo() { return APP_DATA.settings?.logoImage || 'logo.png'; }
+function ownerHero() { return APP_DATA.settings?.heroImage || 'hero-banner.jpg'; }
+function updateOwnerBranding() {
+    const logo = ownerLogo(), hero = ownerHero();
+    document.querySelectorAll('[data-logo]').forEach(el => {
+        el.src = logo;
+        el.onerror = function() { this.onerror = null; this.src = '08_sahabati_app_icon_1024x1024.png'; };
+    });
+    document.querySelectorAll('[data-hero]').forEach(el => {
+        el.src = hero;
+        el.onerror = function() { this.onerror = null; this.src = 'header_hero.jpg'; };
+    });
+    const tg = APP_DATA.settings?.telegramUrl || 'https://t.me/sabh';
+    const fb = APP_DATA.settings?.facebookUrl || '';
+    const ig = APP_DATA.settings?.instagramUrl || '';
+    const tt = APP_DATA.settings?.tiktokUrl || '';
+    const set = (id, url) => { const el = document.getElementById(id); if (el && url) el.href = url; };
+    set('footer-tg-link', tg); set('footer-tg-link2', tg); set('footer-fb-link', fb); set('footer-ig-link', ig); set('footer-tt-link', tt);
+    const nm = APP_DATA.settings?.ownerName || 'سحابتي';
+    document.querySelectorAll('[data-owner]').forEach(el => { el.textContent = nm; });
 }
 
 // Initialize Application
@@ -47,10 +74,12 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function initApp() {
-    // restore saved payment method (MDCard persist)
+    // restore saved payment method (ون باي / حوالة / ليبيانا فقط)
     const savedPay = localStorage.getItem('sahabati_selected_payment');
-    if (savedPay && APP_DATA.settings.paymentMethodsInfo[savedPay]) {
+    if (savedPay && ['one_pay','bank_transfer','telecom_libyana'].includes(savedPay) && APP_DATA.settings.paymentMethodsInfo[savedPay]) {
         state.paymentMethod = savedPay;
+    } else {
+        state.paymentMethod = 'one_pay';
     }
     updateWhatsAppLinks();
     renderCategories();
@@ -60,6 +89,8 @@ function initApp() {
     renderOrders();
     updateCartUI();
     renderPaymentInstructions();
+    updateOwnerBranding();
+    renderPubgHome();
     bindEvents();
     
     // Check initial tab hash if any
@@ -230,6 +261,12 @@ function renderGameDetail(gameId) {
         titleEl.textContent = game.nameAr;
     }
 
+    const bannerEl = document.getElementById('game-banner-img');
+    if (bannerEl) {
+        if (game.image) { bannerEl.src = game.image; bannerEl.style.display = ''; }
+        else { bannerEl.style.display = 'none'; }
+    }
+
     const idLabelEl = document.getElementById('player-id-label');
     if (idLabelEl) {
         idLabelEl.textContent = game.idLabelAr || 'أدخل معرّف اللاعب (Player ID):';
@@ -248,9 +285,9 @@ function renderGameDetail(gameId) {
                 (pkg.popular ? '<span class="absolute -top-2.5 right-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-sm">الأكثر طلباً 🔥</span>' : '') +
                 (pkg.bestValue ? '<span class="absolute -top-2.5 left-4 bg-gradient-to-r from-orange-500 to-amber-500 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-sm">أفضل قيمة ✨</span>' : '') +
                 '<div class="flex items-center gap-3 mb-3">' +
-                    '<div class="pkg-coin">' +
-                        (pkg.icon || 'UC') +
-                    '</div>' +
+                    (pkg.image
+                        ? '<img src="' + pkg.image + '" alt="" loading="lazy" decoding="async" class="game-logo" onerror="this.outerHTML=\'<div class=&quot;pkg-coin&quot;>' + (pkg.icon || 'UC') + '</div>\'">'
+                        : '<div class="pkg-coin">' + (pkg.icon || 'UC') + '</div>') +
                     '<div>' +
                         '<h4 class="font-extrabold text-slate-900 text-sm">' + pkg.nameAr + '</h4>' +
                         '<p class="text-sm font-black text-emerald-700 mt-0.5">' + formatPrice(pkg.priceLYD) + '</p>' +
@@ -269,6 +306,30 @@ function renderGameDetail(gameId) {
             '</div>';
         }).join('');
     }
+}
+
+// PUBG UC codes on homepage
+function renderPubgHome() {
+    const grid = document.getElementById('pubg-home-grid');
+    if (!grid) return;
+    const pubg = APP_DATA.games.find(g => g.id === 'pubg');
+    if (!pubg || !pubg.packages) { grid.innerHTML = ''; return; }
+    grid.innerHTML = pubg.packages.slice(0, 6).map(pkg => {
+        const price = (typeof getPriceForMethod === 'function') ? getPriceForMethod(pkg.priceLYD, state.paymentMethod) : pkg.priceLYD;
+        return '<div class="bg-white rounded-2xl p-3 border border-slate-200 shadow-sm flex flex-col gap-2 card-interactive">' +
+            '<div class="flex items-center gap-2.5">' +
+                '<div class="pkg-coin">' + (pkg.icon || 'UC') + '</div>' +
+                '<div class="flex-1 min-w-0">' +
+                    '<div class="text-xs font-black text-slate-900 line-clamp-1">' + pkg.nameAr + '</div>' +
+                    '<div class="text-xs font-black text-emerald-700 price-live">' + formatPriceLive(price) + '</div>' +
+                '</div>' +
+            '</div>' +
+            '<div class="grid grid-cols-2 gap-1.5">' +
+                '<button onclick="addGamePackageToCart(\'pubg\',\'' + pkg.id + '\')" class="py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-black transition flex items-center justify-center gap-1"><i class="fa-solid fa-cart-plus"></i> أضف</button>' +
+                '<button onclick="buyNowGamePackage(\'pubg\',\'' + pkg.id + '\')" class="py-2 rounded-xl bg-slate-900 hover:bg-black text-white text-[11px] font-black transition">اشتر الآن</button>' +
+            '</div>' +
+        '</div>';
+    }).join('');
 }
 
 // Verify Player ID simulation
@@ -378,11 +439,13 @@ function renderGiftCards(filter) {
             brandIcon = '<span class="text-white font-black text-xl">ChatGPT Plus 🤖</span>';
         }
 
+        const customImg = card.image ? '<img src="' + card.image + '" alt="" loading="lazy" decoding="async" class="pro-img absolute inset-0" onerror="this.remove()">' : '';
         return '<div class="glass-card card-interactive rounded-3xl p-4 flex flex-col justify-between relative group border border-white/80 hover:border-sky-300 fade-in">' +
             (card.badge ? '<span class="absolute top-3 right-3 bg-emerald-600 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-md z-10">' + card.badge + '</span>' : '') +
             '<span class="absolute top-3 left-3 bg-white/90 backdrop-blur text-emerald-700 text-[10px] font-black px-2 py-0.5 rounded-full shadow-sm z-10 stock-urgency">تسليم فوري ⚡</span>' +
             '<div>' +
                 '<div class="brand-card-img bg-gradient-to-br ' + cardBgClass + ' shadow-md mb-3 border border-white/20">' +
+                    customImg +
                     '<div class="absolute inset-0 flex flex-col justify-between p-3.5 text-white">' +
                     '<div class="flex justify-between items-start">' +
                         '<span class="text-[10px] font-extrabold uppercase tracking-wider bg-white/20 px-2 py-0.5 rounded-md backdrop-blur-sm">سحّابتي Sahabati</span>' +
@@ -614,7 +677,9 @@ function applyPromoCode() {
 }
 
 // Select Payment Method
+const ALLOWED_PAYMENTS = ['one_pay','bank_transfer','telecom_libyana'];
 function selectPaymentMethod(method) {
+    if (!ALLOWED_PAYMENTS.includes(method)) method = 'one_pay';
     state.paymentMethod = method;
     localStorage.setItem('sahabati_selected_payment', method);
     document.querySelectorAll('.payment-option-card').forEach(card => {
@@ -1022,6 +1087,7 @@ function handleAdminAddItem(e) {
     const badge = document.getElementById('admin-item-badge').value.trim();
     const category = document.getElementById('admin-item-category').value;
     const instructions = document.getElementById('admin-item-instructions').value.trim();
+    const image = (document.getElementById('admin-item-image')?.value || '').trim();
 
     if (!name || isNaN(price) || price <= 0) {
         showToast('يرجى إدخال اسم صحيح وسعر بالدينار الليبي', 'fa-triangle-exclamation');
@@ -1038,7 +1104,8 @@ function handleAdminAddItem(e) {
                 nameAr: name,
                 priceLYD: price,
                 popular: !!badge,
-                icon: '💎'
+                icon: '💎',
+                image: image
             });
         }
     } else if (type === 'streaming' || type === 'social' || type === 'telecom' || type === 'gift_card') {
@@ -1067,6 +1134,7 @@ function handleAdminAddItem(e) {
             priceLYD: price,
             category: category,
             badge: badge || 'جديد ✨',
+            image: image,
             instructionsAr: instructions || 'يتم تسليم الكود وتفعيله فوراً بعد تأكيد الطلب بالدينار الليبي.'
         });
     } else if (type === 'new_game') {
@@ -1076,6 +1144,7 @@ function handleAdminAddItem(e) {
             nameAr: name,
             nameEn: name,
             badge: badge || 'جديد 🔥',
+            image: image,
             packages: [
                 { id: newGameId + '_1', nameAr: 'باقة 1', priceLYD: price, popular: true, icon: '💎' }
             ]
@@ -1154,16 +1223,22 @@ function populateSettingsForm() {
     const waInput = document.getElementById('setting-whatsapp-number');
     const pinInput = document.getElementById('setting-admin-pin');
     const libyanaInput = document.getElementById('setting-libyana-info');
-    const madarInput = document.getElementById('setting-madar-info');
-    const sadadInput = document.getElementById('setting-sadad-info');
-    const tadawulInput = document.getElementById('setting-tadawul-info');
+    const onePayInput = document.getElementById('setting-onepay-info');
+    const bankInput = document.getElementById('setting-bank-info');
 
     if (waInput) waInput.value = s.whatsappNumber || '218910000000';
     if (pinInput) pinInput.value = s.adminPin || 'admin2026';
     if (libyanaInput) libyanaInput.value = s.paymentMethodsInfo?.telecom_libyana?.accountInfo || '';
-    if (madarInput) madarInput.value = s.paymentMethodsInfo?.telecom_madar?.accountInfo || '';
-    if (sadadInput) sadadInput.value = s.paymentMethodsInfo?.sadad?.accountInfo || '';
-    if (tadawulInput) tadawulInput.value = s.paymentMethodsInfo?.tadawul?.accountInfo || '';
+    if (onePayInput) onePayInput.value = s.paymentMethodsInfo?.one_pay?.accountInfo || '';
+    if (bankInput) bankInput.value = s.paymentMethodsInfo?.bank_transfer?.accountInfo || '';
+    const setV = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
+    setV('setting-owner-name', s.ownerName);
+    setV('setting-telegram-url', s.telegramUrl);
+    setV('setting-facebook-url', s.facebookUrl);
+    setV('setting-instagram-url', s.instagramUrl);
+    setV('setting-tiktok-url', s.tiktokUrl);
+    setV('setting-logo-image', s.logoImage);
+    setV('setting-hero-image', s.heroImage);
 }
 
 function saveStoreSettings() {
@@ -1179,13 +1254,23 @@ function saveStoreSettings() {
         APP_DATA.settings.paymentMethodsInfo = DEFAULT_STORE_SETTINGS.paymentMethodsInfo;
     }
 
+    if (!APP_DATA.settings.paymentMethodsInfo.one_pay) APP_DATA.settings.paymentMethodsInfo.one_pay = { title: 'ون باي (OnePay)' };
+    if (!APP_DATA.settings.paymentMethodsInfo.bank_transfer) APP_DATA.settings.paymentMethodsInfo.bank_transfer = { title: 'تحويل مصرفي ليبي' };
+    APP_DATA.settings.paymentMethodsInfo.one_pay.accountInfo = document.getElementById('setting-onepay-info')?.value.trim() || '';
+    APP_DATA.settings.paymentMethodsInfo.bank_transfer.accountInfo = document.getElementById('setting-bank-info')?.value.trim() || '';
     APP_DATA.settings.paymentMethodsInfo.telecom_libyana.accountInfo = document.getElementById('setting-libyana-info')?.value.trim() || '';
-    APP_DATA.settings.paymentMethodsInfo.telecom_madar.accountInfo = document.getElementById('setting-madar-info')?.value.trim() || '';
-    APP_DATA.settings.paymentMethodsInfo.sadad.accountInfo = document.getElementById('setting-sadad-info')?.value.trim() || '';
-    APP_DATA.settings.paymentMethodsInfo.tadawul.accountInfo = document.getElementById('setting-tadawul-info')?.value.trim() || '';
+    const getV = (id) => document.getElementById(id)?.value.trim() || '';
+    APP_DATA.settings.ownerName = getV('setting-owner-name') || 'سحابتي';
+    APP_DATA.settings.telegramUrl = getV('setting-telegram-url') || 'https://t.me/sabh';
+    APP_DATA.settings.facebookUrl = getV('setting-facebook-url');
+    APP_DATA.settings.instagramUrl = getV('setting-instagram-url');
+    APP_DATA.settings.tiktokUrl = getV('setting-tiktok-url');
+    APP_DATA.settings.logoImage = getV('setting-logo-image') || 'logo.png';
+    APP_DATA.settings.heroImage = getV('setting-hero-image') || 'hero-banner.jpg';
 
     saveAppData(APP_DATA);
     updateWhatsAppLinks();
+    updateOwnerBranding();
     renderPaymentInstructions();
     showToast('تم حفظ إعدادات المتجر ورقم الواتساب بنجاح! 💾');
 }

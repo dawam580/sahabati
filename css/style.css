@@ -24,7 +24,7 @@ html {
 
 body {
     direction: rtl;
-    background: #f8fafc;
+    background: radial-gradient(circle at 50% 0%, #16307f 0%, #0a1f66 38%, #060f3d 72%, #040a29 100%);
     background-attachment: fixed;
     min-height: 100vh;
     color: #0f172a;

@@ -10,6 +10,12 @@ const DEFAULT_STORE_SETTINGS = {
     telegramChannel: 'sabh',
     telegramUrl: 'https://t.me/sabh',
     adminPin: 'admin2026',           // Admin dashboard access PIN
+    ownerName: 'سحابتي',
+    facebookUrl: '',
+    instagramUrl: '',
+    tiktokUrl: '',
+    logoImage: 'logo.png',
+    heroImage: 'hero-banner.jpg',
     storeNameAr: 'سحّابتي',
     storeNameEn: 'Sahabati Cloud',
     currency: {
@@ -28,21 +34,11 @@ const DEFAULT_STORE_SETTINGS = {
             accountInfo: 'رقم تحويل رصيد ليبيانا: 0920000000',
             instructions: 'حوّل الرصيد مباشرة أو أرسل كود كرت ليبيانا عبر واتساب لتأكيد الشحن فوراً.'
         },
-        telecom_madar: {
-            title: 'رصيد مدار الجديد (Madar)',
-            accountInfo: 'رقم تحويل رصيد مدار: 0910000000',
-            instructions: 'حوّل الرصيد مباشرة أو أرسل كود كرت مدار الجديد عبر واتساب لتأكيد الشحن فوراً.'
-        },
         bank_transfer: {
             title: 'تحويل مصرفي ليبي',
             accountInfo: 'اسم الحساب: منصة سحّابتي | رقم الحساب: 0123456789012',
             instructions: 'قم بالتحويل المصرفي وأرسل إشعار الخصم عبر واتساب 0920541749.'
         },
-        usdt: {
-            title: 'USDT / BUSD - عملات رقمية',
-            accountInfo: 'محفظة USDT TRC20: TX... (تواصل واتساب للتأكيد)',
-            instructions: 'حوّل USDT عبر شبكة TRC20 وأرسل hash العملية عبر واتساب 0920541749 للتأكيد والتفعيل خلال دقائق.'
-        }
     }
 };
 
@@ -85,6 +81,7 @@ const DEFAULT_APP_DATA = {
             nameAr: 'ببجي موبايل (PUBG Mobile UC)',
             nameEn: 'PUBG Mobile',
             badge: 'شحن فوري بالمعرّف 🔥',
+            image: '',
             icon: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/pubg.png',
             idLabelAr: 'أدخل معرّف اللاعب (Player ID):',
             idPlaceholder: 'مثال: 5123456789',
@@ -108,6 +105,7 @@ const DEFAULT_APP_DATA = {
             nameAr: 'فري فاير (Free Fire Diamonds)',
             nameEn: 'Free Fire',
             badge: 'فوري ⚡',
+            image: '',
             icon: '01_photo_5809670474982690366_y.jpg',
             idLabelAr: 'معرف الحساب (Player ID):',
             idPlaceholder: 'مثال: 987654321',
@@ -125,6 +123,7 @@ const DEFAULT_APP_DATA = {
             nameAr: 'عملات تيك توك (TikTok Coins)',
             nameEn: 'TikTok Coins',
             badge: 'شحن يوزر 🎵',
+            image: '',
             icon: 'https://upload.wikimedia.org/wikipedia/en/a/a9/TikTok_logo.svg',
             idLabelAr: 'اسم مستخدم تيك توك (@Username):',
             idPlaceholder: 'مثال: @username',
@@ -145,6 +144,7 @@ const DEFAULT_APP_DATA = {
             nameAr: 'روبلوكس (Roblox Robux)',
             nameEn: 'Roblox Robux',
             badge: 'خصم 20% 🔥',
+            image: '',
             icon: '07_roblox_promotion_banner.png',
             idLabelAr: 'اسم مستخدم روبلوكس (Username):',
             idPlaceholder: 'مثال: RobloxPlayer123',
@@ -324,7 +324,11 @@ function loadAppData() {
                     try { localStorage.setItem('sahabati_catalog_data', JSON.stringify(parsed)); } catch(e){}
                 }
                 // احذف طرق الدفع القديمة المحذوفة (سداد، تداول، كاش) إذا كانت مخزنة
-                ['sadad','tadawul','cash','telecom_cards'].forEach(k=>{ if(parsed.settings.paymentMethodsInfo[k]) delete parsed.settings.paymentMethodsInfo[k]; });
+                ['sadad','tadawul','cash','telecom_cards','telecom_madar','usdt'].forEach(k=>{ if(parsed.settings.paymentMethodsInfo[k]) delete parsed.settings.paymentMethodsInfo[k]; });
+                // دمج بيانات المالك الافتراضية
+                ['ownerName','facebookUrl','instagramUrl','tiktokUrl','logoImage','heroImage'].forEach(k=>{ if(parsed.settings[k]===undefined) parsed.settings[k]=DEFAULT_STORE_SETTINGS[k]; });
+                // ضمان طرق الدفع الثلاث فقط
+                ['one_pay','telecom_libyana','bank_transfer'].forEach(k=>{ if(!parsed.settings.paymentMethodsInfo[k]) parsed.settings.paymentMethodsInfo[k]=JSON.parse(JSON.stringify(DEFAULT_STORE_SETTINGS.paymentMethodsInfo[k])); });
                 return parsed;
             }
         }
