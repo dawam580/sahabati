@@ -1067,6 +1067,26 @@
         </div>
     </div>
 
+    <script>
+    // Fallback drawer functions - ensure available even if interactions.js not yet loaded
+    window.openCartDrawer = window.openCartDrawer || function(){
+        var d=document.getElementById('cart-drawer'); var o=document.getElementById('cart-drawer-overlay');
+        if(!d) return; if(typeof renderCartDrawer==='function') try{renderCartDrawer()}catch(e){}
+        d.classList.remove('closed'); d.classList.add('open');
+        if(o){o.classList.remove('hidden'); o.classList.add('visible');}
+        document.body.style.overflow='hidden';
+    };
+    window.closeCartDrawer = window.closeCartDrawer || function(){
+        var d=document.getElementById('cart-drawer'); var o=document.getElementById('cart-drawer-overlay');
+        if(!d) return; d.classList.remove('open'); d.classList.add('closed');
+        if(o){o.classList.remove('visible'); o.classList.add('hidden');}
+        document.body.style.overflow='';
+    };
+    window.toggleCartDrawer = window.toggleCartDrawer || function(){
+        var d=document.getElementById('cart-drawer');
+        if(d && d.classList.contains('open')) window.closeCartDrawer(); else window.openCartDrawer();
+    };
+    </script>
     <!-- Bottom Floating Navigation Bar - محسن للوصول (A11y) -->
     <nav aria-label="التنقل السفلي" class="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-xl border-t border-sky-100 py-2 px-2 shadow-2xl">
         <div class="max-w-lg mx-auto flex items-center justify-around text-center">

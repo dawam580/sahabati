@@ -180,6 +180,9 @@ function toggleCartDrawer(){
   const drawer = document.getElementById('cart-drawer');
   if(drawer.classList.contains('open')) closeCartDrawer(); else openCartDrawer();
 }
+window.openCartDrawer = openCartDrawer;
+window.closeCartDrawer = closeCartDrawer;
+window.toggleCartDrawer = toggleCartDrawer;
 function renderCartDrawer(){
   const cont = document.getElementById('cart-drawer-items');
   const empty = document.getElementById('cart-drawer-empty');
