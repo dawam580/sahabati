@@ -99,6 +99,7 @@ function initApp() {
     // apply global bar visual
     safeStep('payBar', () => selectPaymentMethod(state.paymentMethod));
     safeStep('events', bindEvents);
+    safeStep('fresh', () => { if (typeof checkBuildFresh === 'function') checkBuildFresh(); });
     
     // Check initial tab hash if any
     const hash = window.location.hash.replace('#', '');

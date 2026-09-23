@@ -30,6 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function initAdmin(){
+    try { if (typeof checkBuildFresh === 'function') checkBuildFresh(); } catch(e){}
     if(adminState.isAdminAuth){
         showDashboard();
     } else {

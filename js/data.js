@@ -303,6 +303,7 @@ const DEFAULT_APP_DATA = {
 };
 
 // Safe storage: لا يموت السكربت لو التخزين محظور أو تالف (وضع خاص/كوكيز محظورة)
+const BUILD = 'big6';
 const __memStore = {};
 function storeGet(k){ try { if (typeof window !== 'undefined' && window.localStorage) { const v = window.localStorage.getItem(k); if (v !== null && v !== undefined) return v; } } catch(e){} return (__memStore[k] !== undefined ? __memStore[k] : null); }
 function storeSet(k,v){ try { if (typeof window !== 'undefined' && window.localStorage) { window.localStorage.setItem(k,v); return; } } catch(e){} __memStore[k]=v; }
@@ -311,6 +312,24 @@ function loadJSON(k,fb){ try { const v = storeGet(k); if(!v) return fb; return J
 function sessGet(k){ try { if (typeof window !== 'undefined' && window.sessionStorage) { return window.sessionStorage.getItem(k); } } catch(e){} return (__memStore['ss:'+k] !== undefined ? __memStore['ss:'+k] : null); }
 function sessSet(k,v){ try { if (typeof window !== 'undefined' && window.sessionStorage) { window.sessionStorage.setItem(k,v); return; } } catch(e){} __memStore['ss:'+k]=v; }
 function sessDel(k){ try { if (typeof window !== 'undefined' && window.sessionStorage) { window.sessionStorage.removeItem(k); } } catch(e){} delete __memStore['ss:'+k]; }
+
+// Build freshness: لو نسخة HTML أقدم من السكربتات، حدّث مرة واحدة تلقائياً
+function checkBuildFresh(){
+    try {
+        const last = storeGet('sahabati_build');
+        if (last && last !== BUILD) {
+            storeSet('sahabati_build', BUILD);
+            try { if (typeof showToast === 'function') showToast('وصل تحديث جديد، جارٍ تحميل النسخة الجديدة...'); } catch(e){}
+            setTimeout(function(){ try { location.reload(); } catch(e){} }, 900);
+        } else if (!last) {
+            storeSet('sahabati_build', BUILD);
+        }
+        try {
+            const spots = (typeof document !== 'undefined' && document.querySelectorAll) ? document.querySelectorAll('[data-build]') : [];
+            for (let i = 0; i < spots.length; i++) spots[i].textContent = BUILD;
+        } catch(e){}
+    } catch(e){}
+}
 
 // LocalStorage Persistence Layer - مع ترحيل لإزالة كروت ليبيانا/مدار من البيع (يبقى الدفع فقط)
 function loadAppData() {
