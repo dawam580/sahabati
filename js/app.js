@@ -13,11 +13,11 @@ let state = {
     verifiedPlayerId: '',
     verifiedPlayerName: '',
     selectedPackage: null,
-    cart: JSON.parse(localStorage.getItem('sahabati_cart') || '[]'),
-    orders: JSON.parse(localStorage.getItem('sahabati_orders') || '[]'),
+    cart: loadJSON('sahabati_cart', []),
+    orders: loadJSON('sahabati_orders', []),
     appliedPromo: null,
     paymentMethod: 'one_pay',
-    isAdminAuth: sessionStorage.getItem('sahabati_admin_auth') === 'true'
+    isAdminAuth: (typeof sessGet === 'function' ? sessGet('sahabati_admin_auth') : null) === 'true'
 };
 
 // Resolve Base64 and Local Assets
@@ -73,25 +73,32 @@ document.addEventListener('DOMContentLoaded', () => {
     initApp();
 });
 
+function safeStep(name, fn) {
+    try { fn(); }
+    catch (err) { try { console.warn('init step failed:', name, err); } catch(e){} }
+}
+
 function initApp() {
     // restore saved payment method (ون باي / حوالة / ليبيانا فقط)
-    const savedPay = localStorage.getItem('sahabati_selected_payment');
+    const savedPay = (typeof storeGet === 'function' ? storeGet('sahabati_selected_payment') : null);
     if (savedPay && ['one_pay','bank_transfer','telecom_libyana'].includes(savedPay) && APP_DATA.settings.paymentMethodsInfo[savedPay]) {
         state.paymentMethod = savedPay;
     } else {
         state.paymentMethod = 'one_pay';
     }
-    updateWhatsAppLinks();
-    renderCategories();
-    renderGamesNav();
-    renderGameDetail(state.selectedGame || 'pubg');
-    renderGiftCards('all');
-    renderOrders();
-    updateCartUI();
-    renderPaymentInstructions();
-    updateOwnerBranding();
-    renderPubgHome();
-    bindEvents();
+    safeStep('links', updateWhatsAppLinks);
+    safeStep('categories', renderCategories);
+    safeStep('gamesNav', renderGamesNav);
+    safeStep('gameDetail', () => renderGameDetail(state.selectedGame || 'pubg'));
+    safeStep('giftCards', () => renderGiftCards('all'));
+    safeStep('orders', renderOrders);
+    safeStep('cartUI', updateCartUI);
+    safeStep('payInstr', renderPaymentInstructions);
+    safeStep('branding', () => { if (typeof updateOwnerBranding === 'function') updateOwnerBranding(); });
+    safeStep('pubgHome', () => { if (typeof renderPubgHome === 'function') renderPubgHome(); });
+    // apply global bar visual
+    safeStep('payBar', () => selectPaymentMethod(state.paymentMethod));
+    safeStep('events', bindEvents);
     
     // Check initial tab hash if any
     const hash = window.location.hash.replace('#', '');
@@ -315,13 +322,14 @@ function renderPubgHome() {
     const pubg = APP_DATA.games.find(g => g.id === 'pubg');
     if (!pubg || !pubg.packages) { grid.innerHTML = ''; return; }
     grid.innerHTML = pubg.packages.slice(0, 6).map(pkg => {
-        const price = (typeof getPriceForMethod === 'function') ? getPriceForMethod(pkg.priceLYD, state.paymentMethod) : pkg.priceLYD;
+        const base = (typeof getPriceForMethod === 'function') ? getPriceForMethod(pkg.priceLYD, state.paymentMethod) : pkg.priceLYD;
+        const price = (typeof formatPriceLive === 'function') ? formatPriceLive(base) : formatPrice(base);
         return '<div class="bg-white rounded-2xl p-3 border border-slate-200 shadow-sm flex flex-col gap-2 card-interactive">' +
             '<div class="flex items-center gap-2.5">' +
                 '<div class="pkg-coin">' + (pkg.icon || 'UC') + '</div>' +
                 '<div class="flex-1 min-w-0">' +
                     '<div class="text-xs font-black text-slate-900 line-clamp-1">' + pkg.nameAr + '</div>' +
-                    '<div class="text-xs font-black text-emerald-700 price-live">' + formatPriceLive(price) + '</div>' +
+                    '<div class="text-xs font-black text-emerald-700 price-live">' + price + '</div>' +
                 '</div>' +
             '</div>' +
             '<div class="grid grid-cols-2 gap-1.5">' +
@@ -557,7 +565,7 @@ function closeModal(modalId) {
 
 // Cart Storage & UI
 function saveCart() {
-    localStorage.setItem('sahabati_cart', JSON.stringify(state.cart));
+    if (typeof storeSet === 'function') storeSet('sahabati_cart', JSON.stringify(state.cart));
 }
 
 function updateCartUI() {
@@ -681,7 +689,7 @@ const ALLOWED_PAYMENTS = ['one_pay','bank_transfer','telecom_libyana'];
 function selectPaymentMethod(method) {
     if (!ALLOWED_PAYMENTS.includes(method)) method = 'one_pay';
     state.paymentMethod = method;
-    localStorage.setItem('sahabati_selected_payment', method);
+    if (typeof storeSet === 'function') storeSet('sahabati_selected_payment', method);
     document.querySelectorAll('.payment-option-card').forEach(card => {
         if (card.dataset.method === method) {
             card.classList.add('border-emerald-500', 'bg-emerald-50/80', 'ring-2', 'ring-emerald-400');
@@ -812,7 +820,7 @@ customerNotes + '\n' +
         window.open(waUrl, '_blank');
 
         state.orders.unshift(newOrder);
-        localStorage.setItem('sahabati_orders', JSON.stringify(state.orders));
+        if (typeof storeSet === 'function') storeSet('sahabati_orders', JSON.stringify(state.orders));
 
         // Clear Cart
         state.cart = [];
@@ -942,27 +950,48 @@ function openAdminAuthModal() {
     }
 }
 
-function handleAdminLogin(e) {
-    e.preventDefault();
-    const pinInput = document.getElementById('admin-pin-input');
-    const enteredPin = pinInput.value.trim();
-    const correctPin = APP_DATA.settings?.adminPin || DEFAULT_STORE_SETTINGS.adminPin;
+function correctAdminPin() {
+    try {
+        if (typeof APP_DATA !== 'undefined' && APP_DATA && APP_DATA.settings && APP_DATA.settings.adminPin) return APP_DATA.settings.adminPin;
+    } catch (e) {}
+    return 'admin2026';
+}
 
-    if (enteredPin === correctPin || enteredPin === '1234' || enteredPin === 'admin2026') {
+function handleAdminLogin(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    const pinInput = document.getElementById('admin-pin-input');
+    if (!pinInput) { showToast('حقل كلمة السر غير موجود', 'fa-triangle-exclamation'); return; }
+    const enteredPin = (pinInput.value || '').trim();
+    const correctPin = correctAdminPin();
+
+    if (enteredPin && (enteredPin === correctPin || enteredPin === '1234' || enteredPin === 'admin2026')) {
         state.isAdminAuth = true;
-        sessionStorage.setItem('sahabati_admin_auth', 'true');
+        if (typeof sessSet === 'function') sessSet('sahabati_admin_auth', 'true');
         closeModal('admin-auth-modal');
-        navigateTo('admin');
+        try { navigateTo('admin'); }
+        catch (err) { showToast('تم الدخول لكن تعذر فتح اللوحة: ' + err.message, 'fa-triangle-exclamation'); return; }
         showToast('مرحباً بك في لوحة تحكم سحّابتي 👑');
     } else {
+        try {
+            pinInput.classList.remove('shake'); void pinInput.offsetWidth; pinInput.classList.add('shake');
+            setTimeout(() => { try { pinInput.classList.remove('shake'); } catch (e) {} }, 450);
+        } catch (e) {}
         showToast('كلمة السر غير صحيحة، يرجى المحاولة مجدداً', 'fa-lock');
         pinInput.value = '';
+        try { pinInput.focus(); } catch (e) {}
     }
+}
+
+function togglePinVisibility(inputId, btn) {
+    const inp = document.getElementById(inputId);
+    if (!inp) return;
+    inp.type = (inp.type === 'password') ? 'text' : 'password';
+    if (btn) { btn.innerHTML = (inp.type === 'password') ? '<i class="fa-solid fa-eye"></i>' : '<i class="fa-solid fa-eye-slash"></i>'; }
 }
 
 function logoutAdmin() {
     state.isAdminAuth = false;
-    sessionStorage.removeItem('sahabati_admin_auth');
+    if (typeof sessDel === 'function') sessDel('sahabati_admin_auth');
     navigateTo('home');
     showToast('تم قفل لوحة الأدمن بنجاح');
 }
@@ -1324,7 +1353,7 @@ function importCatalogFromFile() {
 
 function resetCatalogToDefault() {
     if (confirm('هل أنت متأكد من استعادة بيانات الأصناف والإعدادات الافتراضية؟')) {
-        localStorage.removeItem('sahabati_catalog_data');
+        if (typeof storeDel === 'function') storeDel('sahabati_catalog_data');
         APP_DATA = JSON.parse(JSON.stringify(DEFAULT_APP_DATA));
         updateWhatsAppLinks();
         renderGamesNav();

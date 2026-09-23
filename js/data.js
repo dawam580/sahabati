@@ -302,10 +302,20 @@ const DEFAULT_APP_DATA = {
     ]
 };
 
+// Safe storage: لا يموت السكربت لو التخزين محظور أو تالف (وضع خاص/كوكيز محظورة)
+const __memStore = {};
+function storeGet(k){ try { if (typeof window !== 'undefined' && window.localStorage) { const v = window.localStorage.getItem(k); if (v !== null && v !== undefined) return v; } } catch(e){} return (__memStore[k] !== undefined ? __memStore[k] : null); }
+function storeSet(k,v){ try { if (typeof window !== 'undefined' && window.localStorage) { window.localStorage.setItem(k,v); return; } } catch(e){} __memStore[k]=v; }
+function storeDel(k){ try { if (typeof window !== 'undefined' && window.localStorage) { window.localStorage.removeItem(k); } } catch(e){} delete __memStore[k]; }
+function loadJSON(k,fb){ try { const v = storeGet(k); if(!v) return fb; return JSON.parse(v); } catch(e){ return fb; } }
+function sessGet(k){ try { if (typeof window !== 'undefined' && window.sessionStorage) { return window.sessionStorage.getItem(k); } } catch(e){} return (__memStore['ss:'+k] !== undefined ? __memStore['ss:'+k] : null); }
+function sessSet(k,v){ try { if (typeof window !== 'undefined' && window.sessionStorage) { window.sessionStorage.setItem(k,v); return; } } catch(e){} __memStore['ss:'+k]=v; }
+function sessDel(k){ try { if (typeof window !== 'undefined' && window.sessionStorage) { window.sessionStorage.removeItem(k); } } catch(e){} delete __memStore['ss:'+k]; }
+
 // LocalStorage Persistence Layer - مع ترحيل لإزالة كروت ليبيانا/مدار من البيع (يبقى الدفع فقط)
 function loadAppData() {
     try {
-        const stored = localStorage.getItem('sahabati_catalog_data');
+        const stored = storeGet('sahabati_catalog_data');
         if (stored) {
             const parsed = JSON.parse(stored);
             if (parsed && parsed.games && parsed.giftCards) {
@@ -316,17 +326,19 @@ function loadAppData() {
                     // احذف فئة telecom من التصنيفات إذا وجدت
                     if (parsed.categories) parsed.categories = parsed.categories.filter(cat => cat.id !== 'telecom');
                     // احفظ الترحيل فوراً
-                    try { localStorage.setItem('sahabati_catalog_data', JSON.stringify(parsed)); } catch(e){}
+                    try { storeSet('sahabati_catalog_data', JSON.stringify(parsed)); } catch(e){}
                 }
                 // تأكد من وجود ون باي في طرق الدفع
                 if (!parsed.settings.paymentMethodsInfo.one_pay) {
                     parsed.settings.paymentMethodsInfo.one_pay = JSON.parse(JSON.stringify(DEFAULT_STORE_SETTINGS.paymentMethodsInfo.one_pay));
-                    try { localStorage.setItem('sahabati_catalog_data', JSON.stringify(parsed)); } catch(e){}
+                    try { storeSet('sahabati_catalog_data', JSON.stringify(parsed)); } catch(e){}
                 }
                 // احذف طرق الدفع القديمة المحذوفة (سداد، تداول، كاش) إذا كانت مخزنة
                 ['sadad','tadawul','cash','telecom_cards','telecom_madar','usdt'].forEach(k=>{ if(parsed.settings.paymentMethodsInfo[k]) delete parsed.settings.paymentMethodsInfo[k]; });
                 // دمج بيانات المالك الافتراضية
                 ['ownerName','facebookUrl','instagramUrl','tiktokUrl','logoImage','heroImage'].forEach(k=>{ if(parsed.settings[k]===undefined) parsed.settings[k]=DEFAULT_STORE_SETTINGS[k]; });
+                // ضمان التصنيفات الافتراضية للكتالوجات القديمة
+                if (!parsed.categories || !parsed.categories.length) parsed.categories = JSON.parse(JSON.stringify(DEFAULT_APP_DATA.categories));
                 // ضمان طرق الدفع الثلاث فقط
                 ['one_pay','telecom_libyana','bank_transfer'].forEach(k=>{ if(!parsed.settings.paymentMethodsInfo[k]) parsed.settings.paymentMethodsInfo[k]=JSON.parse(JSON.stringify(DEFAULT_STORE_SETTINGS.paymentMethodsInfo[k])); });
                 return parsed;
@@ -340,7 +352,7 @@ function loadAppData() {
 
 function saveAppData(data) {
     try {
-        localStorage.setItem('sahabati_catalog_data', JSON.stringify(data));
+        storeSet('sahabati_catalog_data', JSON.stringify(data));
     } catch (e) {
         console.error('Failed to save app data:', e);
     }

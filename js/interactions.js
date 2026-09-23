@@ -247,6 +247,12 @@ function removeFromCartWithDrawer(id){
   renderCartDrawer();
 }
 
+// Safe event target (بعض المتصفحات لا توفر window.event)
+function currentEventTarget(){
+  try { return (typeof event !== 'undefined' && event && event.target) ? event.target : null; }
+  catch(e){ return null; }
+}
+
 // Flying animation - اقتباس Midasbuy/SEAGM
 function flyToCart(sourceEl){
   const cartBtn = document.querySelector('button[onclick="toggleCartDrawer()"]') || document.getElementById('cart-drawer-btn') || document.querySelector('.cart-count-badge')?.parentElement;
@@ -280,12 +286,12 @@ function flyToCart(sourceEl){
   }, 800);
 }
 function addGamePackageToCartWithFly(gameId, pkgId, sourceEl){
-  flyToCart(sourceEl || event?.target);
+  flyToCart(sourceEl || currentEventTarget());
   addGamePackageToCart(gameId, pkgId);
   setTimeout(openCartDrawer, 400);
 }
 function addGiftCardToCartWithFly(cardId, sourceEl){
-  flyToCart(sourceEl || event?.target);
+  flyToCart(sourceEl || currentEventTarget());
   addGiftCardToCart(cardId);
   setTimeout(openCartDrawer, 400);
 }
@@ -294,7 +300,8 @@ function addGiftCardToCartWithFly(cardId, sourceEl){
 const originalAddGame = window.addGamePackageToCart;
 const originalAddGift = window.addGiftCardToCart;
 window.addGamePackageToCart = function(gameId, pkgId){
-  const btn = event?.target?.closest('button');
+  const _cet = currentEventTarget();
+  const btn = _cet ? _cet.closest('button') : null;
   if(btn) flyToCart(btn);
   // call original logic without recursion
   const game = APP_DATA.games.find(g=>g.id===gameId);
@@ -316,7 +323,8 @@ window.addGamePackageToCart = function(gameId, pkgId){
   if(navigator.vibrate) navigator.vibrate(20);
 };
 window.addGiftCardToCart = function(cardId){
-  const btn = event?.target?.closest('button');
+  const _cet = currentEventTarget();
+  const btn = _cet ? _cet.closest('button') : null;
   if(btn) flyToCart(btn);
   const card = APP_DATA.giftCards.find(c=>c.id===cardId);
   if(!card) return;
@@ -422,15 +430,19 @@ function enhancePriceLive(){
 
 // Skeleton + fade-in - اقتباس Eneba
 function initFadeIn(){
-  const obs = new IntersectionObserver((entries)=>{
-    entries.forEach(e=>{ if(e.isIntersecting) e.target.classList.add('visible'); });
-  }, {threshold:0.08});
-  document.querySelectorAll('.fade-in').forEach(el=> obs.observe(el));
-  // also observe dynamically added cards
-  const gridObs = new MutationObserver(()=>{
-    document.querySelectorAll('.fade-in:not(.visible)').forEach(el=> obs.observe(el));
-  });
-  gridObs.observe(document.body, {childList:true, subtree:true});
+  try {
+    if (typeof IntersectionObserver === 'undefined') return;
+    const obs = new IntersectionObserver((entries)=>{
+      entries.forEach(e=>{ if(e.isIntersecting) e.target.classList.add('visible'); });
+    }, {threshold:0.08});
+    document.querySelectorAll('.fade-in').forEach(el=> obs.observe(el));
+    // also observe dynamically added cards
+    if (typeof MutationObserver === 'undefined') return;
+    const gridObs = new MutationObserver(()=>{
+      document.querySelectorAll('.fade-in:not(.visible)').forEach(el=> obs.observe(el));
+    });
+    if (document.body) gridObs.observe(document.body, {childList:true, subtree:true});
+  } catch(e){}
 }
 
 // Confetti on success - اقتباس Midasbuy

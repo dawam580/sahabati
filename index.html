@@ -1142,8 +1142,8 @@
             </div>
 
             <form onsubmit="handleAdminLogin(event)" class="space-y-3">
-                <input type="password" id="admin-pin-input" placeholder="admin2026" required 
-                       class="glass-input w-full rounded-2xl py-3 px-4 text-center font-mono font-black text-sm text-slate-900 tracking-widest border border-indigo-200">
+                <div class="relative"><input type="password" id="admin-pin-input" placeholder="admin2026" required 
+                       class="glass-input w-full rounded-2xl py-3 px-4 text-center font-mono font-black text-sm text-slate-900 tracking-widest border border-indigo-200"><button type="button" data-pin-toggle onclick="togglePinVisibility('admin-pin-input', this)" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1" title="إظهار/إخفاء"><i class="fa-solid fa-eye"></i></button></div>
                 <button type="submit" class="w-full py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-2">
                     <i class="fa-solid fa-right-to-bracket"></i>
                     <span>دخول إلى لوحة التحكم</span>

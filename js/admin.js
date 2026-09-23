@@ -3,8 +3,8 @@
 // ==========================================
 
 let adminState = {
-    isAdminAuth: sessionStorage.getItem('sahabati_admin_auth') === 'true',
-    orders: JSON.parse(localStorage.getItem('sahabati_orders') || '[]')
+    isAdminAuth: (typeof sessGet === 'function' ? sessGet('sahabati_admin_auth') : null) === 'true',
+    orders: (typeof loadJSON === 'function' ? loadJSON('sahabati_orders', []) : [])
 };
 
 function escapeHtml(str) {
@@ -47,29 +47,57 @@ function showDashboard(){
     document.getElementById('admin-login-view')?.classList.add('hidden');
     document.getElementById('admin-dashboard-view')?.classList.remove('hidden');
     document.getElementById('admin-logout-btn')?.classList.remove('hidden');
-    document.getElementById('admin-session-badge')?.classList.remove('hidden');
-    renderAdminPanel();
+    const badge=document.getElementById('admin-session-badge');
+    if(badge) badge.classList.remove('hidden');
+    try { renderAdminPanel(); }
+    catch(err){ showToast('تعذر تحميل بيانات اللوحة: '+err.message,'fa-triangle-exclamation'); }
 }
 
+function correctAdminPin(){
+    try {
+        if (typeof APP_DATA !== 'undefined' && APP_DATA && APP_DATA.settings && APP_DATA.settings.adminPin) return APP_DATA.settings.adminPin;
+    } catch(e){}
+    try {
+        if (typeof DEFAULT_STORE_SETTINGS !== 'undefined' && DEFAULT_STORE_SETTINGS.adminPin) return DEFAULT_STORE_SETTINGS.adminPin;
+    } catch(e){}
+    return 'admin2026';
+}
+function shakeEl(el){
+    if(!el) return;
+    try {
+        el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake');
+        setTimeout(()=>{ try{el.classList.remove('shake');}catch(e){} }, 450);
+    } catch(e){}
+}
 function handleAdminLogin(e){
-    e.preventDefault();
+    if(e && e.preventDefault) e.preventDefault();
     const pinInput=document.getElementById('admin-pin-input');
-    const entered=pinInput.value.trim();
-    const correct=APP_DATA.settings?.adminPin || DEFAULT_STORE_SETTINGS.adminPin;
+    if(!pinInput){ showToast('حقل كلمة السر غير موجود','fa-triangle-exclamation'); return; }
+    const entered=(pinInput.value||'').trim();
+    const correct=correctAdminPin();
 
-    if(entered===correct || entered==='1234' || entered==='admin2026' || entered==='admin'){
+    if(entered && (entered===correct || entered==='1234' || entered==='admin2026' || entered==='admin')){
         adminState.isAdminAuth=true;
-        sessionStorage.setItem('sahabati_admin_auth','true');
+        if (typeof sessSet === 'function') sessSet('sahabati_admin_auth','true');
         showToast('مرحباً بك في لوحة تحكم سحّابتي 👑');
-        showDashboard();
+        try { showDashboard(); }
+        catch(err){ showToast('تم الدخول لكن تعذر عرض اللوحة: '+err.message,'fa-triangle-exclamation'); }
     } else {
+        shakeEl(pinInput);
         showToast('كلمة السر غير صحيحة، يرجى كتابة admin2026','fa-lock');
         pinInput.value='';
+        try{pinInput.focus();}catch(e){}
     }
+}
+function togglePinVisibility(inputId, btn){
+    const inp=document.getElementById(inputId);
+    if(!inp) return;
+    inp.type = (inp.type === 'password') ? 'text' : 'password';
+    if(btn){ btn.innerHTML = (inp.type === 'password') ? '<i class="fa-solid fa-eye"></i>' : '<i class="fa-solid fa-eye-slash"></i>'; }
 }
 function logoutAdmin(){
     adminState.isAdminAuth=false;
-    sessionStorage.removeItem('sahabati_admin_auth');
+    if (typeof sessDel === 'function') sessDel('sahabati_admin_auth');
     showLogin();
     showToast('تم قفل لوحة الأدمن بنجاح');
 }
@@ -89,7 +117,7 @@ function renderAdminPanel(){
     const so=document.getElementById('admin-stat-orders');
     if(sg) sg.textContent=APP_DATA.games.length+' ألعاب وعملات ('+totalPackages+' باقة)';
     if(sc) sc.textContent=APP_DATA.giftCards.length+' بطاقات واشتراكات';
-    const orders=JSON.parse(localStorage.getItem('sahabati_orders')||'[]');
+    const orders=(typeof loadJSON === 'function' ? loadJSON('sahabati_orders', []) : []);
     if(so) so.textContent=orders.length+' طلب';
 
     const gameSelect=document.getElementById('admin-target-game');
@@ -278,7 +306,7 @@ function importCatalogFromFile(){
 }
 function resetCatalogToDefault(){
     if(confirm('هل أنت متأكد من استعادة بيانات الأصناف والإعدادات الافتراضية؟')){
-        localStorage.removeItem('sahabati_catalog_data');
+        if (typeof storeDel === 'function') storeDel('sahabati_catalog_data');
         APP_DATA=JSON.parse(JSON.stringify(DEFAULT_APP_DATA));
         saveAppData(APP_DATA);
         renderAdminPanel();
