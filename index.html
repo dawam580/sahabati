@@ -582,7 +582,7 @@
                         <div class="space-y-2.5 pt-2">
                             <div>
                                 <label class="text-xs font-bold text-slate-700 block mb-1 flex items-center gap-2">رقم هاتفك على واتساب (لتسليم كود الشحن / بيانات الحساب): <span id="phone-operator-badge" class="operator-badge hidden"></span></label>
-                                <input type="text" id="whatsapp-phone-input" placeholder="مثال: 091XXXXXXX أو 092XXXXXXX" maxlength="10" inputmode="numeric" class="glass-input w-full rounded-xl py-2.5 px-3 text-xs font-bold font-mono text-slate-800">
+                                <input type="text" id="whatsapp-phone-input" autocomplete="tel" inputmode="numeric" placeholder="مثال: 091XXXXXXX أو 092XXXXXXX" maxlength="10" inputmode="numeric" class="glass-input w-full rounded-xl py-2.5 px-3 text-xs font-bold font-mono text-slate-800">
                                 <div class="text-[10px] text-slate-500 mt-1">سيتم التواصل عبر واتساب على هذا الرقم فقط • ليبيانا / مدار</div>
                             </div>
                             <div>
@@ -1146,7 +1146,7 @@
             </div>
 
             <form onsubmit="handleAdminLogin(event)" class="space-y-3">
-                <div class="relative"><input type="password" id="admin-pin-input" placeholder="admin2026" required 
+                <div class="relative"><input type="password" id="admin-pin-input" placeholder="admin2026" required autocomplete="current-password" 
                        class="glass-input w-full rounded-2xl py-3 px-4 text-center font-mono font-black text-sm text-slate-900 tracking-widest border border-indigo-200"><button type="button" data-pin-toggle onclick="togglePinVisibility('admin-pin-input', this)" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1" title="إظهار/إخفاء"><i class="fa-solid fa-eye"></i></button></div>
                 <button type="submit" class="w-full py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-2">
                     <i class="fa-solid fa-right-to-bracket"></i>

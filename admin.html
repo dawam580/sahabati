@@ -78,7 +78,7 @@
                 <form onsubmit="handleAdminLogin(event)" class="space-y-4 text-right">
                     <div>
                         <label class="text-xs font-bold text-slate-700 block mb-1">كلمة المرور / الرمز السري (PIN Code):</label>
-                        <div class="relative"><input type="password" id="admin-pin-input" placeholder="admin2026" required autofocus
+                        <div class="relative"><input type="password" id="admin-pin-input" placeholder="admin2026" required autofocus autocomplete="current-password"
                                class="glass-input w-full rounded-2xl py-3 px-4 text-center font-mono font-black text-base text-slate-900 tracking-widest border border-indigo-200 focus:border-indigo-500"><button type="button" data-pin-toggle onclick="togglePinVisibility('admin-pin-input', this)" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1" title="إظهار/إخفاء"><i class="fa-solid fa-eye"></i></button></div>
                     </div>
                     <button type="submit" class="w-full py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 active:scale-98 text-white font-black text-sm shadow-lg shadow-indigo-600/30 transition flex items-center justify-center gap-2">
@@ -89,6 +89,7 @@
                 <div class="pt-2 border-t border-slate-100 flex items-center justify-center gap-2 text-[11px] text-slate-400">
                     <i class="fa-solid fa-shield-check text-emerald-500"></i>
                     <span>حماية مشفرة ومستقلة لمنصة سحّابتي</span><span> • الإصدار <span data-build>…</span></span>
+                    <button type="button" onclick="resetLocalData()" class="text-slate-400 hover:text-rose-600 underline">مسح البيانات وإعادة التعيين</button>
                 </div>
             </div>
         </div>

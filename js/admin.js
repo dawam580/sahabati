@@ -96,6 +96,14 @@ function togglePinVisibility(inputId, btn){
     inp.type = (inp.type === 'password') ? 'text' : 'password';
     if(btn){ btn.innerHTML = (inp.type === 'password') ? '<i class="fa-solid fa-eye"></i>' : '<i class="fa-solid fa-eye-slash"></i>'; }
 }
+function resetLocalData(){
+    if(!confirm('سيتم مسح البيانات المحفوظة محلياً (السلة والطلبات والإعدادات) وإعادة تحميل الصفحة. متابعة؟')) return;
+    try {
+        ['sahabati_cart','sahabati_orders','sahabati_catalog_data','sahabati_selected_payment','sahabati_build','sahabati_sound'].forEach(k=>{ try{localStorage.removeItem(k);}catch(e){} });
+        try{sessionStorage.removeItem('sahabati_admin_auth');}catch(e){}
+    } catch(e){}
+    try { location.reload(); } catch(e){}
+}
 function logoutAdmin(){
     adminState.isAdminAuth=false;
     if (typeof sessDel === 'function') sessDel('sahabati_admin_auth');
