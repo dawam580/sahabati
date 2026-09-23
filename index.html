@@ -7,11 +7,11 @@
     <meta http-equiv="Expires" content="0">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>سحّابتي | Sahabati - شحن ألعاب واشتراكات وبطاقات رقمية بالدينار الليبي</title>
-    <meta name="description" content="منصة سحّابتي لشحن ألعاب ببجي وفري فاير وتيك توك، واشتراكات نتفليكس وشاهد VIP (حساب كامل شاشات وهواتف)، وسناب شات بلس، مع دفع ون باي ورصيد مدار وليبيانا وتحويل مصرفي بالدينار الليبي.">
+    <meta name="description" content="منصة سحّابتي لشحن ألعاب ببجي وفري فاير وتيك توك، واشتراكات نتفليكس وشاهد VIP (حساب كامل شاشات وهواتف)، وسناب شات بلس، مع دفع ون باي ورصيد ليبيانا وتحويل مصرفي بالدينار الليبي.">
     <link rel="icon" href="logo.png" type="image/png">
     <meta name="theme-color" content="#0a1a5c">
     <meta property="og:title" content="سحّابتي | Sahabati - شحن ألعاب واشتراكات بالدينار الليبي">
-    <meta property="og:description" content="اشحن ببجي وفري فاير وتيك توك، نتفليكس وشاهد VIP - دفع ون باي ورصيد مدار وليبيانا وتحويل مصرفي وتسليم فوري عبر واتساب بالدينار الليبي.">
+    <meta property="og:description" content="اشحن ببجي وفري فاير وتيك توك، نتفليكس وشاهد VIP - دفع ون باي ورصيد ليبيانا وتحويل مصرفي وتسليم فوري عبر واتساب بالدينار الليبي.">
     <meta property="og:image" content="logo.png">
     <meta property="og:locale" content="ar_LY">
     <meta name="twitter:card" content="summary_large_image">
@@ -33,14 +33,6 @@
 </head>
 <body class="antialiased selection:bg-emerald-500 selection:text-white pb-20 sm:pb-10" dir="rtl">
 
-    <!-- MDCard Style: Wallet Bonus Bar -->
-    <div class="w-full bg-[#0f172a] text-white text-center py-2 px-3 text-xs font-bold border-b border-white/10">
-        <a href="#checkout" onclick="navigateTo('checkout')" class="inline-flex items-center gap-2 hover:opacity-90 transition">
-            <span class="hidden sm:inline text-amber-300">🎁</span>
-            <span>اشحن محفظتك واحصل على <span class="text-emerald-400">2% رصيداً إضافياً</span> يُضاف داخل محفظتك بعد 14 يوماً</span>
-            <span class="bg-white text-slate-900 px-2.5 py-0.5 rounded-full text-[11px] font-black hidden sm:inline-flex items-center gap-1">اشحن الآن <i class="fa-solid fa-arrow-left text-[10px]"></i></span>
-        </a>
-    </div>
 
     <!-- MDCard Style: Trust Ticker -->
     <div class="w-full bg-white border-b border-slate-100 overflow-hidden">
@@ -306,8 +298,8 @@
                     <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto mb-2 text-lg border border-amber-100">
                         <i class="fa-solid fa-sim-card"></i>
                     </div>
-                    <h4 class="font-extrabold text-slate-900 text-xs sm:text-sm">دفع ليبيانا & مدار</h4>
-                    <p class="text-[10px] sm:text-xs text-slate-500 mt-0.5">تحويل رصيد وكروت تعبئة</p>
+                    <h4 class="font-extrabold text-slate-900 text-xs sm:text-sm">دفع ون باي وليبيانا</h4>
+                    <p class="text-[10px] sm:text-xs text-slate-500 mt-0.5">حوالة مصرفية ورصيد ليبيانا</p>
                 </div>
 
                 <div class="bg-white rounded-2xl p-3.5 text-center border border-slate-100 shadow-sm">
@@ -357,7 +349,7 @@
                         <span class="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-slate-900 text-white text-xs font-black flex items-center justify-center">1</span>
                         <div class="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center mx-auto mb-2 text-sky-600"><i class="fa-solid fa-credit-card"></i></div>
                         <h4 class="font-black text-xs text-slate-900">اختر طريقة الدفع</h4>
-                        <p class="text-[11px] text-slate-500 mt-1">كاش أو رصيد أو حوالة أو USDT</p>
+                        <p class="text-[11px] text-slate-500 mt-1">ون باي أو رصيد ليبيانا أو حوالة</p>
                     </div>
                     <div class="bg-slate-50 rounded-2xl p-4 border border-slate-100 text-center relative">
                         <span class="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-sky-600 text-white text-xs font-black flex items-center justify-center">2</span>
@@ -577,7 +569,7 @@
                             <div>
                                 <label class="text-xs font-bold text-slate-700 block mb-1 flex items-center gap-2">رقم هاتفك على واتساب (لتسليم كود الشحن / بيانات الحساب): <span id="phone-operator-badge" class="operator-badge hidden"></span></label>
                                 <input type="text" id="whatsapp-phone-input" autocomplete="tel" inputmode="numeric" placeholder="مثال: 091XXXXXXX أو 092XXXXXXX" maxlength="10" inputmode="numeric" class="glass-input w-full rounded-xl py-2.5 px-3 text-xs font-bold font-mono text-slate-800">
-                                <div class="text-[10px] text-slate-500 mt-1">سيتم التواصل عبر واتساب على هذا الرقم فقط • ليبيانا / مدار</div>
+                                <div class="text-[10px] text-slate-500 mt-1">سيتم التواصل عبر واتساب على هذا الرقم فقط • الدفع: ون باي / ليبيانا / حوالة</div>
                             </div>
                             <div>
                                 <label class="text-xs font-bold text-slate-700 block mb-1">كود كرت التعبئة / رقم المعاملة / ملاحظاتك:</label>
@@ -750,7 +742,7 @@
                                     <option value="game_package">🎮 باقة شحن لعبة (ببجي، فري فاير...)</option>
                                     <option value="streaming">🎬 اشتراك بث وترفيه (نتفليكس، شاهد...)</option>
                                     <option value="social">🔥 سوشيال ميديا (تيك توك، سناب بلس...)</option>
-                                    <option value="telecom">📱 كرت اتصالات وإنترنت (مدار، ليبيانا...)</option>
+                                    <option value="telecom">📱 كرت اتصالات وإنترنت (ليبيانا...)</option>
                                     <option value="new_game">🕹️ لعبة / تطبيق جديد بالكامل</option>
                                 </select>
                             </div>
@@ -787,7 +779,7 @@
                                 <select id="admin-item-category" class="glass-input w-full rounded-xl py-2 px-3 text-xs font-bold text-slate-800">
                                     <option value="streaming">🎬 اشتراكات البث والترفيه</option>
                                     <option value="social">🔥 تيك توك وسناب بلس</option>
-                                    <option value="telecom">📱 كروت مدار وليبيانا</option>
+                                    <option value="telecom">📱 كروت ليبيانا</option>
                                     <option value="gaming">🎮 ألعاب وبطاقات رقمية</option>
                                 </select>
                             </div>
@@ -878,7 +870,7 @@
                                 </div>
                                 <div>
                                     <label class="text-xs font-bold text-slate-700 block mb-1">رابط تيليجرام:</label>
-                                    <input type="text" id="setting-telegram-url" placeholder="https://t.me/sabh" class="glass-input w-full rounded-xl py-2 px-3 text-xs font-medium text-slate-800">
+                                    <input type="text" id="setting-telegram-url" placeholder="https://t.me/A_98_A20" class="glass-input w-full rounded-xl py-2 px-3 text-xs font-medium text-slate-800">
                                 </div>
                                 <div>
                                     <label class="text-xs font-bold text-slate-700 block mb-1">رابط فيسبوك:</label>
@@ -1015,7 +1007,7 @@
                     <p class="text-xs leading-relaxed text-slate-400">متجر رائد في مجال الاشتراكات الرقمية في ليبيا. نوفر خدمات سريعة وآمنة لجميع احتياجاتك الرقمية بالدينار الليبي.</p>
                     <div class="flex gap-2 pt-1">
                         <a id="footer-wa-link" href="https://wa.me/218920541749" target="_blank" class="w-8 h-8 rounded-full bg-emerald-600 flex items-center justify-center text-white hover:bg-emerald-700 transition"><i class="fa-brands fa-whatsapp text-sm"></i></a>
-                        <a id="footer-tg-link" href="https://t.me/sabh" target="_blank" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition"><i class="fa-brands fa-telegram text-sm"></i></a><a id="footer-fb-link" href="#" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition"><i class="fa-brands fa-facebook text-sm"></i></a>
+                        <a id="footer-tg-link" href="https://t.me/A_98_A20" target="_blank" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition"><i class="fa-brands fa-telegram text-sm"></i></a><a id="footer-fb-link" href="#" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition"><i class="fa-brands fa-facebook text-sm"></i></a>
                         <a id="footer-ig-link" href="#" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition"><i class="fa-brands fa-instagram text-sm"></i></a>
                         <a id="footer-tt-link" href="#" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition"><i class="fa-brands fa-tiktok text-sm"></i></a>
                     </div>
@@ -1032,8 +1024,8 @@
                 <div>
                     <h4 class="font-black text-white text-sm mb-3">تواصل معنا</h4>
                     <ul class="space-y-1.5 text-xs font-medium">
-                        <li><a id="footer-wa-link2" href="https://wa.me/218920541749" target="_blank" class="hover:text-white transition">واتساب: +218 920 541 749</a></li>
-                        <li><a id="footer-tg-link2" href="https://t.me/sabh" target="_blank" class="hover:text-white transition">تيليجرام: @sabh</a></li>
+                        <li><a id="footer-wa-link2" href="https://wa.me/218920541749" target="_blank" class="hover:text-white transition">واتساب: <span dir="ltr">0920541749</span></a></li>
+                        <li><a id="footer-tg-link2" href="https://t.me/A_98_A20" target="_blank" class="hover:text-white transition">تيليجرام: @A_98_A20</a></li>
                         <li class="text-slate-400">جميع الروابط: linktr.ee/sahabati</li>
                     </ul>
                     <div class="mt-4">

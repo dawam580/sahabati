@@ -372,7 +372,7 @@ function saveStoreSettings(){
     if(lb) APP_DATA.settings.paymentMethodsInfo.telecom_libyana.accountInfo=lb;
     const getV=(id)=>document.getElementById(id)?.value.trim()||'';
     APP_DATA.settings.ownerName=getV('setting-owner-name')||'سحابتي';
-    APP_DATA.settings.telegramUrl=getV('setting-telegram-url')||'https://t.me/sabh';
+    APP_DATA.settings.telegramUrl=getV('setting-telegram-url')||'https://t.me/A_98_A20';
     APP_DATA.settings.facebookUrl=getV('setting-facebook-url');
     APP_DATA.settings.instagramUrl=getV('setting-instagram-url');
     APP_DATA.settings.tiktokUrl=getV('setting-tiktok-url');

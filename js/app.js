@@ -58,7 +58,7 @@ function updateOwnerBranding() {
         el.src = hero;
         el.onerror = function() { this.onerror = null; this.src = 'header_hero.jpg'; };
     });
-    const tg = APP_DATA.settings?.telegramUrl || 'https://t.me/sabh';
+    const tg = APP_DATA.settings?.telegramUrl || 'https://t.me/A_98_A20';
     const fb = APP_DATA.settings?.facebookUrl || '';
     const ig = APP_DATA.settings?.instagramUrl || '';
     const tt = APP_DATA.settings?.tiktokUrl || '';
@@ -720,7 +720,7 @@ function sendSuggestion(platform) {
     const msg = encodeURIComponent('مرحباً سحّابتي 👋 أقترح إضافة: ' + text);
     const waNumber = (APP_DATA.settings?.whatsappNumber || '218920541749').replace(/[^0-9]/g,'');
     if (platform === 'telegram') {
-        const tgUrl = APP_DATA.settings.telegramUrl || 'https://t.me/sabh';
+        const tgUrl = APP_DATA.settings.telegramUrl || 'https://t.me/A_98_A20';
         window.open(tgUrl, '_blank');
         showToast('تم نسخ اقتراحك، أرسله في تيليجرام: ' + text);
     } else {
@@ -1391,7 +1391,7 @@ function saveStoreSettings() {
     APP_DATA.settings.paymentMethodsInfo.telecom_libyana.accountInfo = document.getElementById('setting-libyana-info')?.value.trim() || '';
     const getV = (id) => document.getElementById(id)?.value.trim() || '';
     APP_DATA.settings.ownerName = getV('setting-owner-name') || 'سحابتي';
-    APP_DATA.settings.telegramUrl = getV('setting-telegram-url') || 'https://t.me/sabh';
+    APP_DATA.settings.telegramUrl = getV('setting-telegram-url') || 'https://t.me/A_98_A20';
     APP_DATA.settings.facebookUrl = getV('setting-facebook-url');
     APP_DATA.settings.instagramUrl = getV('setting-instagram-url');
     APP_DATA.settings.tiktokUrl = getV('setting-tiktok-url');

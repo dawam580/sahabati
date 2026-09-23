@@ -7,8 +7,8 @@
 
 const DEFAULT_STORE_SETTINGS = {
     whatsappNumber: '218920541749', // رقم واتساب المتجر الجديد 0920541749
-    telegramChannel: 'sabh',
-    telegramUrl: 'https://t.me/sabh',
+    telegramChannel: 'A_98_A20',
+    telegramUrl: 'https://t.me/A_98_A20',
     adminPin: 'admin2026',           // Admin dashboard access PIN
     ownerName: 'سحابتي',
     facebookUrl: '',
@@ -357,6 +357,7 @@ function loadAppData() {
                 ['sadad','tadawul','cash','telecom_cards','telecom_madar','usdt'].forEach(k=>{ if(parsed.settings.paymentMethodsInfo[k]) delete parsed.settings.paymentMethodsInfo[k]; });
                 // دمج بيانات المالك الافتراضية
                 ['ownerName','facebookUrl','instagramUrl','tiktokUrl','logoImage','heroImage'].forEach(k=>{ if(parsed.settings[k]===undefined) parsed.settings[k]=DEFAULT_STORE_SETTINGS[k]; });
+                if (parsed.settings.telegramUrl === 'https://t.me/sabh') parsed.settings.telegramUrl = DEFAULT_STORE_SETTINGS.telegramUrl;
                 if (!parsed.announcements) parsed.announcements = [];
                 // ضمان التصنيفات الافتراضية للكتالوجات القديمة
                 if (!parsed.categories || !parsed.categories.length) parsed.categories = JSON.parse(JSON.stringify(DEFAULT_APP_DATA.categories));
