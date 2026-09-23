@@ -161,6 +161,8 @@ function openCartDrawer(){
   renderCartDrawer();
   drawer.classList.remove('closed');
   drawer.classList.add('open');
+  drawer.style.transform='translateX(0)';
+  drawer.style.visibility='visible';
   overlay.classList.remove('hidden');
   overlay.classList.add('visible');
   document.body.style.overflow='hidden';
@@ -172,6 +174,8 @@ function closeCartDrawer(){
   if(!drawer) return;
   drawer.classList.remove('open');
   drawer.classList.add('closed');
+  drawer.style.transform='translateX(115%)';
+  drawer.style.visibility='hidden';
   overlay.classList.remove('visible');
   overlay.classList.add('hidden');
   document.body.style.overflow='';

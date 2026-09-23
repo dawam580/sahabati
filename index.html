@@ -13,6 +13,7 @@
     <meta property="og:locale" content="ar_LY">
     <meta name="twitter:card" content="summary_large_image">
     <link rel="manifest" href="manifest.json">
+    <link rel="preload" as="image" href="header_hero.jpg" fetchpriority="high">
     
     <!-- Google Fonts: Cairo & Readex Pro - Optimized -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -20,12 +21,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Readex+Pro:wght@400;600;700&display=swap" rel="stylesheet">
     
     <!-- Tailwind CSS - Production Build (40KB minified) بديل CDN -->
-    <link rel="stylesheet" href="css/tailwind.css?v=mdcard4">
+    <link rel="stylesheet" href="css/tailwind.css?v=profix1">
     <!-- Font Awesome Icons - subset friendly -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
     <!-- Custom Styles fallback -->
-    <link rel="stylesheet" href="css/style.css?v=mdcard4">
-    <link rel="stylesheet" href="css/interactions.css?v=1">
+    <link rel="stylesheet" href="css/style.css?v=profix1">
+    <link rel="stylesheet" href="css/interactions.css?v=profix1">
 </head>
 <body class="antialiased selection:bg-emerald-500 selection:text-white pb-20 sm:pb-10" dir="rtl">
 
@@ -58,9 +59,7 @@
         <div class="max-w-5xl mx-auto px-3 sm:px-4 py-2.5 flex items-center justify-between gap-3">
             <!-- Brand -->
             <a href="#home" onclick="navigateTo('home')" class="flex items-center gap-3 hover:opacity-95 transition flex-shrink-0">
-                <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-sky-600 to-blue-700 shadow-md flex items-center justify-center text-white text-xl">
-                    <i class="fa-solid fa-cloud"></i>
-                </div>
+                <img src="08_sahabati_app_icon_1024x1024.png" alt="سحابتي" width="40" height="40" class="w-10 h-10 rounded-2xl shadow-md object-cover border border-sky-100" loading="eager" decoding="async" onerror="this.outerHTML='<div class=&quot;w-10 h-10 rounded-2xl bg-gradient-to-tr from-sky-600 to-blue-700 shadow-md flex items-center justify-center text-white text-xl&quot;><i class=&quot;fa-solid fa-cloud&quot;></i></div>'">
                 <div class="hidden sm:block">
                     <div class="flex items-center gap-1.5">
                         <span class="font-black text-slate-900 text-[17px] tracking-tight">سحّابتي</span>
@@ -191,49 +190,25 @@
                             <span class="hidden sm:inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 px-2.5 py-1 rounded-full">التسليم 5–30 دقيقة <i class="fa-solid fa-bolt text-[10px]"></i></span>
                         </div>
                     </div>
-                    <!-- Visual Cards Grid - MDCard style -->
-                    <div class="grid grid-cols-2 gap-3 sm:gap-4 relative">
-                        <div class="bg-white border border-slate-200 rounded-2xl p-3 shadow-sm flex flex-col gap-2 hover:shadow-md transition">
-                            <div class="w-full h-28 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-700 flex items-center justify-center text-white font-black text-sm relative overflow-hidden">
-                                <span class="z-10">ChatGPT Plus</span>
-                                <div class="absolute inset-0 bg-white/10"></div>
-                            </div>
-                            <div class="flex items-center justify-between">
-                                <span class="text-xs font-black text-slate-900">ChatGPT Plus</span>
-                                <span class="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold">متوفر</span>
-                            </div>
-                            <span class="text-xs text-slate-500">ابتداءً من 210 د.ل</span>
+                    <!-- Hero Professional Image - سحابتي -->
+                    <div class="relative rounded-2xl overflow-hidden border border-slate-200 shadow-lg bg-slate-900">
+                        <img src="header_hero.jpg" alt="سحابتي - شحن العاب وبطاقات" class="hero-pro-img h-64 sm:h-80" loading="eager" fetchpriority="high" decoding="async" onerror="this.style.display='none'">
+                        <div class="absolute inset-0 bg-gradient-to-t from-slate-900/70 via-transparent to-transparent pointer-events-none"></div>
+                        <div class="absolute top-3 right-3 flex gap-1.5">
+                            <span class="bg-emerald-500 text-white text-[10px] font-black px-2.5 py-1 rounded-full shadow flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span> متوفر الان</span>
+                            <span class="bg-white/90 backdrop-blur text-slate-900 text-[10px] font-black px-2.5 py-1 rounded-full shadow">تسليم 5-30 دقيقة</span>
                         </div>
-                        <div class="bg-white border border-slate-200 rounded-2xl p-3 shadow-sm flex flex-col gap-2 opacity-60">
-                            <div class="w-full h-28 rounded-xl bg-gradient-to-br from-zinc-900 to-red-950 flex items-center justify-center text-white font-black text-sm relative">
-                                <span>NETFLIX</span>
-                                <span class="absolute top-2 right-2 bg-rose-600 text-white text-[9px] px-1.5 py-0.5 rounded font-bold">موقوف مؤقتاً</span>
-                            </div>
-                            <div class="flex items-center justify-between">
-                                <span class="text-xs font-black text-slate-900">نتفليكس</span>
-                                <span class="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-bold">قريباً</span>
-                            </div>
-                            <span class="text-xs text-slate-500">ابتداءً من 45 د.ل</span>
-                        </div>
-                        <div class="bg-white border border-slate-200 rounded-2xl p-3 shadow-sm flex flex-col gap-2 hover:shadow-md transition">
-                            <div class="w-full h-28 rounded-xl bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center text-white font-black text-sm">
-                                <i class="fa-brands fa-snapchat text-3xl drop-shadow"></i>
-                            </div>
-                            <div class="flex items-center justify-between">
-                                <span class="text-xs font-black text-slate-900">سناب بلس</span>
-                                <span class="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold">متوفر</span>
-                            </div>
-                            <span class="text-xs text-slate-500">ابتداءً من 50 د.ل</span>
-                        </div>
-                        <div class="bg-white border border-slate-200 rounded-2xl p-3 shadow-sm flex flex-col gap-2 hover:shadow-md transition">
-                            <div class="w-full h-28 rounded-xl bg-gradient-to-br from-sky-700 to-indigo-800 flex items-center justify-center text-amber-300 font-black text-sm">
-                                <span>PUBG UC</span>
-                            </div>
-                            <div class="flex items-center justify-between">
-                                <span class="text-xs font-black text-slate-900">شدات ببجي</span>
-                                <span class="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold">متوفر</span>
-                            </div>
-                            <span class="text-xs text-slate-500">ابتداءً من 9 د.ل</span>
+                        <div class="absolute bottom-3 right-3 left-3 flex gap-2">
+                            <button onclick="navigateTo('games')" class="flex-1 bg-white/95 backdrop-blur rounded-xl px-3 py-2.5 flex items-center gap-2 hover:bg-white transition text-right shadow">
+                                <img src="https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/pubg.png" alt="PUBG" width="32" height="32" class="w-8 h-8 rounded-lg object-contain bg-slate-900 p-0.5" loading="lazy" decoding="async" onerror="this.outerHTML='<span class=&quot;w-8 h-8 rounded-lg bg-slate-900 text-amber-400 flex items-center justify-center text-xs font-black&quot;>UC</span>'">
+                                <span class="flex-1"><span class="block text-xs font-black text-slate-900">شدات ببجي</span><span class="block text-[11px] text-emerald-700 font-bold">من 9 د.ل - شحن فوري</span></span>
+                                <i class="fa-solid fa-chevron-left text-slate-400 text-xs"></i>
+                            </button>
+                            <button onclick="navigateTo('giftcards'); filterGiftCards('streaming');" class="flex-1 bg-white/95 backdrop-blur rounded-xl px-3 py-2.5 flex items-center gap-2 hover:bg-white transition text-right shadow">
+                                <span class="w-8 h-8 rounded-lg bg-red-600 text-white flex items-center justify-center font-black text-sm">N</span>
+                                <span class="flex-1"><span class="block text-xs font-black text-slate-900">شاهد VIP</span><span class="block text-[11px] text-emerald-700 font-bold">40 د.ل - حساب كامل</span></span>
+                                <i class="fa-solid fa-chevron-left text-slate-400 text-xs"></i>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -982,7 +957,7 @@
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-8">
                 <div class="space-y-3">
                     <div class="flex items-center gap-2">
-                        <div class="w-9 h-9 rounded-xl bg-sky-600 flex items-center justify-center text-white"><i class="fa-solid fa-cloud"></i></div>
+                        <img src="08_sahabati_app_icon_1024x1024.png" alt="سحابتي" width="36" height="36" class="w-9 h-9 rounded-xl object-cover shadow" loading="lazy" decoding="async">
                         <span class="font-black text-white text-lg">سحّابتي</span>
                         <span class="text-[11px] bg-white/10 px-2 py-0.5 rounded text-white font-bold">Sahabati</span>
                     </div>
@@ -1031,7 +1006,7 @@
 
     <!-- Cart Drawer - اقتباس mdcard / Midasbuy -->
     <div id="cart-drawer-overlay" class="hidden fixed inset-0 bg-slate-900/40 z-40" onclick="closeCartDrawer()"></div>
-    <div id="cart-drawer" class="closed fixed top-0 right-0 bottom-0 w-[92%] max-w-[380px] bg-white z-50 shadow-2xl flex flex-col border-l border-slate-200">
+    <div id="cart-drawer" style="transform:translateX(115%);visibility:hidden" class="closed fixed top-0 right-0 bottom-0 w-[92%] max-w-[380px] bg-white z-50 shadow-2xl flex flex-col border-l border-slate-200">
         <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
             <div class="flex items-center gap-2">
                 <div class="w-9 h-9 rounded-xl bg-slate-900 text-white flex items-center justify-center"><i class="fa-solid fa-bag-shopping"></i></div>
@@ -1073,12 +1048,14 @@
         var d=document.getElementById('cart-drawer'); var o=document.getElementById('cart-drawer-overlay');
         if(!d) return; if(typeof renderCartDrawer==='function') try{renderCartDrawer()}catch(e){}
         d.classList.remove('closed'); d.classList.add('open');
+        d.style.transform='translateX(0)'; d.style.visibility='visible';
         if(o){o.classList.remove('hidden'); o.classList.add('visible');}
         document.body.style.overflow='hidden';
     };
     window.closeCartDrawer = window.closeCartDrawer || function(){
         var d=document.getElementById('cart-drawer'); var o=document.getElementById('cart-drawer-overlay');
         if(!d) return; d.classList.remove('open'); d.classList.add('closed');
+        d.style.transform='translateX(115%)'; d.style.visibility='hidden';
         if(o){o.classList.remove('visible'); o.classList.add('hidden');}
         document.body.style.overflow='';
     };

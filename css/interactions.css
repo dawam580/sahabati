@@ -2,19 +2,22 @@
 
 /* === Sahabati Interactions - اقتباس من مواقع بيع الكروت (SEAGM / Midasbuy / Eneba) === */
 
-/* Cart Drawer - منزلقة مثل mdcard */
+/* Cart Drawer - منزلقة مثل mdcard - FIX: الدرج يمين دائما حتى في RTL */
 #cart-drawer {
-  transition: transform 0.35s cubic-bezier(0.32, 0, 0.67, 0);
+  transition: transform 0.35s cubic-bezier(0.32, 0, 0.67, 0), visibility 0.35s;
+  will-change: transform;
+  left: auto !important;
+  right: 0 !important;
 }
 #cart-drawer.open {
-  transform: translateX(0);
+  transform: translateX(0) !important;
+  visibility: visible;
 }
 #cart-drawer.closed {
-  transform: translateX(100%);
+  transform: translateX(115%) !important;
+  visibility: hidden;
 }
-[dir="rtl"] #cart-drawer.closed {
-  transform: translateX(-100%);
-}
+/* لا نقلب الاتجاه في RTL لان الدرج مثبت يمين */
 #cart-drawer-overlay {
   backdrop-filter: blur(2px);
   transition: opacity 0.3s;
@@ -181,4 +184,70 @@
   font-size: 10px;
   font-weight: 700;
   color: #475569;
+}
+
+/* === Professional Images - SEAGM / Midasbuy style === */
+.pro-img {
+  object-fit: cover;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.pro-logo {
+  object-fit: contain;
+  width: 100%;
+  height: 100%;
+  padding: 6px;
+  display: block;
+  background: #fff;
+}
+.brand-card-img {
+  width: 100%;
+  height: 7rem;
+  border-radius: 0.9rem;
+  overflow: hidden;
+  position: relative;
+  background: #0f172a;
+}
+.brand-card-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.brand-card-img .brand-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.05) 55%, rgba(0,0,0,0.15) 100%);
+}
+.game-logo {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  object-fit: cover;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  flex-shrink: 0;
+  display: block;
+}
+.pkg-coin {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 13px;
+  flex-shrink: 0;
+  color: #fff;
+  background: linear-gradient(135deg, #0f172a 0%, #0369a1 60%, #10b981 100%);
+  border: 1px solid rgba(255,255,255,0.25);
+  box-shadow: 0 4px 10px -2px rgba(2,132,199,0.4);
+}
+.hero-pro-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }

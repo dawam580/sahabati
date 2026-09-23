@@ -204,7 +204,8 @@ function renderGamesNav() {
     container.innerHTML = APP_DATA.games.map(game => {
         const activeClass = state.selectedGame === game.id ? 'bg-sky-600 text-white shadow-md' : 'bg-white/80 text-slate-700 hover:bg-white border border-sky-100';
         const badgeClass = state.selectedGame === game.id ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-800';
-        return '<button onclick="selectGame(\'' + game.id + '\')" class="px-3.5 py-2 rounded-2xl flex items-center gap-2 transition-all text-xs sm:text-sm font-bold flex-shrink-0 ' + activeClass + '">' +
+        return '<button onclick="selectGame(\'' + game.id + '\')" class="px-3 py-1.5 rounded-2xl flex items-center gap-2 transition-all text-xs sm:text-sm font-bold flex-shrink-0 ' + activeClass + '">' +
+            '<img src="' + game.icon + '" alt="' + game.nameEn + '" width="32" height="32" loading="lazy" decoding="async" class="w-8 h-8 rounded-xl object-cover bg-white border border-slate-200" onerror="this.style.display=\'none\'">' +
             '<span>' + game.nameAr.split('(')[0] + '</span>' +
             (game.badge ? '<span class="text-[10px] px-1.5 py-0.2 rounded-md ' + badgeClass + '">' + game.badge + '</span>' : '') +
         '</button>';
@@ -247,8 +248,8 @@ function renderGameDetail(gameId) {
                 (pkg.popular ? '<span class="absolute -top-2.5 right-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-sm">الأكثر طلباً 🔥</span>' : '') +
                 (pkg.bestValue ? '<span class="absolute -top-2.5 left-4 bg-gradient-to-r from-orange-500 to-amber-500 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-sm">أفضل قيمة ✨</span>' : '') +
                 '<div class="flex items-center gap-3 mb-3">' +
-                    '<div class="w-11 h-11 rounded-2xl bg-slate-900 text-amber-400 font-extrabold flex items-center justify-center text-sm shadow-md border border-amber-400/40 flex-shrink-0">' +
-                        (pkg.icon || '💎') +
+                    '<div class="pkg-coin">' +
+                        (pkg.icon || 'UC') +
                     '</div>' +
                     '<div>' +
                         '<h4 class="font-extrabold text-slate-900 text-sm">' + pkg.nameAr + '</h4>' +
@@ -368,26 +369,31 @@ function renderGiftCards(filter) {
             brandIcon = '<i class="fa-brands fa-tiktok text-3xl text-rose-400"></i>';
         } else if (card.brand === 'madar') {
             cardBgClass = 'from-blue-800 via-sky-800 to-cyan-900';
-            brandIcon = '<span class="text-sky-300 font-black text-xl">مدار الجديد 🇱🇾</span>';
+            brandIcon = '<span class="text-sky-300 font-black text-xl">مدار الجديد</span>';
         } else if (card.brand === 'libyana') {
             cardBgClass = 'from-amber-600 via-orange-700 to-amber-900';
-            brandIcon = '<span class="text-amber-200 font-black text-xl">ليبيانا 4G 🇱🇾</span>';
+            brandIcon = '<span class="text-amber-200 font-black text-xl">ليبيانا 4G</span>';
+        } else if (card.brand === 'chatgpt') {
+            cardBgClass = 'from-emerald-700 via-teal-800 to-slate-900';
+            brandIcon = '<span class="text-white font-black text-xl">ChatGPT Plus 🤖</span>';
         }
 
-        return '<div class="glass-card rounded-3xl p-4 flex flex-col justify-between relative group border border-white/80 hover:border-sky-300">' +
-            (card.badge ? '<span class="absolute top-3 right-3 bg-emerald-600 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-sm z-10">' + card.badge + '</span>' : '') +
+        return '<div class="glass-card card-interactive rounded-3xl p-4 flex flex-col justify-between relative group border border-white/80 hover:border-sky-300 fade-in">' +
+            (card.badge ? '<span class="absolute top-3 right-3 bg-emerald-600 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-md z-10">' + card.badge + '</span>' : '') +
+            '<span class="absolute top-3 left-3 bg-white/90 backdrop-blur text-emerald-700 text-[10px] font-black px-2 py-0.5 rounded-full shadow-sm z-10 stock-urgency">تسليم فوري ⚡</span>' +
             '<div>' +
-                '<div class="w-full h-32 rounded-2xl bg-gradient-to-br ' + cardBgClass + ' p-3.5 flex flex-col justify-between text-white shadow-md relative overflow-hidden mb-3 border border-white/20">' +
+                '<div class="brand-card-img bg-gradient-to-br ' + cardBgClass + ' shadow-md mb-3 border border-white/20">' +
+                    '<div class="absolute inset-0 flex flex-col justify-between p-3.5 text-white">' +
                     '<div class="flex justify-between items-start">' +
                         '<span class="text-[10px] font-extrabold uppercase tracking-wider bg-white/20 px-2 py-0.5 rounded-md backdrop-blur-sm">سحّابتي Sahabati</span>' +
-                        '<span class="text-[10px] text-white/80 font-bold">تسليم فوري</span>' +
                     '</div>' +
                     '<div class="text-center my-auto flex items-center justify-center">' +
                         brandIcon +
                     '</div>' +
                     '<div class="flex justify-between items-center text-[10px] text-white/90 font-bold">' +
                         '<span class="line-clamp-1">' + (card.nominal || card.nameAr) + '</span>' +
-                        '<span>🇱🇾 د.ل</span>' +
+                        '<span>د.ل</span>' +
+                    '</div>' +
                     '</div>' +
                 '</div>' +
                 '<h4 class="font-bold text-slate-900 text-sm mb-1">' + card.nameAr + '</h4>' +

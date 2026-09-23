@@ -195,6 +195,17 @@ const DEFAULT_APP_DATA = {
             instructionsAr: 'تفعيل فوري لاشتراك سناب شات بلس لمدة 3 أشهر مع جميع ميزات بلس الحصرية.'
         },
         {
+            id: 'chatgpt_plus_1m',
+            brand: 'chatgpt',
+            category: 'streaming',
+            nameAr: 'اشتراك ChatGPT Plus - شهر واحد',
+            nominal: '1 Month - Plus',
+            priceLYD: 210.00,
+            badge: 'الأكثر طلبا 🤖',
+            duration: '1 month',
+            instructionsAr: 'تفعيل ChatGPT Plus على حسابك لمدة شهر كامل مع GPT-4 والأولوية في السرعة.'
+        },
+        {
             id: 'snapchat_plus_6m',
             brand: 'snapchat',
             category: 'social',

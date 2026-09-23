@@ -40,9 +40,11 @@ img {
     object-fit: contain;
 }
 /* صور المنتجات فقط تأخذ عرض كامل */
-.glass-card img, .glass-panel img {
+/* FIX: لا تمدد كل الصور - فقط بانر البطاقة */
+.brand-card-img img, .hero-pro-img, .pro-img {
     width: 100%;
 }
+.game-logo, .pro-logo { width: 44px; height: 44px; }
 
 .img-contain {
     object-fit: contain !important;
