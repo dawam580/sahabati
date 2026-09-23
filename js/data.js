@@ -49,6 +49,7 @@ const DEFAULT_APP_DATA = {
         'LIBYA10': { discountPercent: 10, description: 'خصم الشحن المباشر 10%' },
         'WELCOME': { discountPercent: 15, description: 'خصم الترحيب للزبائن الجدد 15%' }
     },
+    announcements: [],
     categories: [
         {
             id: 'games',
@@ -356,6 +357,7 @@ function loadAppData() {
                 ['sadad','tadawul','cash','telecom_cards','telecom_madar','usdt'].forEach(k=>{ if(parsed.settings.paymentMethodsInfo[k]) delete parsed.settings.paymentMethodsInfo[k]; });
                 // دمج بيانات المالك الافتراضية
                 ['ownerName','facebookUrl','instagramUrl','tiktokUrl','logoImage','heroImage'].forEach(k=>{ if(parsed.settings[k]===undefined) parsed.settings[k]=DEFAULT_STORE_SETTINGS[k]; });
+                if (!parsed.announcements) parsed.announcements = [];
                 // ضمان التصنيفات الافتراضية للكتالوجات القديمة
                 if (!parsed.categories || !parsed.categories.length) parsed.categories = JSON.parse(JSON.stringify(DEFAULT_APP_DATA.categories));
                 // ضمان طرق الدفع الثلاث فقط

@@ -96,6 +96,7 @@ function initApp() {
     safeStep('payInstr', renderPaymentInstructions);
     safeStep('branding', () => { if (typeof updateOwnerBranding === 'function') updateOwnerBranding(); });
     safeStep('pubgHome', () => { if (typeof renderPubgHome === 'function') renderPubgHome(); });
+    safeStep('notices', () => { if (typeof renderAnnouncements === 'function') renderAnnouncements(); });
     // apply global bar visual
     safeStep('payBar', () => selectPaymentMethod(state.paymentMethod));
     safeStep('events', bindEvents);
@@ -1009,13 +1010,16 @@ function switchAdminTab(tabName) {
         activeBtn.classList.remove('bg-white', 'text-slate-700');
     }
 
-    ['products', 'settings', 'backup'].forEach(t => {
+    ['products', 'settings', 'notices', 'backup'].forEach(t => {
         const view = document.getElementById('adm-view-' + t);
         if (view) view.classList.toggle('hidden', t !== tabName);
     });
 
     if (tabName === 'settings') {
         populateSettingsForm();
+    }
+    if (tabName === 'notices') {
+        try { renderNoticesAdmin(); } catch (e) {}
     }
 }
 
@@ -1243,6 +1247,102 @@ function deleteGiftCard(cardId) {
         renderAdminPanel();
         showToast('تم حذف البطاقة بنجاح', 'fa-trash');
     }
+}
+
+
+function escH(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+const dismissedNotices = (typeof Set !== 'undefined') ? new Set() : { has: () => false, add: () => {} };
+function dismissNotice(id){
+    try { dismissedNotices.add(id); } catch(e){}
+    renderAnnouncements();
+}
+
+function renderAnnouncements(){
+    const box = document.getElementById('announcements-container');
+    if (!box) return;
+    let list = [];
+    try { list = (APP_DATA.announcements || []).filter(n => n && n.active && !dismissedNotices.has(n.id)); }
+    catch(e){ list = []; }
+    if (!list.length) { box.innerHTML = ''; return; }
+    const styles = {
+        warn: { box: 'bg-amber-50 border-amber-200', title: 'text-amber-900', sub: 'text-amber-800', dot: 'bg-amber-500', icon: '⛔' },
+        info: { box: 'bg-sky-50 border-sky-200', title: 'text-sky-900', sub: 'text-sky-800', dot: 'bg-sky-500', icon: '📢' },
+        success: { box: 'bg-emerald-50 border-emerald-200', title: 'text-emerald-900', sub: 'text-emerald-800', dot: 'bg-emerald-500', icon: '✅' }
+    };
+    box.innerHTML = list.map(n => {
+        const s = styles[n.kind] || styles.info;
+        return '<div class="' + s.box + ' border rounded-2xl px-4 py-3 flex items-start gap-3">' +
+            '<span class="w-8 h-8 rounded-full ' + s.dot + ' text-white flex items-center justify-center flex-shrink-0 text-sm">' + s.icon + '</span>' +
+            '<div class="text-xs flex-1"><div class="font-black ' + s.title + '">' + escH(n.title) + '</div>' +
+            (n.sub ? '<div class="' + s.sub + ' mt-0.5">' + escH(n.sub) + '</div>' : '') + '</div>' +
+            '<button onclick="dismissNotice(\'' + n.id + '\')" class="text-slate-400 hover:text-slate-600 p-1" title="إغلاق"><i class="fa-solid fa-xmark"></i></button>' +
+        '</div>';
+    }).join('');
+}
+
+function renderNoticesAdmin(){
+    const box = document.getElementById('admin-notices-list');
+    if (!box) return;
+    const arr = APP_DATA.announcements || [];
+    if (!arr.length) {
+        box.innerHTML = '<p class="text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-xl p-3 text-center">لا توجد إعلانات بعد — اكتب إعلانك بالأعلى وانشره ليظهر فوراً في المتجر.</p>';
+        return;
+    }
+    const kindName = { warn: 'تنبيه', info: 'خبر', success: 'عرض' };
+    box.innerHTML = arr.map(n => {
+        return '<div class="p-3 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-2">' +
+            '<div class="min-w-0"><div class="font-black text-slate-900 text-xs line-clamp-1">' + escH(n.title) + '</div>' +
+            '<div class="text-[10px] text-slate-500 mt-0.5">' + (kindName[n.kind] || 'خبر') + ' • ' + (n.active ? '<span class="text-emerald-700 font-bold">منشور</span>' : '<span class="text-slate-400 font-bold">مخفي</span>') + '</div></div>' +
+            '<div class="flex gap-1 flex-shrink-0">' +
+                '<button onclick="toggleNotice(\'' + n.id + '\')" class="px-3 py-1.5 rounded-xl text-[11px] font-black transition ' + (n.active ? 'bg-amber-100 text-amber-800 hover:bg-amber-200' : 'bg-emerald-600 text-white hover:bg-emerald-700') + '">' + (n.active ? 'إخفاء' : 'نشر') + '</button>' +
+                '<button onclick="deleteNotice(\'' + n.id + '\')" class="px-3 py-1.5 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 text-[11px] font-black transition"><i class="fa-solid fa-trash"></i></button>' +
+            '</div>' +
+        '</div>';
+    }).join('');
+}
+
+function handleNoticeAdd(e){
+    if (e && e.preventDefault) e.preventDefault();
+    const titleEl = document.getElementById('notice-title');
+    const subEl = document.getElementById('notice-sub');
+    const kindEl = document.getElementById('notice-kind');
+    const title = titleEl ? titleEl.value.trim() : '';
+    if (!title) { showToast('اكتب نص الإعلان أولاً', 'fa-triangle-exclamation'); return; }
+    if (!APP_DATA.announcements) APP_DATA.announcements = [];
+    APP_DATA.announcements.unshift({
+        id: 'ntc_' + Date.now(),
+        title: title,
+        sub: subEl ? subEl.value.trim() : '',
+        kind: kindEl ? kindEl.value : 'info',
+        active: true,
+        createdAt: Date.now()
+    });
+    saveAppData(APP_DATA);
+    renderNoticesAdmin();
+    renderAnnouncements();
+    const form = document.getElementById('admin-notice-form');
+    if (form) form.reset();
+    showToast('تم نشر الإعلان في المتجر فوراً 📢');
+}
+
+function toggleNotice(id){
+    const n = (APP_DATA.announcements || []).find(x => x.id === id);
+    if (!n) return;
+    n.active = !n.active;
+    saveAppData(APP_DATA);
+    renderNoticesAdmin();
+    renderAnnouncements();
+    showToast(n.active ? 'تم نشر الإعلان' : 'تم إخفاء الإعلان');
+}
+
+function deleteNotice(id){
+    if (!confirm('حذف هذا الإعلان نهائياً؟')) return;
+    APP_DATA.announcements = (APP_DATA.announcements || []).filter(x => x.id !== id);
+    saveAppData(APP_DATA);
+    renderNoticesAdmin();
+    renderAnnouncements();
+    showToast('تم حذف الإعلان', 'fa-trash');
 }
 
 // Store Settings
