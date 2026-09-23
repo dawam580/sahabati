@@ -35,7 +35,7 @@ img { max-width: 100%; height: auto; object-fit: contain; }
 .nav-tab-active { background: #0284c7 !important; color: #ffffff !important; font-weight: 800; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3); }
 .nav-tab-active .nav-icon { transform: scale(1.1); color: #ffffff !important; }
 .btn-shimmer { position: relative; overflow: hidden; }
-.btn-shimmer::after { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: linear-gradient(60deg, rgba(255, 255, 255, 0) 20%, rgba(255, 255, 255, 0.3) 50%, rgba(255, 255, 255, 0) 80%); transform: rotate(30deg); animation: shimmer 4s infinite; }
+.btn-shimmer::after{display:none}
 @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: rgba(224, 242, 254, 0.5); }

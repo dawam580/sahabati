@@ -105,15 +105,11 @@
   100% { background-position: 200% 0; }
 }
 
-/* Fade-in on scroll - اقتباس من Eneba */
-.fade-in {
-  opacity: 0;
-  transform: translateY(16px);
-  transition: opacity 0.5s, transform 0.5s;
-}
-.fade-in.visible {
+/* Skill restraint: no scroll fade-up on every section; user-triggered motion only */
+.fade-in, .fade-in.visible {
   opacity: 1;
-  transform: translateY(0);
+  transform: none;
+  transition: none;
 }
 
 /* Stock urgency - اقتباس من Midasbuy */
@@ -250,4 +246,28 @@
   height: 100%;
   object-fit: cover;
   display: block;
+}
+
+/* Sahabati token system: Layl night / Sahaba cyan / UC gold / Nakheel green */
+.sahabati-display {
+  font-family: 'Cairo', 'Readex Pro', sans-serif;
+  letter-spacing: -0.02em;
+}
+.sahabati-gold-rule {
+  display: block;
+  margin-top: 12px;
+  height: 6px;
+  width: 64px;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, #F59E0B, #B45309);
+}
+/* Break the identical-card kit: quiet resting surface, one lift on hover */
+.glass-card {
+  box-shadow: none !important;
+}
+.glass-card:hover, .glass-card:active {
+  box-shadow: 0 14px 28px -10px rgba(2, 132, 199, 0.22) !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .fly-item, .price-pulse, .stock-urgency { animation: none !important; transition: none !important; }
 }

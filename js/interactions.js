@@ -491,7 +491,7 @@ const origRenderCategories = window.renderCategories;
 if(origRenderCategories){
   window.renderCategories = function(){
     origRenderCategories();
-    document.querySelectorAll('#categories-grid > div').forEach(el=>{ el.classList.add('card-interactive','fade-in'); });
+    document.querySelectorAll('#categories-grid > div').forEach(el=>{ el.classList.add('card-interactive'); });
     initFadeIn();
   };
 }
@@ -499,7 +499,7 @@ const origRenderGiftCards = window.renderGiftCards;
 if(origRenderGiftCards){
   window.renderGiftCards = function(filter){
     origRenderGiftCards(filter);
-    document.querySelectorAll('#giftcards-grid > div').forEach(el=>{ el.classList.add('card-interactive','fade-in'); });
+    document.querySelectorAll('#giftcards-grid > div').forEach(el=>{ el.classList.add('card-interactive'); });
     // add price-live class to price elements
     document.querySelectorAll('#giftcards-grid .text-base.font-black').forEach(el=> el.classList.add('price-live'));
   };
@@ -508,7 +508,7 @@ const origRenderGameDetail = window.renderGameDetail;
 if(origRenderGameDetail){
   window.renderGameDetail = function(gameId){
     origRenderGameDetail(gameId);
-    document.querySelectorAll('#packages-grid > div').forEach(el=>{ el.classList.add('card-interactive','fade-in'); });
+    document.querySelectorAll('#packages-grid > div').forEach(el=>{ el.classList.add('card-interactive'); });
     document.querySelectorAll('#packages-grid .text-sm.font-black').forEach(el=> el.classList.add('price-live'));
   };
 }

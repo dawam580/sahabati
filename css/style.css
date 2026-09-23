@@ -159,21 +159,9 @@ img {
     overflow: hidden;
 }
 
+/* Skill restraint: no ambient shimmer; motion answers user action only */
 .btn-shimmer::after {
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: linear-gradient(
-        60deg,
-        rgba(255, 255, 255, 0) 20%,
-        rgba(255, 255, 255, 0.3) 50%,
-        rgba(255, 255, 255, 0) 80%
-    );
-    transform: rotate(30deg);
-    animation: shimmer 4s infinite;
+    display: none;
 }
 
 @keyframes shimmer {
