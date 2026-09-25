@@ -760,12 +760,17 @@ function renderPaymentInstructions() {
 
 // Complete Payment Execution & WhatsApp Redirect
 function processPayment() {
-    if (state.cart.length === 0) return;
+    if (state.cart.length === 0) { showToast('السلة فارغة — أضف منتجات أولاً', 'fa-cart-shopping'); return; }
 
     const btn = document.getElementById('complete-payment-btn');
-    const originalText = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-lg"></i> <span>جاري تجهيز وتأكيد الفاتورة...</span>';
+    const originalText = btn ? btn.innerHTML : '';
+    // فتح تبويب واتساب فوراً ضمن نقرة المستخدم — الفتح المتأخر تحجبه المتصفحات
+    let waWin = null;
+    try { waWin = window.open('about:blank', '_blank'); } catch(e){ waWin = null; }
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-lg"></i> <span>جاري تجهيز وتأكيد الفاتورة...</span>';
+    }
 
     setTimeout(() => {
         const orderId = 'LYD-' + Math.floor(100000 + Math.random() * 900000);
@@ -818,8 +823,16 @@ customerNotes + '\n' +
         const waUrl = 'https://api.whatsapp.com/send?phone=' + cleanPhone + '&text=' + encodeURIComponent(waMessage);
         newOrder.waUrl = waUrl;
         
-        // Open WhatsApp in new tab
-        window.open(waUrl, '_blank');
+        // الانتقال إلى واتساب عبر التبويب المفتوح مسبقاً (بديل: نفس الصفحة عند الحجب)
+        try {
+            if (waWin && !waWin.closed) { waWin.location.href = waUrl; }
+            else {
+                const w2 = window.open(waUrl, '_blank');
+                if (!w2) window.location.href = waUrl;
+            }
+        } catch(e) {
+            try { window.location.href = waUrl; } catch(e2){}
+        }
 
         state.orders.unshift(newOrder);
         if (typeof storeSet === 'function') storeSet('sahabati_orders', JSON.stringify(state.orders));
@@ -830,8 +843,7 @@ customerNotes + '\n' +
         saveCart();
         updateCartUI();
 
-        btn.disabled = false;
-        btn.innerHTML = originalText;
+        if (btn) { btn.disabled = false; btn.innerHTML = originalText; }
 
         // Show Success Receipt Modal
         showSuccessModal(newOrder);
