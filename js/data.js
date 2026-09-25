@@ -14,7 +14,7 @@ const DEFAULT_STORE_SETTINGS = {
     facebookUrl: '',
     instagramUrl: '',
     tiktokUrl: '',
-    logoImage: 'logo.png',
+    logoImage: 'logo.jpg',
     heroImage: 'hero-banner.jpg',
     storeNameAr: 'سحّابتي',
     storeNameEn: 'Sahabati Cloud',
@@ -358,6 +358,7 @@ function loadAppData() {
                 // دمج بيانات المالك الافتراضية
                 ['ownerName','facebookUrl','instagramUrl','tiktokUrl','logoImage','heroImage'].forEach(k=>{ if(parsed.settings[k]===undefined) parsed.settings[k]=DEFAULT_STORE_SETTINGS[k]; });
                 if (parsed.settings.telegramUrl === 'https://t.me/sabh') parsed.settings.telegramUrl = DEFAULT_STORE_SETTINGS.telegramUrl;
+                if (parsed.settings.logoImage === 'logo.png') parsed.settings.logoImage = 'logo.jpg';
                 if (!parsed.announcements) parsed.announcements = [];
                 // ضمان التصنيفات الافتراضية للكتالوجات القديمة
                 if (!parsed.categories || !parsed.categories.length) parsed.categories = JSON.parse(JSON.stringify(DEFAULT_APP_DATA.categories));

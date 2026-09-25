@@ -46,7 +46,7 @@ function updateWhatsAppLinks() {
 }
 
 // Brand owner: الشعار + الغلاف + حسابات المالك (تتحدث من الأدمن)
-function ownerLogo() { return APP_DATA.settings?.logoImage || 'logo.png'; }
+function ownerLogo() { return APP_DATA.settings?.logoImage || 'logo.jpg'; }
 function ownerHero() { return APP_DATA.settings?.heroImage || 'hero-banner.jpg'; }
 function updateOwnerBranding() {
     const logo = ownerLogo(), hero = ownerHero();
@@ -1407,7 +1407,7 @@ function saveStoreSettings() {
     APP_DATA.settings.facebookUrl = getV('setting-facebook-url');
     APP_DATA.settings.instagramUrl = getV('setting-instagram-url');
     APP_DATA.settings.tiktokUrl = getV('setting-tiktok-url');
-    APP_DATA.settings.logoImage = getV('setting-logo-image') || 'logo.png';
+    APP_DATA.settings.logoImage = getV('setting-logo-image') || 'logo.jpg';
     APP_DATA.settings.heroImage = getV('setting-hero-image') || 'hero-banner.jpg';
 
     saveAppData(APP_DATA);

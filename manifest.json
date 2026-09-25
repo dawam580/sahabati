@@ -4,15 +4,15 @@
   "description": "منصة شحن ألعاب واشتراكات وبطاقات رقمية بالدينار الليبي - ببجي، فري فاير، نتفليكس، شاهد، تيك توك، مدار وليبيانا",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#e0f2fe",
-  "theme_color": "#0284c7",
+  "background_color": "#060f3d",
+  "theme_color": "#0a1a5c",
   "dir": "rtl",
   "lang": "ar",
   "icons": [
     {
-      "src": "08_sahabati_app_icon_1024x1024.png",
-      "sizes": "1024x1024",
-      "type": "image/png",
+      "src": "logo.jpg",
+      "sizes": "1254x1254",
+      "type": "image/jpeg",
       "purpose": "any maskable"
     }
   ]

@@ -376,7 +376,7 @@ function saveStoreSettings(){
     APP_DATA.settings.facebookUrl=getV('setting-facebook-url');
     APP_DATA.settings.instagramUrl=getV('setting-instagram-url');
     APP_DATA.settings.tiktokUrl=getV('setting-tiktok-url');
-    APP_DATA.settings.logoImage=getV('setting-logo-image')||'logo.png';
+    APP_DATA.settings.logoImage=getV('setting-logo-image')||'logo.jpg';
     APP_DATA.settings.heroImage=getV('setting-hero-image')||'hero-banner.jpg';
     APP_DATA.settings.paymentMethodsInfo.bank_transfer.accountInfo=(document.getElementById('setting-bank-info')?.value.trim()||'');
     saveAppData(APP_DATA);
