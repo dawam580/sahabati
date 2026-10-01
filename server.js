@@ -1,6 +1,7 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const { handleOrders } = require('./order-api');
 
 const PORT = process.env.PORT || 5000;
 const MIME_TYPES = {
@@ -36,7 +37,7 @@ function isPathBlocked(relativePath) {
     return BLOCKED_PATTERNS.some(rx => rx.test(normalized));
 }
 
-const server = http.createServer((req, res) => {
+const server = http.createServer(async (req, res) => {
     // Security headers - تطبق على كل الردود
     const securityHeaders = {
         'X-Content-Type-Options': 'nosniff',
@@ -61,6 +62,38 @@ const server = http.createServer((req, res) => {
         res.end();
         return;
     }
+
+    const apiUrl = req.url.split('?')[0];
+    if (apiUrl === '/api/database') {
+        const dbDir = path.join(__dirname, '.data');
+        const dbFile = path.join(dbDir, 'database.json');
+        if (req.method === 'GET') {
+            try {
+                const data = await fs.promises.readFile(dbFile, 'utf8');
+                res.writeHead(200, { ...securityHeaders, 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
+                res.end(data);
+            } catch(e) {
+                res.writeHead(200, { ...securityHeaders, 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
+                res.end('{}');
+            }
+            return;
+        } else if (req.method === 'POST') {
+            let body = '';
+            for await (const chunk of req) body += chunk;
+            try {
+                JSON.parse(body); // validate json
+                await fs.promises.mkdir(dbDir, { recursive: true });
+                await fs.promises.writeFile(dbFile, body, 'utf8');
+                res.writeHead(200, { ...securityHeaders, 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
+                res.end(JSON.stringify({ success: true }));
+            } catch(e) {
+                res.writeHead(400, { ...securityHeaders, 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
+                res.end(JSON.stringify({ error: 'Invalid database payload: ' + e.message }));
+            }
+            return;
+        }
+    }
+    if (await handleOrders(req, res, securityHeaders, apiUrl)) return;
 
     // فقط GET/HEAD مسموح للملفات الثابتة
     if (req.method !== 'GET' && req.method !== 'HEAD') {
@@ -100,7 +133,7 @@ const server = http.createServer((req, res) => {
     }
 
     // منع كشف الملفات المخفية (dotfiles)
-    if (path.basename(resolved).startsWith('.')) {
+    if (relative.split(/[\\/]/).some(part => part.startsWith('.')) || ['server.js', 'order-api.js'].includes(relative)) {
         res.writeHead(404, { ...securityHeaders, 'Content-Type': 'text/plain; charset=utf-8' });
         res.end('404 Not Found');
         return;

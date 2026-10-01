@@ -13,11 +13,11 @@ let state = {
     verifiedPlayerId: '',
     verifiedPlayerName: '',
     selectedPackage: null,
-    cart: JSON.parse(localStorage.getItem('sahabati_cart') || '[]'),
-    orders: JSON.parse(localStorage.getItem('sahabati_orders') || '[]'),
+    cart: (typeof localStorage !== 'undefined' ? JSON.parse(localStorage.getItem('sahabati_cart') || '[]') : []),
+    orders: (typeof localStorage !== 'undefined' ? JSON.parse(localStorage.getItem('sahabati_orders') || '[]') : []),
     appliedPromo: null,
     paymentMethod: 'one_pay',
-    isAdminAuth: sessionStorage.getItem('sahabati_admin_auth') === 'true'
+    isAdminAuth: (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('sahabati_admin_auth') === 'true' : false)
 };
 
 // Resolve Base64 and Local Assets
@@ -48,6 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function initApp() {
     updateWhatsAppLinks();
+    updateCustomerAuthUI();
     renderCategories();
     renderGamesNav();
     renderGameDetail(state.selectedGame || 'pubg');
@@ -56,6 +57,13 @@ function initApp() {
     updateCartUI();
     renderPaymentInstructions();
     bindEvents();
+    
+    if (typeof SahabatiDB !== 'undefined' && SahabatiDB.subscribe) {
+        SahabatiDB.subscribe(() => {
+            updateCustomerAuthUI();
+            if (state.currentTab === 'orders') renderOrders();
+        });
+    }
     
     // Check initial tab hash if any
     const hash = window.location.hash.replace('#', '');
@@ -320,7 +328,7 @@ function addGamePackageToCart(gameId, pkgId) {
         gameId: game.id,
         packageId: pkg.id,
         titleAr: game.nameAr.split('(')[0] + ' - ' + pkg.nameAr,
-        meta: 'Player ID: ' + playerId,
+        meta: game.id === 'pubg' ? 'كود شدات ببجي' : ('Player ID: ' + playerId),
         priceLYD: pkg.priceLYD,
         quantity: 1
     };
@@ -789,25 +797,38 @@ function processPayment() {
         let totalLYD = state.cart.reduce((sum, item) => sum + (item.priceLYD * item.quantity), 0);
         const totalAmountText = formatPrice(totalLYD);
 
-        const generatedVouchers = state.cart.map(item => ({
-            title: item.titleAr,
-            voucherCode: 'SHB-' + Array.from({length: 4}, () => Math.random().toString(36).substr(2, 4).toUpperCase()).join('-'),
-            quantity: item.quantity,
-            price: formatPrice(item.priceLYD * item.quantity)
-        }));
-
-        const newOrder = {
-            id: orderId,
-            date: orderDate,
-            items: [...state.cart],
-            vouchers: generatedVouchers,
-            paymentMethod: state.paymentMethod,
-            customerPhone: customerPhone,
-            cardCode13: cleanCardDigits.length === 13 ? cleanCardDigits : '',
-            customerNotes: customerNotes,
-            totalFormatted: totalAmountText,
-            status: 'whatsapp_pending'
-        };
+        let newOrder;
+        if (typeof SahabatiDB !== 'undefined' && SahabatiDB.createOrder) {
+            newOrder = SahabatiDB.createOrder({
+                id: orderId,
+                date: orderDate,
+                items: [...state.cart],
+                paymentMethod: state.paymentMethod,
+                customerPhone: customerPhone,
+                cardCode13: cleanCardDigits.length === 13 ? cleanCardDigits : '',
+                customerNotes: customerNotes,
+                totalFormatted: totalAmountText
+            });
+        } else {
+            const generatedVouchers = state.cart.map(item => ({
+                title: item.titleAr,
+                voucherCode: 'SHB-' + Array.from({length: 4}, () => Math.random().toString(36).substr(2, 4).toUpperCase()).join('-'),
+                quantity: item.quantity,
+                price: formatPrice(item.priceLYD * item.quantity)
+            }));
+            newOrder = {
+                id: orderId,
+                date: orderDate,
+                items: [...state.cart],
+                vouchers: generatedVouchers,
+                paymentMethod: state.paymentMethod,
+                customerPhone: customerPhone,
+                cardCode13: cleanCardDigits.length === 13 ? cleanCardDigits : '',
+                customerNotes: customerNotes,
+                totalFormatted: totalAmountText,
+                status: 'whatsapp_pending'
+            };
+        }
 
         // Prepare WhatsApp message with full details
         const itemsListText = state.cart.map(item => '• ' + item.quantity + 'x ' + item.titleAr + ' (' + item.meta + ') - ' + formatPrice(item.priceLYD * item.quantity)).join('\n');
@@ -930,51 +951,382 @@ function copyToClipboard(text) {
     });
 }
 
-// Render Orders History
-function renderOrders() {
-    const container = document.getElementById('orders-list-container');
-    const emptyState = document.getElementById('orders-empty-state');
-    if (!container) return;
+// ================= CUSTOMER AUTHENTICATION & DATABASE ENGINE =================
 
-    if (state.orders.length === 0) {
-        if (emptyState) emptyState.classList.remove('hidden');
-        container.innerHTML = '';
+function getActiveCustomer() {
+    if (typeof SahabatiDB !== 'undefined' && SahabatiDB.getCurrentUser) {
+        return SahabatiDB.getCurrentUser();
+    }
+    return null;
+}
+
+function updateCustomerAuthUI() {
+    const customer = getActiveCustomer();
+    const label = document.getElementById('customer-header-auth-label');
+    const btn = document.getElementById('customer-header-auth-btn');
+    const phoneInput = document.getElementById('whatsapp-phone-input');
+
+    if (customer) {
+        if (label) {
+            const firstName = customer.name.split(' ')[0] || 'حسابي';
+            label.textContent = 'مرحباً، ' + firstName;
+        }
+        if (btn) {
+            btn.classList.remove('from-sky-600', 'to-indigo-600');
+            btn.classList.add('from-emerald-600', 'to-teal-700');
+            btn.title = 'حساب ' + customer.name + ' - تتبع طلباتك';
+        }
+        if (phoneInput && !phoneInput.value && customer.phone) {
+            phoneInput.value = customer.phone;
+        }
+    } else {
+        if (label) label.textContent = 'حسابي / دخول';
+        if (btn) {
+            btn.classList.remove('from-emerald-600', 'to-teal-700');
+            btn.classList.add('from-sky-600', 'to-indigo-600');
+            btn.title = 'تسجيل الدخول أو إنشاء حساب جديد';
+        }
+    }
+}
+
+function handleCustomerHeaderClick() {
+    const customer = getActiveCustomer();
+    if (customer) {
+        navigateTo('orders');
+    } else {
+        openCustomerAuthModal('login');
+    }
+}
+
+function openCustomerAuthModal(tab) {
+    const modal = document.getElementById('customer-auth-modal');
+    if (!modal) return;
+    switchCustomerAuthTab(tab || 'login');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+function closeCustomerAuthModal() {
+    const modal = document.getElementById('customer-auth-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+}
+
+function switchCustomerAuthTab(tab) {
+    const loginBtn = document.getElementById('cust-auth-tab-login');
+    const regBtn = document.getElementById('cust-auth-tab-register');
+    const loginForm = document.getElementById('customer-login-form');
+    const regForm = document.getElementById('customer-register-form');
+
+    if (tab === 'register') {
+        if (loginBtn) { loginBtn.classList.remove('bg-white', 'text-sky-700', 'shadow-sm', 'font-black'); loginBtn.classList.add('text-slate-600', 'font-bold'); }
+        if (regBtn) { regBtn.classList.add('bg-white', 'text-emerald-700', 'shadow-sm', 'font-black'); regBtn.classList.remove('text-slate-600', 'font-bold'); }
+        if (loginForm) loginForm.classList.add('hidden');
+        if (regForm) regForm.classList.remove('hidden');
+        document.getElementById('cust-reg-name')?.focus();
+    } else {
+        if (regBtn) { regBtn.classList.remove('bg-white', 'text-emerald-700', 'shadow-sm', 'font-black'); regBtn.classList.add('text-slate-600', 'font-bold'); }
+        if (loginBtn) { loginBtn.classList.add('bg-white', 'text-sky-700', 'shadow-sm', 'font-black'); loginBtn.classList.remove('text-slate-600', 'font-bold'); }
+        if (regForm) regForm.classList.add('hidden');
+        if (loginForm) loginForm.classList.remove('hidden');
+        document.getElementById('cust-login-ident')?.focus();
+    }
+}
+
+function togglePassVisibility(inputId, btn) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    input.type = input.type === 'password' ? 'text' : 'password';
+    if (btn) {
+        btn.innerHTML = input.type === 'password' ? '<i class="fa-solid fa-eye"></i>' : '<i class="fa-solid fa-eye-slash"></i>';
+    }
+}
+
+async function handleCustomerLoginSubmit(e) {
+    e.preventDefault();
+    const ident = (document.getElementById('cust-login-ident')?.value || '').trim();
+    const pass = (document.getElementById('cust-login-pass')?.value || '').trim();
+    const btn = document.getElementById('cust-login-submit-btn');
+
+    if (!ident || !pass) {
+        showToast('يرجى كتابة رقم الهاتف وكلمة المرور', 'fa-triangle-exclamation');
         return;
     }
 
-    if (emptyState) emptyState.classList.add('hidden');
-    container.innerHTML = state.orders.map(order => {
-        return '<div class="glass-card rounded-3xl p-4 sm:p-5 border border-white/80 shadow-md">' +
-            '<div class="flex items-center justify-between border-b border-slate-100 pb-2.5 mb-2.5">' +
-                '<div>' +
-                    '<span class="font-extrabold text-slate-900 text-xs sm:text-sm">#' + order.id + '</span>' +
-                    '<span class="text-[10px] text-slate-500 block">' + order.date + '</span>' +
+    const origText = btn ? btn.innerHTML : '';
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري التحقق...'; }
+
+    try {
+        if (typeof SahabatiDB !== 'undefined') {
+            const user = await SahabatiDB.loginUser(ident, pass);
+            closeCustomerAuthModal();
+            updateCustomerAuthUI();
+            showToast('مرحباً بك يا ' + user.name + ' في سحّابتي ☁️', 'fa-user-check');
+            navigateTo('orders');
+            renderOrders();
+        }
+    } catch(err) {
+        showToast(err.message || 'فشل تسجيل الدخول', 'fa-triangle-exclamation');
+    } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = origText; }
+    }
+}
+
+async function handleCustomerRegisterSubmit(e) {
+    e.preventDefault();
+    const name = (document.getElementById('cust-reg-name')?.value || '').trim();
+    const phone = (document.getElementById('cust-reg-phone')?.value || '').trim();
+    const email = (document.getElementById('cust-reg-email')?.value || '').trim();
+    const pass = (document.getElementById('cust-reg-pass')?.value || '').trim();
+    const passConfirm = (document.getElementById('cust-reg-pass-confirm')?.value || '').trim();
+    const btn = document.getElementById('cust-reg-submit-btn');
+
+    if (pass !== passConfirm) {
+        showToast('كلمتا المرور غير متطابقتين', 'fa-triangle-exclamation');
+        return;
+    }
+
+    const origText = btn ? btn.innerHTML : '';
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري إنشاء الحساب...'; }
+
+    try {
+        if (typeof SahabatiDB !== 'undefined') {
+            const newUser = await SahabatiDB.registerUser({ name, phone, email, password: pass });
+            closeCustomerAuthModal();
+            updateCustomerAuthUI();
+            showToast('تم إنشاء حسابك بنجاح! مرحباً بك يا ' + newUser.name + ' 🌟', 'fa-circle-check');
+            navigateTo('orders');
+            renderOrders();
+        }
+    } catch(err) {
+        showToast(err.message || 'فشل إنشاء الحساب', 'fa-triangle-exclamation');
+    } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = origText; }
+    }
+}
+
+function logoutCustomer() {
+    if (typeof SahabatiDB !== 'undefined') {
+        SahabatiDB.logout();
+    }
+    updateCustomerAuthUI();
+    renderOrders();
+    showToast('تم تسجيل الخروج بنجاح', 'fa-arrow-right-from-bracket');
+}
+
+function switchCustomerOrdersTab(tab) {
+    const ordersBtn = document.getElementById('cust-tab-btn-orders');
+    const codesBtn = document.getElementById('cust-tab-btn-codes');
+    const ordersView = document.getElementById('cust-view-orders');
+    const codesView = document.getElementById('cust-view-codes');
+
+    if (tab === 'codes') {
+        if (ordersBtn) { ordersBtn.classList.remove('bg-sky-600', 'text-white', 'shadow-md'); ordersBtn.classList.add('bg-white/90', 'text-slate-700'); }
+        if (codesBtn) { codesBtn.classList.add('bg-amber-500', 'text-white', 'shadow-md'); codesBtn.classList.remove('bg-white/90', 'text-slate-700'); }
+        if (ordersView) ordersView.classList.add('hidden');
+        if (codesView) codesView.classList.remove('hidden');
+    } else {
+        if (codesBtn) { codesBtn.classList.remove('bg-amber-500', 'text-white', 'shadow-md'); codesBtn.classList.add('bg-white/90', 'text-slate-700'); }
+        if (ordersBtn) { ordersBtn.classList.add('bg-sky-600', 'text-white', 'shadow-md'); ordersBtn.classList.remove('bg-white/90', 'text-slate-700'); }
+        if (codesView) codesView.classList.add('hidden');
+        if (ordersView) ordersView.classList.remove('hidden');
+    }
+}
+
+// Render Profile Header Banner
+function renderCustomerProfileBanner(customer, userOrders, userCodes) {
+    const banner = document.getElementById('customer-profile-banner');
+    if (!banner) return;
+
+    if (customer) {
+        banner.innerHTML = '<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">' +
+            '<div class="flex items-center gap-3.5">' +
+                '<div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-sky-600 to-indigo-700 text-white flex items-center justify-center text-2xl font-black shadow-md flex-shrink-0 border-2 border-sky-200">' +
+                    customer.name.charAt(0) +
                 '</div>' +
-                '<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 flex items-center gap-1">' +
-                    '<i class="fa-brands fa-whatsapp"></i>' +
-                    '<span>طلب واتساب (ليبي)</span>' +
-                '</span>' +
+                '<div>' +
+                    '<div class="flex items-center gap-2">' +
+                        '<h3 class="font-extrabold text-slate-900 text-base sm:text-lg">' + customer.name + '</h3>' +
+                        '<span class="bg-emerald-100 text-emerald-800 text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1">' +
+                            '<i class="fa-solid fa-circle-check text-emerald-600"></i>' +
+                            '<span>حساب عميل مفعل</span>' +
+                        '</span>' +
+                    '</div>' +
+                    '<div class="flex items-center gap-3 text-xs text-slate-500 mt-1">' +
+                        '<span class="font-mono font-bold"><i class="fa-solid fa-phone text-slate-400 ml-1"></i> ' + customer.phone + '</span>' +
+                        (customer.email ? '<span class="hidden sm:inline">• ' + customer.email + '</span>' : '') +
+                    '</div>' +
+                '</div>' +
             '</div>' +
-            '<div class="space-y-2 mb-2.5">' +
-                order.vouchers.map(v => {
-                    return '<div class="p-2.5 rounded-xl bg-sky-50/60 border border-sky-100 flex items-center justify-between">' +
-                        '<div>' +
-                            '<p class="font-bold text-xs text-slate-800">' + v.title + '</p>' +
-                            '<code class="font-mono text-sky-700 font-bold text-xs">' + v.voucherCode + '</code>' +
-                        '</div>' +
-                        '<button onclick="copyToClipboard(\'' + v.voucherCode + '\')" class="px-2.5 py-1 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold">' +
-                            '<i class="fa-solid fa-copy"></i>' +
-                        '</button>' +
-                    '</div>';
-                }).join('') +
-            '</div>' +
-            (order.cardCode13 ? '<div class="p-2 bg-amber-50 rounded-xl text-amber-900 text-[11px] font-mono font-bold mb-2">🎟️ كود كارت التعبئة: ' + order.cardCode13 + '</div>' : '') +
-            '<div class="flex items-center justify-between text-xs font-bold text-slate-700 pt-2 border-t border-slate-100">' +
-                '<span>الإجمالي بالدينار الليبي:</span>' +
-                '<span class="text-emerald-700 font-extrabold text-sm sm:text-base">' + order.totalFormatted + '</span>' +
+            '<div class="flex items-center gap-2 sm:gap-3 self-stretch sm:self-center justify-between sm:justify-end pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">' +
+                '<div class="text-center px-3.5 py-1.5 rounded-2xl bg-sky-50 border border-sky-200">' +
+                    '<span class="text-[10px] font-bold text-sky-800 block">إجمالي طلباتي</span>' +
+                    '<span class="font-black text-sky-950 text-sm sm:text-base">' + userOrders.length + '</span>' +
+                '</div>' +
+                '<div class="text-center px-3.5 py-1.5 rounded-2xl bg-amber-50 border border-amber-200">' +
+                    '<span class="text-[10px] font-bold text-amber-800 block">أكواد في محفظتي</span>' +
+                    '<span class="font-black text-amber-950 text-sm sm:text-base">' + userCodes.length + '</span>' +
+                '</div>' +
+                '<button onclick="logoutCustomer()" class="px-3.5 py-2.5 rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold transition flex items-center gap-1.5 border border-rose-200 shadow-sm" title="تسجيل الخروج من الحساب">' +
+                    '<i class="fa-solid fa-arrow-right-from-bracket"></i>' +
+                    '<span>خروج</span>' +
+                '</button>' +
             '</div>' +
         '</div>';
-    }).join('');
+    } else {
+        banner.innerHTML = '<div class="flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-right">' +
+            '<div class="flex items-center gap-3.5">' +
+                '<div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-sky-500 to-indigo-600 text-white flex items-center justify-center text-xl shadow-md flex-shrink-0">' +
+                    '<i class="fa-solid fa-user-lock"></i>' +
+                '</div>' +
+                '<div>' +
+                    '<h3 class="font-black text-slate-900 text-sm sm:text-base">سجّل دخولك لحفظ مشترياتك وأكوادك الرقمية</h3>' +
+                    '<p class="text-xs text-slate-500 mt-0.5">أنشئ حساباً مجانياً للاحتفاظ بجميع فواتيرك وأكواد آيتونز وببجي وفري فاير في محفظتك دائماً.</p>' +
+                '</div>' +
+            '</div>' +
+            '<div class="flex items-center gap-2 flex-shrink-0 w-full sm:w-auto">' +
+                '<button onclick="openCustomerAuthModal(\'login\')" class="flex-1 sm:flex-none px-4 py-2.5 rounded-2xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs shadow-md shadow-sky-600/20 transition flex items-center justify-center gap-1.5">' +
+                    '<i class="fa-solid fa-right-to-bracket"></i>' +
+                    '<span>تسجيل الدخول</span>' +
+                '</button>' +
+                '<button onclick="openCustomerAuthModal(\'register\')" class="flex-1 sm:flex-none px-4 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition flex items-center justify-center gap-1.5">' +
+                    '<i class="fa-solid fa-user-plus"></i>' +
+                    '<span>إنشاء حساب</span>' +
+                '</button>' +
+            '</div>' +
+        '</div>';
+    }
+}
+
+// Render Orders & Digital Codes Dashboard
+function renderOrders() {
+    const customer = getActiveCustomer();
+    const container = document.getElementById('orders-list-container');
+    const emptyState = document.getElementById('orders-empty-state');
+    const codesGrid = document.getElementById('customer-codes-grid');
+    const codesEmpty = document.getElementById('customer-codes-empty-state');
+    const codesBadge = document.getElementById('cust-codes-badge');
+
+    // Retrieve customer specific orders or all local orders
+    let userOrders = [];
+    if (customer && typeof SahabatiDB !== 'undefined') {
+        userOrders = SahabatiDB.getOrdersForUser(customer.id);
+        // Fallback: if user has no orders in DB yet, show legacy orders if phone matches
+        if (userOrders.length === 0 && state.orders.length > 0) {
+            userOrders = state.orders.filter(o => o.customerPhone === customer.phone || o.userId === customer.id);
+            if (userOrders.length === 0) userOrders = state.orders;
+        }
+    } else {
+        userOrders = state.orders;
+    }
+
+    // Retrieve digital codes owned by this customer
+    let userCodes = [];
+    userOrders.forEach(o => {
+        if (o.vouchers && Array.isArray(o.vouchers)) {
+            o.vouchers.forEach(v => {
+                userCodes.push({
+                    orderId: o.id,
+                    date: o.date,
+                    title: v.title,
+                    code: v.voucherCode,
+                    pin: v.pin || '',
+                    isRealVaultCode: v.isRealVaultCode || false
+                });
+            });
+        }
+    });
+
+    if (codesBadge) codesBadge.textContent = userCodes.length;
+
+    // Render Banner
+    renderCustomerProfileBanner(customer, userOrders, userCodes);
+
+    // 1. Render Orders List
+    if (container) {
+        if (userOrders.length === 0) {
+            if (emptyState) emptyState.classList.remove('hidden');
+            container.innerHTML = '';
+        } else {
+            if (emptyState) emptyState.classList.add('hidden');
+            container.innerHTML = userOrders.map(order => {
+                return '<div class="glass-card rounded-3xl p-4 sm:p-5 border border-white/80 shadow-md">' +
+                    '<div class="flex items-center justify-between border-b border-slate-100 pb-2.5 mb-2.5">' +
+                        '<div>' +
+                            '<span class="font-extrabold text-slate-900 text-xs sm:text-sm">#' + order.id + '</span>' +
+                            '<span class="text-[10px] text-slate-500 block">' + order.date + '</span>' +
+                        '</div>' +
+                        '<div class="flex items-center gap-1.5">' +
+                            (order.waUrl ? '<a href="' + order.waUrl + '" target="_blank" class="px-2.5 py-1 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 hover:bg-emerald-200 transition flex items-center gap-1">' +
+                                '<i class="fa-brands fa-whatsapp text-xs"></i>' +
+                                '<span>واتساب</span>' +
+                            '</a>' : '') +
+                            '<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-sky-100 text-sky-800">' +
+                                (order.status === 'completed' ? 'مسجل ✓' : 'قيد المعالجة') +
+                            '</span>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="space-y-2 mb-2.5">' +
+                        (order.vouchers || []).map(v => {
+                            return '<div class="p-2.5 rounded-xl bg-sky-50/70 border border-sky-100 flex items-center justify-between gap-2">' +
+                                '<div class="min-w-0">' +
+                                    '<p class="font-bold text-xs text-slate-800 line-clamp-1">' + v.title + '</p>' +
+                                    '<code class="font-mono text-sky-700 font-bold text-xs block select-all mt-0.5">' + v.voucherCode + '</code>' +
+                                '</div>' +
+                                '<button onclick="copyToClipboard(\'' + v.voucherCode + '\')" class="px-3 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold transition flex items-center gap-1 flex-shrink-0 shadow-sm">' +
+                                    '<i class="fa-solid fa-copy"></i>' +
+                                    '<span>نسخ</span>' +
+                                '</button>' +
+                            '</div>';
+                        }).join('') +
+                    '</div>' +
+                    (order.cardCode13 ? '<div class="p-2 bg-amber-50 rounded-xl text-amber-900 text-[11px] font-mono font-bold mb-2">🎟️ كود كارت التعبئة: ' + order.cardCode13 + '</div>' : '') +
+                    '<div class="flex items-center justify-between text-xs font-bold text-slate-700 pt-2 border-t border-slate-100">' +
+                        '<span>الإجمالي بالدينار الليبي:</span>' +
+                        '<span class="text-emerald-700 font-extrabold text-sm sm:text-base">' + (order.totalFormatted || formatPrice(order.totalLYD || 0)) + '</span>' +
+                    '</div>' +
+                '</div>';
+            }).join('');
+        }
+    }
+
+    // 2. Render Digital Codes Vault
+    if (codesGrid) {
+        if (userCodes.length === 0) {
+            if (codesEmpty) codesEmpty.classList.remove('hidden');
+            codesGrid.innerHTML = '';
+        } else {
+            if (codesEmpty) codesEmpty.classList.add('hidden');
+            codesGrid.innerHTML = userCodes.map(codeItem => {
+                return '<div class="glass-card rounded-3xl p-4 sm:p-5 border-2 border-amber-200/80 bg-white/95 shadow-md flex flex-col justify-between space-y-3 relative overflow-hidden">' +
+                    '<div class="flex items-center justify-between">' +
+                        '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-100 text-amber-900 flex items-center gap-1">' +
+                            '<i class="fa-solid fa-key text-amber-600"></i>' +
+                            '<span>كود رقمي نشط</span>' +
+                        '</span>' +
+                        '<span class="text-[10px] text-slate-400 font-mono">#' + codeItem.orderId + '</span>' +
+                    '</div>' +
+                    '<div>' +
+                        '<h4 class="font-black text-slate-900 text-xs sm:text-sm mb-1.5">' + codeItem.title + '</h4>' +
+                        '<div class="p-3 rounded-2xl bg-amber-50/80 border border-amber-200 flex items-center justify-between gap-2">' +
+                            '<code class="font-mono text-amber-950 font-black text-xs sm:text-sm select-all tracking-wider break-all">' + codeItem.code + '</code>' +
+                            '<button onclick="copyToClipboard(\'' + codeItem.code + '\')" class="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-black text-xs shadow-sm transition flex items-center gap-1 flex-shrink-0">' +
+                                '<i class="fa-solid fa-copy"></i>' +
+                                '<span>نسخ</span>' +
+                            '</button>' +
+                        '</div>' +
+                        (codeItem.pin ? '<p class="text-[10px] font-mono text-slate-500 mt-1 font-bold">الرمز السري (PIN): <span class="text-slate-800">' + codeItem.pin + '</span></p>' : '') +
+                    '</div>' +
+                    '<div class="text-[10px] text-slate-400 border-t border-slate-100 pt-2 flex items-center justify-between">' +
+                        '<span>تاريخ الشراء: ' + codeItem.date + '</span>' +
+                        '<span class="text-emerald-700 font-bold">صالح للاستخدام ✓</span>' +
+                    '</div>' +
+                '</div>';
+            }).join('');
+        }
+    }
 }
 
 // ================= ADMIN SECURITY & DASHBOARD (FOR DIRECT URL ADMIN PORTAL) =================

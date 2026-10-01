@@ -120,6 +120,12 @@
                 <button onclick="switchAdminTab('products')" id="adm-tab-btn-products" class="admin-tab-btn px-4 py-2 rounded-xl text-xs font-extrabold bg-indigo-600 text-white shadow-sm transition">
                     <i class="fa-solid fa-boxes-stacked ml-1"></i> إدارة الأصناف والباقات
                 </button>
+                <button onclick="switchAdminTab('vault')" id="adm-tab-btn-vault" class="admin-tab-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 transition">
+                    <i class="fa-solid fa-key ml-1 text-amber-500"></i> مخزن الأكواد الرقمية (آيتونز/ببجي/فري فاير)
+                </button>
+                <button onclick="switchAdminTab('customers')" id="adm-tab-btn-customers" class="admin-tab-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 transition">
+                    <i class="fa-solid fa-users ml-1 text-sky-600"></i> قاعدة بيانات العملاء والطلبات
+                </button>
                 <button onclick="switchAdminTab('settings')" id="adm-tab-btn-settings" class="admin-tab-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 transition">
                     <i class="fa-solid fa-gear ml-1"></i> إعدادات واتساب والدفع
                 </button>
@@ -127,7 +133,7 @@
                     <i class="fa-solid fa-bullhorn ml-1"></i> الإعلانات والنشر
                 </button>
                 <button onclick="switchAdminTab('backup')" id="adm-tab-btn-backup" class="admin-tab-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 transition">
-                    <i class="fa-solid fa-file-export ml-1"></i> النسخ الاحتياطي (JSON)
+                    <i class="fa-solid fa-file-export ml-1"></i> قاعدة البيانات (JSON Backup)
                 </button>
             </div>
 
@@ -226,6 +232,136 @@
                         <span>الأصناف والباقات المعروضة حالياً بالمتجر:</span>
                     </h3>
                     <div id="admin-items-table-container" class="space-y-2"></div>
+                </div>
+            </div>
+
+            <!-- TAB: DIGITAL CODES VAULT (مخزن الأكواد الرقمية) -->
+            <div id="adm-view-vault" class="hidden space-y-5">
+                <!-- Vault Stats -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                    <div class="glass-card rounded-2xl p-4 border border-amber-200 bg-white/80 shadow-sm">
+                        <span class="text-xs text-amber-700 font-bold block">إجمالي الأكواد في المخزن</span>
+                        <span id="vault-stat-total" class="text-2xl font-black text-amber-950 mt-1 block">0</span>
+                    </div>
+                    <div class="glass-card rounded-2xl p-4 border border-emerald-200 bg-white/80 shadow-sm">
+                        <span class="text-xs text-emerald-700 font-bold block">أكواد متوفرة (جاهزة للتسليم)</span>
+                        <span id="vault-stat-available" class="text-2xl font-black text-emerald-900 mt-1 block">0</span>
+                    </div>
+                    <div class="glass-card rounded-2xl p-4 border border-rose-200 bg-white/80 shadow-sm">
+                        <span class="text-xs text-rose-700 font-bold block">أكواد تم صرفها وبيعها للعملاء</span>
+                        <span id="vault-stat-sold" class="text-2xl font-black text-rose-900 mt-1 block">0</span>
+                    </div>
+                </div>
+
+                <!-- Add Digital Codes Form -->
+                <div class="glass-panel bg-white/95 rounded-3xl p-5 sm:p-6 shadow-xl border border-white space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                        <h3 class="font-extrabold text-slate-900 text-base flex items-center gap-2">
+                            <i class="fa-solid fa-key text-amber-500"></i>
+                            <span>إضافة أكواد رقمية جديدة (آيتونز / ببجي / فري فاير / نتفليكس / شاهد)</span>
+                        </h3>
+                        <span class="text-xs font-bold text-amber-800 bg-amber-100 px-2.5 py-0.5 rounded-full">تخزين فوري بالقاعدة</span>
+                    </div>
+
+                    <form id="vault-add-form" onsubmit="handleVaultAddCodes(event)" class="space-y-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div>
+                                <label class="text-xs font-bold text-slate-700 block mb-1">نوع اللعبة أو الخدمة:</label>
+                                <select id="vault-brand-select" onchange="updateVaultProductOptions(this.value)" class="glass-input w-full rounded-xl py-2.5 px-3 text-xs font-bold text-slate-800">
+                                    <option value="apple">🍏 آبل آيتونز (Apple iTunes Gift Cards)</option>
+                                    <option value="pubg">🎮 ببجي موبايل (PUBG Mobile UC)</option>
+                                    <option value="freefire">🔥 فري فاير (Free Fire Diamonds)</option>
+                                    <option value="netflix">🎬 نتفليكس (Netflix 4K Accounts/Cards)</option>
+                                    <option value="shahid">📺 شاهد VIP (Shahid VIP Accounts)</option>
+                                    <option value="general">✨ كود أو بطاقة رقمية أخرى</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-slate-700 block mb-1">اسم الصنف أو الباقة:</label>
+                                <input type="text" id="vault-product-name" placeholder="مثال: بطاقة آيتونز 10$ أو 60 شدة ببجي" required class="glass-input w-full rounded-xl py-2 px-3 text-xs font-bold text-slate-800">
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-slate-700 block mb-1">ملاحظات / تعليمات:</label>
+                                <input type="text" id="vault-notes" placeholder="مثال: متجر أمريكي أو شحن فوري" class="glass-input w-full rounded-xl py-2 px-3 text-xs font-medium text-slate-800">
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex items-center justify-between mb-1">
+                                <label class="text-xs font-bold text-slate-700">الأكواد الرقمية (كود في كل سطر لإضافة عشرات الأكواد دفعة واحدة):</label>
+                                <span class="text-[11px] text-slate-500 font-medium">يمكنك كتابة: <code class="bg-slate-100 px-1 rounded font-bold">الكود</code> أو <code class="bg-slate-100 px-1 rounded font-bold">الكود|PIN</code></span>
+                            </div>
+                            <textarea id="vault-codes-textarea" rows="4" placeholder="ITUNES-ABCD-1234-XYZ|1024&#10;ITUNES-EFGH-5678-XYZ&#10;PUBG-UC60-99210-LIBYA" required 
+                                      class="glass-input w-full rounded-2xl py-2.5 px-3 font-mono text-xs font-bold text-slate-800 border border-amber-200 focus:border-amber-500"></textarea>
+                        </div>
+
+                        <div class="flex justify-end pt-1">
+                            <button type="submit" class="px-6 py-3 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white font-black text-xs shadow-lg shadow-amber-500/30 transition flex items-center gap-2">
+                                <i class="fa-solid fa-plus-circle"></i>
+                                <span>حفظ وتخزين الأكواد في قاعدة البيانات</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Vault Inventory Filter & Table -->
+                <div class="glass-panel bg-white/95 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                        <h3 class="font-extrabold text-slate-900 text-base flex items-center gap-2">
+                            <i class="fa-solid fa-boxes-packing text-amber-600"></i>
+                            <span>الأكواد المخزنة في قاعدة البيانات:</span>
+                        </h3>
+                        <div class="flex items-center gap-2">
+                            <select id="vault-filter-brand" onchange="renderVaultCodesTable()" class="glass-input rounded-xl py-1.5 px-3 text-xs font-bold text-slate-700">
+                                <option value="all">كل الألعاب والبطاقات</option>
+                                <option value="apple">آيتونز (iTunes)</option>
+                                <option value="pubg">ببجي (PUBG UC)</option>
+                                <option value="freefire">فري فاير (Free Fire)</option>
+                                <option value="netflix">نتفليكس (Netflix)</option>
+                                <option value="shahid">شاهد (Shahid VIP)</option>
+                            </select>
+                            <select id="vault-filter-status" onchange="renderVaultCodesTable()" class="glass-input rounded-xl py-1.5 px-3 text-xs font-bold text-slate-700">
+                                <option value="all">كل الحالات</option>
+                                <option value="available">متوفر للبيع فقط</option>
+                                <option value="sold">تم بيعه فقط</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="vault-codes-table-container" class="space-y-2">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: CUSTOMERS & ORDERS (سجل العملاء والطلبات) -->
+            <div id="adm-view-customers" class="hidden space-y-5">
+                <!-- Customers Table -->
+                <div class="glass-panel bg-white/95 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                        <h3 class="font-extrabold text-slate-900 text-base flex items-center gap-2">
+                            <i class="fa-solid fa-users text-sky-600"></i>
+                            <span>حسابات العملاء المسجلين في الموقع:</span>
+                        </h3>
+                        <span id="customers-count-badge" class="bg-sky-100 text-sky-800 text-xs font-black px-2.5 py-1 rounded-full">0 عميل</span>
+                    </div>
+                    <div id="customers-table-container" class="overflow-x-auto">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Complete Orders History Table -->
+                <div class="glass-panel bg-white/95 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                        <h3 class="font-extrabold text-slate-900 text-base flex items-center gap-2">
+                            <i class="fa-solid fa-clipboard-list text-emerald-600"></i>
+                            <span>جميع طلبات المشتريات بالدينار الليبي:</span>
+                        </h3>
+                        <span id="all-orders-count-badge" class="bg-emerald-100 text-emerald-800 text-xs font-black px-2.5 py-1 rounded-full">0 طلب</span>
+                    </div>
+                    <div id="all-orders-table-container" class="space-y-3">
+                        <!-- Populated by JS -->
+                    </div>
                 </div>
             </div>
 
@@ -394,6 +530,7 @@
 
     <script src="js/assets.js"></script>
     <script src="js/data.js?v=big6"></script>
+    <script src="js/database.js"></script>
     <script src="js/admin.js?v=big6"></script>
 <script>
 window.addEventListener('DOMContentLoaded', function(){

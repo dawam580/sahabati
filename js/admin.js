@@ -115,7 +115,9 @@ function switchAdminTab(tabName){
     document.querySelectorAll('.admin-tab-btn').forEach(b=>{ b.classList.remove('bg-indigo-600','text-white'); b.classList.add('bg-white','text-slate-700'); });
     const active=document.getElementById('adm-tab-btn-'+tabName);
     if(active){ active.classList.add('bg-indigo-600','text-white'); active.classList.remove('bg-white','text-slate-700'); }
-    ['products','settings','notices','backup'].forEach(t=>{ const v=document.getElementById('adm-view-'+t); if(v) v.classList.toggle('hidden', t!==tabName); });
+    ['products','vault','customers','settings','notices','backup'].forEach(t=>{ const v=document.getElementById('adm-view-'+t); if(v) v.classList.toggle('hidden', t!==tabName); });
+    if(tabName==='vault') renderVaultPanel();
+    if(tabName==='customers') renderCustomersPanel();
     if(tabName==='settings') populateSettingsForm();
     if(tabName==='notices'){ try{renderNoticesAdmin();}catch(e){} }
 }
@@ -417,5 +419,241 @@ function resetCatalogToDefault(){
         saveAppData(APP_DATA);
         renderAdminPanel();
         showToast('تمت استعادة الأصناف الافتراضية بنجاح');
+    }
+}
+
+// ================= DIGITAL CODES VAULT (مخزن الأكواد الرقمية) =================
+
+function renderVaultPanel() {
+    if (typeof SahabatiDB === 'undefined') return;
+
+    const allCodes = SahabatiDB.getAllCodes();
+    const availableCodes = allCodes.filter(c => c.status === 'available');
+    const soldCodes = allCodes.filter(c => c.status === 'sold');
+
+    const statTotal = document.getElementById('vault-stat-total');
+    const statAvailable = document.getElementById('vault-stat-available');
+    const statSold = document.getElementById('vault-stat-sold');
+
+    if (statTotal) statTotal.textContent = allCodes.length + ' كود';
+    if (statAvailable) statAvailable.textContent = availableCodes.length + ' متاح';
+    if (statSold) statSold.textContent = soldCodes.length + ' مصروف';
+
+    renderVaultCodesTable();
+}
+
+function updateVaultProductOptions(brand) {
+    const nameInput = document.getElementById('vault-product-name');
+    if (!nameInput) return;
+
+    const defaults = {
+        'apple': 'بطاقة آبل آيتونز 10$ (iTunes 10 USD)',
+        'pubg': '60 شدة (60 UC) ببجي موبايل',
+        'freefire': '100 جوهرة فري فاير (100 Diamonds)',
+        'netflix': 'اشتراك نتفليكس 4K UHD بريميوم (شهر)',
+        'shahid': 'شاهد VIP شامل المسلسلات والأفلام (حساب كامل)',
+        'general': 'بطاقة رقمية'
+    };
+
+    nameInput.value = defaults[brand] || '';
+}
+
+function handleVaultAddCodes(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    if (typeof SahabatiDB === 'undefined') return;
+
+    const brand = document.getElementById('vault-brand-select')?.value || 'general';
+    const productName = document.getElementById('vault-product-name')?.value.trim();
+    const notes = document.getElementById('vault-notes')?.value.trim();
+    const rawText = document.getElementById('vault-codes-textarea')?.value.trim();
+
+    if (!productName || !rawText) {
+        showToast('يرجى إدخال اسم الصنف ولصق الأكواد', 'fa-triangle-exclamation');
+        return;
+    }
+
+    try {
+        const addedCount = SahabatiDB.addBatchCodes({
+            brand: brand,
+            category: brand === 'apple' ? 'ai_cards' : (brand === 'pubg' || brand === 'freefire' ? 'games' : 'streaming'),
+            productName: productName,
+            notes: notes
+        }, rawText);
+
+        document.getElementById('vault-codes-textarea').value = '';
+        renderVaultPanel();
+        showToast('تمت إضافة ' + addedCount + ' كود إلى مخزن الأكواد الرقمية بنجاح! 🎟️');
+    } catch(err) {
+        showToast(err.message || 'حدث خطأ أثناء إضافة الأكواد', 'fa-triangle-exclamation');
+    }
+}
+
+let revealedVaultCodes = {};
+
+function toggleVaultCodeReveal(id) {
+    revealedVaultCodes[id] = !revealedVaultCodes[id];
+    renderVaultCodesTable();
+}
+
+function renderVaultCodesTable() {
+    if (typeof SahabatiDB === 'undefined') return;
+
+    const container = document.getElementById('vault-codes-table-container');
+    if (!container) return;
+
+    const brandFilter = document.getElementById('vault-filter-brand')?.value || 'all';
+    const statusFilter = document.getElementById('vault-filter-status')?.value || 'all';
+
+    const codes = SahabatiDB.getAllCodes({
+        brand: brandFilter,
+        status: statusFilter
+    });
+
+    if (codes.length === 0) {
+        container.innerHTML = '<div class="p-8 text-center text-xs text-slate-500 bg-slate-50 rounded-2xl border border-slate-200">' +
+            '<i class="fa-solid fa-key text-3xl text-slate-300 mb-2 block"></i>' +
+            'لا توجد أكواد مطابقة للفلاتر المختارة. يمكنك إضافة أكواد جديدة من النموذج بالأعلى.' +
+        '</div>';
+        return;
+    }
+
+    const brandIcons = {
+        'apple': '<span class="text-slate-900 font-bold"><i class="fa-brands fa-apple text-sm ml-1"></i> آيتونز</span>',
+        'pubg': '<span class="text-amber-600 font-bold"><i class="fa-solid fa-gamepad text-sm ml-1"></i> ببجي UC</span>',
+        'freefire': '<span class="text-orange-600 font-bold"><i class="fa-solid fa-fire text-sm ml-1"></i> فري فاير</span>',
+        'netflix': '<span class="text-rose-600 font-bold"><i class="fa-solid fa-film text-sm ml-1"></i> نتفليكس</span>',
+        'shahid': '<span class="text-emerald-600 font-bold"><i class="fa-solid fa-tv text-sm ml-1"></i> شاهد VIP</span>',
+        'general': '<span class="text-sky-600 font-bold"><i class="fa-solid fa-key text-sm ml-1"></i> بطاقة</span>'
+    };
+
+    container.innerHTML = codes.map(c => {
+        const isRevealed = !!revealedVaultCodes[c.id];
+        const displayCode = isRevealed ? c.code : (c.code.slice(0, 4) + '••••••••' + c.code.slice(-3));
+        const isAvailable = c.status === 'available';
+
+        return '<div class="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">' +
+            '<div class="min-w-0 space-y-1">' +
+                '<div class="flex items-center gap-2">' +
+                    (brandIcons[c.brand] || brandIcons.general) +
+                    '<span class="font-extrabold text-xs text-slate-800">' + escapeHtml(c.productName) + '</span>' +
+                    (isAvailable ? 
+                        '<span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800">متوفر للبيع 🟢</span>' : 
+                        '<span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-100 text-rose-800">تم بيعه 🔴 (' + (c.assignedOrderId || '') + ')</span>') +
+                '</div>' +
+                '<div class="flex items-center gap-2">' +
+                    '<code class="font-mono text-xs font-black text-indigo-950 bg-indigo-50/80 px-2.5 py-1 rounded-lg border border-indigo-200 tracking-wider">' + escapeHtml(displayCode) + '</code>' +
+                    (c.pin ? '<span class="text-[10px] font-mono text-slate-500 font-bold">PIN: ' + escapeHtml(c.pin) + '</span>' : '') +
+                    '<button type="button" onclick="toggleVaultCodeReveal(\'' + escapeAttr(c.id) + '\')" class="text-slate-400 hover:text-slate-700 p-1 text-xs" title="' + (isRevealed ? 'إخفاء' : 'إظهار') + '">' +
+                        '<i class="fa-solid ' + (isRevealed ? 'fa-eye-slash' : 'fa-eye') + '"></i>' +
+                    '</button>' +
+                    '<button type="button" onclick="copyToClipboard(\'' + escapeAttr(c.code) + '\')" class="text-sky-600 hover:text-sky-800 p-1 text-xs font-bold" title="نسخ الكود">' +
+                        '<i class="fa-solid fa-copy"></i>' +
+                    '</button>' +
+                '</div>' +
+                (c.notes ? '<p class="text-[10px] text-slate-400">' + escapeHtml(c.notes) + '</p>' : '') +
+            '</div>' +
+            '<div class="flex items-center gap-2 self-end sm:self-center">' +
+                '<span class="text-[10px] text-slate-400 font-mono">' + (c.soldAt ? new Date(c.soldAt).toLocaleDateString('ar-LY') : new Date(c.addedAt).toLocaleDateString('ar-LY')) + '</span>' +
+                '<button type="button" onclick="deleteVaultCode(\'' + escapeAttr(c.id) + '\')" class="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold transition" title="حذف الكود نهائياً">' +
+                    '<i class="fa-solid fa-trash"></i>' +
+                '</button>' +
+            '</div>' +
+        '</div>';
+    }).join('');
+}
+
+function deleteVaultCode(codeId) {
+    if (!confirm('هل أنت متأكد من حذف هذا الكود من قاعدة البيانات؟')) return;
+    if (typeof SahabatiDB !== 'undefined') {
+        SahabatiDB.deleteCode(codeId);
+        renderVaultPanel();
+        showToast('تم حذف الكود بنجاح', 'fa-trash');
+    }
+}
+
+// ================= CUSTOMERS & ORDERS DATABASE PANEL =================
+
+function renderCustomersPanel() {
+    if (typeof SahabatiDB === 'undefined') return;
+
+    const users = SahabatiDB.getAllUsers();
+    const orders = SahabatiDB.getAllOrders();
+
+    const userBadge = document.getElementById('customers-count-badge');
+    const ordersBadge = document.getElementById('all-orders-count-badge');
+    if (userBadge) userBadge.textContent = users.length + ' عميل';
+    if (ordersBadge) ordersBadge.textContent = orders.length + ' طلب';
+
+    // 1. Render Customers Table
+    const custContainer = document.getElementById('customers-table-container');
+    if (custContainer) {
+        if (users.length === 0) {
+            custContainer.innerHTML = '<p class="text-xs text-slate-500 text-center p-4">لا يوجد عملاء مسجلين بعد.</p>';
+        } else {
+            custContainer.innerHTML = '<table class="w-full text-right text-xs">' +
+                '<thead><tr class="border-b border-slate-200 text-slate-500 font-bold">' +
+                    '<th class="pb-2">اسم العميل</th>' +
+                    '<th class="pb-2">رقم الهاتف</th>' +
+                    '<th class="pb-2">البريد</th>' +
+                    '<th class="pb-2">عدد الطلبات</th>' +
+                    '<th class="pb-2">تاريخ الانضمام</th>' +
+                '</tr></thead>' +
+                '<tbody class="divide-y divide-slate-100">' +
+                users.map(u => {
+                    const userOrders = orders.filter(o => o.userId === u.id || o.customerPhone === u.phone);
+                    const totalSpent = userOrders.reduce((sum, o) => {
+                        const val = parseFloat(String(o.totalFormatted || '').replace(/[^0-9.]/g, '')) || 0;
+                        return sum + val;
+                    }, 0);
+
+                    return '<tr class="hover:bg-slate-50/80">' +
+                        '<td class="py-2.5 font-extrabold text-slate-900 flex items-center gap-2">' +
+                            '<span class="w-7 h-7 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center font-bold text-xs">' + u.name.charAt(0) + '</span>' +
+                            '<span>' + escapeHtml(u.name) + '</span>' +
+                        '</td>' +
+                        '<td class="py-2.5 font-mono font-bold text-slate-700">' + escapeHtml(u.phone) + '</td>' +
+                        '<td class="py-2.5 text-slate-500">' + escapeHtml(u.email || '-') + '</td>' +
+                        '<td class="py-2.5 font-black text-sky-800">' + userOrders.length + ' طلب (' + totalSpent.toFixed(2) + ' د.ل)</td>' +
+                        '<td class="py-2.5 text-slate-400 font-mono text-[11px]">' + (u.createdAt ? new Date(u.createdAt).toLocaleDateString('ar-LY') : '-') + '</td>' +
+                    '</tr>';
+                }).join('') +
+                '</tbody></table>';
+        }
+    }
+
+    // 2. Render All Orders Table
+    const ordersContainer = document.getElementById('all-orders-table-container');
+    if (ordersContainer) {
+        if (orders.length === 0) {
+            ordersContainer.innerHTML = '<p class="text-xs text-slate-500 text-center p-4">لا توجد طلبات مسجلة بعد في قاعدة البيانات.</p>';
+        } else {
+            ordersContainer.innerHTML = orders.map(order => {
+                return '<div class="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-2.5">' +
+                    '<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-2">' +
+                        '<div>' +
+                            '<span class="font-black text-slate-900 text-sm">#' + escapeHtml(order.id) + '</span>' +
+                            '<span class="text-xs text-slate-500 font-bold mr-2">' + escapeHtml(order.customerName || 'عميل') + ' (' + escapeHtml(order.customerPhone || '') + ')</span>' +
+                        '</div>' +
+                        '<div class="flex items-center gap-2">' +
+                            '<span class="text-xs font-mono text-slate-400">' + escapeHtml(order.date || '') + '</span>' +
+                            (order.waUrl ? '<a href="' + escapeAttr(order.waUrl) + '" target="_blank" class="px-2.5 py-1 rounded-xl bg-emerald-100 text-emerald-800 font-black text-[10px] hover:bg-emerald-200 transition flex items-center gap-1"><i class="fa-brands fa-whatsapp"></i> واتساب</a>' : '') +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="space-y-1 text-xs">' +
+                        (order.vouchers || []).map(v => {
+                            return '<div class="p-2 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">' +
+                                '<div><span class="font-bold text-slate-800">' + escapeHtml(v.title) + ': </span><code class="font-mono font-black text-sky-800">' + escapeHtml(v.voucherCode) + '</code></div>' +
+                                '<button onclick="copyToClipboard(\'' + escapeAttr(v.voucherCode) + '\')" class="px-2 py-0.5 rounded bg-sky-600 text-white font-bold text-[10px]">نسخ</button>' +
+                            '</div>';
+                        }).join('') +
+                    '</div>' +
+                    (order.cardCode13 ? '<div class="p-2 bg-amber-50 rounded-xl text-amber-900 text-xs font-mono font-bold">🎟️ كود كارت التعبئة (13 رقم): ' + escapeHtml(order.cardCode13) + '</div>' : '') +
+                    '<div class="flex items-center justify-between text-xs pt-1">' +
+                        '<span class="text-slate-500 font-medium">وسيلة الدفع: <strong>' + escapeHtml(order.paymentMethod || '') + '</strong></span>' +
+                        '<span class="font-black text-emerald-700 text-sm">' + escapeHtml(order.totalFormatted || '') + '</span>' +
+                    '</div>' +
+                '</div>';
+            }).join('');
+        }
     }
 }

@@ -61,12 +61,18 @@
                 </div>
             </a>
 
-            <!-- Controls (WhatsApp Contact, LYD Currency Badge) -->
-            <div class="flex items-center gap-2 sm:gap-2.5">
+            <!-- Controls (Customer Account, WhatsApp Contact, LYD Currency Badge) -->
+            <div class="flex items-center gap-1.5 sm:gap-2.5">
+                <!-- Customer Account Header Button -->
+                <button type="button" onclick="handleCustomerHeaderClick()" id="customer-header-auth-btn" class="bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-700 hover:to-indigo-700 text-white font-bold px-3 py-1.5 rounded-xl shadow-md shadow-sky-600/20 transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-user-circle text-sm sm:text-base"></i>
+                    <span id="customer-header-auth-label" class="font-extrabold text-[11px] sm:text-xs">حسابي / دخول</span>
+                </button>
+
                 <!-- WhatsApp Support Header Button -->
                 <a id="header-wa-btn" href="https://wa.me/218920541749" target="_blank" title="تواصل مع خدمة العملاء على واتساب" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3.5 py-1.5 rounded-xl shadow-md shadow-emerald-600/20 transition flex items-center gap-1.5">
-                    <i class="fa-brands fa-whatsapp text-base"></i>
-                    <span class="hidden sm:inline font-black">واتساب المبيعات</span>
+                    <i class="fa-brands fa-whatsapp text-sm sm:text-base"></i>
+                    <span class="hidden md:inline font-black">واتساب المبيعات</span>
                 </a>
 
                 <!-- Libyan Dinar Currency Badge -->
@@ -522,30 +528,66 @@
 
         </section>
 
-        <!-- ================= PAGE 5: ORDERS ================= -->
+        <!-- ================= PAGE 5: ORDERS & CUSTOMER ACCOUNT ================= -->
         <section id="page-orders" class="view-page hidden space-y-5">
 
-            <div class="flex items-center justify-between">
-                <div>
-                    <h2 class="text-2xl font-black text-slate-900">سجل طلباتي (My Orders)</h2>
-                    <p class="text-xs text-slate-500 font-medium">عرض واسترجاع جميع الفواتير وأكواد الشحن السابقة</p>
-                </div>
-                <span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full">🇱🇾 دينار ليبي</span>
+            <!-- Customer Account Profile Header (Dynamic) -->
+            <div id="customer-profile-banner" class="glass-panel bg-white/95 rounded-3xl p-4 sm:p-6 shadow-xl border border-white">
+                <!-- Injected by JS: renderCustomerAccount() -->
             </div>
 
-            <div id="orders-empty-state" class="glass-panel rounded-3xl p-10 text-center shadow-xl">
-                <div class="w-16 h-16 rounded-full bg-sky-100 text-sky-600 flex items-center justify-center text-2xl mx-auto mb-3">
+            <!-- Customer Dashboard Navigation Tabs -->
+            <div class="flex items-center gap-2 border-b border-sky-100 pb-2 overflow-x-auto no-scrollbar">
+                <button onclick="switchCustomerOrdersTab('orders')" id="cust-tab-btn-orders" class="px-4 py-2 rounded-2xl text-xs sm:text-sm font-extrabold bg-sky-600 text-white shadow-md transition flex items-center gap-2">
                     <i class="fa-solid fa-receipt"></i>
-                </div>
-                <h4 class="font-bold text-slate-900 text-base mb-1">لا توجد طلبات سابقة</h4>
-                <p class="text-xs text-slate-500 mb-4">عند قيامك بأول عملية شحن أو شراء اشتراك ستظهر هنا تلقائياً.</p>
-                <button onclick="navigateTo('games')" class="px-5 py-2.5 rounded-xl bg-sky-600 text-white font-bold text-xs">
-                    ابدأ التسوق الآن
+                    <span>سجل طلباتي ومشترياتي</span>
+                </button>
+                <button onclick="switchCustomerOrdersTab('codes')" id="cust-tab-btn-codes" class="px-4 py-2 rounded-2xl text-xs sm:text-sm font-bold bg-white/90 text-slate-700 hover:bg-sky-50 border border-sky-100 transition flex items-center gap-2">
+                    <i class="fa-solid fa-key text-amber-500"></i>
+                    <span>مخزن أكوادي الرقمية (آيتونز / ببجي / فري فاير)</span>
+                    <span id="cust-codes-badge" class="bg-amber-100 text-amber-900 text-[10px] font-black px-2 py-0.5 rounded-full">0</span>
                 </button>
             </div>
 
-            <div id="orders-list-container" class="space-y-4">
-                <!-- Populated by JS -->
+            <!-- VIEW 1: ORDERS LIST -->
+            <div id="cust-view-orders" class="space-y-4">
+                <div id="orders-empty-state" class="glass-panel rounded-3xl p-10 text-center shadow-xl">
+                    <div class="w-16 h-16 rounded-full bg-sky-100 text-sky-600 flex items-center justify-center text-2xl mx-auto mb-3">
+                        <i class="fa-solid fa-receipt"></i>
+                    </div>
+                    <h4 class="font-bold text-slate-900 text-base mb-1">لا توجد طلبات مسجلة بعد</h4>
+                    <p class="text-xs text-slate-500 mb-4">عند قيامك بأول عملية شحن أو شراء ستظهر فواتيرك هنا مباشرة.</p>
+                    <button onclick="navigateTo('games')" class="px-5 py-2.5 rounded-xl bg-sky-600 text-white font-bold text-xs shadow-md">
+                        ابدأ التسوق والشحن الآن
+                    </button>
+                </div>
+
+                <div id="orders-list-container" class="space-y-4">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <!-- VIEW 2: DIGITAL CODES VAULT -->
+            <div id="cust-view-codes" class="hidden space-y-4">
+                <div class="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center gap-2 font-medium">
+                    <i class="fa-solid fa-shield-halved text-amber-600 text-lg flex-shrink-0"></i>
+                    <span>هنا تجد جميع الأكواد الرقمية وبطاقات الهدايا (آيتونز، شدات ببجي، جواهر فري فاير، حسابات المشاهدة) المخصصة لحسابك مع زر نسخ فوري لكل كود.</span>
+                </div>
+
+                <div id="customer-codes-empty-state" class="glass-panel rounded-3xl p-10 text-center shadow-xl">
+                    <div class="w-16 h-16 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-2xl mx-auto mb-3">
+                        <i class="fa-solid fa-key"></i>
+                    </div>
+                    <h4 class="font-bold text-slate-900 text-base mb-1">لا توجد أكواد رقمية مسجلة بعد</h4>
+                    <p class="text-xs text-slate-500 mb-4">عند شرائك بطاقات آيتونز أو شدات ببجي أو جواهر فري فاير ستُحفظ وتُعرض أكوادك هنا دائماً.</p>
+                    <button onclick="navigateTo('giftcards')" class="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-md">
+                        تصفح البطاقات والأكواد
+                    </button>
+                </div>
+
+                <div id="customer-codes-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                    <!-- Populated by JS -->
+                </div>
             </div>
 
         </section>
@@ -599,12 +641,119 @@
         </div>
     </div>
 
+    <!-- Modal: Customer Authentication (تسجيل الدخول / إنشاء حساب) -->
+    <div id="customer-auth-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-md z-50 hidden items-center justify-center p-3 sm:p-4">
+        <div class="glass-panel bg-white/95 rounded-3xl max-w-md w-full p-5 sm:p-7 shadow-2xl border-2 border-sky-300 animate-toastIn relative">
+            <button onclick="closeCustomerAuthModal()" class="absolute top-4 left-4 text-slate-400 hover:text-slate-600 w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-sm transition" title="إغلاق">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <div class="text-center mb-5">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-sky-600 to-indigo-700 text-white flex items-center justify-center text-2xl mx-auto mb-2 shadow-md">
+                    <i class="fa-solid fa-user-shield"></i>
+                </div>
+                <h3 class="text-xl font-black text-slate-900">بوابة عملاء سحّابتي</h3>
+                <p class="text-xs text-slate-500 mt-0.5">تتبع طلباتك، استعرض فواتيرك، واحفظ أكوادك الرقمية بأمان</p>
+            </div>
+
+            <!-- Tab Switcher -->
+            <div class="flex items-center gap-1.5 p-1 bg-slate-100 rounded-2xl mb-5">
+                <button type="button" onclick="switchCustomerAuthTab('login')" id="cust-auth-tab-login" class="flex-1 py-2 rounded-xl text-xs font-black bg-white text-sky-700 shadow-sm transition">
+                    تسجيل الدخول
+                </button>
+                <button type="button" onclick="switchCustomerAuthTab('register')" id="cust-auth-tab-register" class="flex-1 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 transition">
+                    إنشاء حساب جديد
+                </button>
+            </div>
+
+            <!-- TAB 1: LOGIN FORM -->
+            <form id="customer-login-form" onsubmit="handleCustomerLoginSubmit(event)" class="space-y-3.5 text-right">
+                <div>
+                    <label class="text-xs font-bold text-slate-700 block mb-1">رقم الهاتف الليبي أو البريد:</label>
+                    <div class="relative">
+                        <input type="text" id="cust-login-ident" placeholder="0920541749" required 
+                               class="glass-input w-full rounded-xl py-2.5 pr-3 pl-10 text-xs font-bold text-slate-800 border border-slate-200 focus:border-sky-500">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none">
+                            <i class="fa-solid fa-phone"></i>
+                        </span>
+                    </div>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-700 block mb-1">كلمة المرور:</label>
+                    <div class="relative">
+                        <input type="password" id="cust-login-pass" placeholder="••••••••" required 
+                               class="glass-input w-full rounded-xl py-2.5 pr-3 pl-10 text-xs font-bold text-slate-800 border border-slate-200 focus:border-sky-500">
+                        <button type="button" onclick="togglePassVisibility('cust-login-pass', this)" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-sm">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="pt-1">
+                    <button type="submit" id="cust-login-submit-btn" class="w-full py-3 rounded-2xl bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-700 hover:to-indigo-700 text-white font-black text-xs shadow-lg shadow-sky-600/30 transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-right-to-bracket"></i>
+                        <span>دخول إلى حسابي</span>
+                    </button>
+                </div>
+                <div class="text-center pt-2 border-t border-slate-100">
+                    <p class="text-xs text-slate-500">
+                        ليس لديك حساب؟
+                        <button type="button" onclick="switchCustomerAuthTab('register')" class="text-sky-600 font-bold hover:underline">أنشئ حسابك في ثوانٍ</button>
+                    </p>
+                </div>
+            </form>
+
+            <!-- TAB 2: REGISTER FORM -->
+            <form id="customer-register-form" onsubmit="handleCustomerRegisterSubmit(event)" class="hidden space-y-3 text-right">
+                <div>
+                    <label class="text-xs font-bold text-slate-700 block mb-1">الاسم الكامل:</label>
+                    <input type="text" id="cust-reg-name" placeholder="محمد الزروق" required 
+                           class="glass-input w-full rounded-xl py-2.5 px-3 text-xs font-bold text-slate-800 border border-slate-200 focus:border-sky-500">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-700 block mb-1">رقم الهاتف الليبي (ليبيانا أو مدار):</label>
+                    <input type="tel" id="cust-reg-phone" placeholder="0920541749" required 
+                           class="glass-input w-full rounded-xl py-2.5 px-3 text-xs font-bold font-mono text-slate-800 border border-slate-200 focus:border-sky-500">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-700 block mb-1">البريد الإلكتروني (اختياري):</label>
+                    <input type="email" id="cust-reg-email" placeholder="name@example.ly" 
+                           class="glass-input w-full rounded-xl py-2.5 px-3 text-xs font-medium text-slate-800 border border-slate-200 focus:border-sky-500">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-xs font-bold text-slate-700 block mb-1">كلمة المرور:</label>
+                        <input type="password" id="cust-reg-pass" placeholder="••••••••" required 
+                               class="glass-input w-full rounded-xl py-2 px-3 text-xs font-bold text-slate-800 border border-slate-200 focus:border-sky-500">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-700 block mb-1">تأكيد كلمة المرور:</label>
+                        <input type="password" id="cust-reg-pass-confirm" placeholder="••••••••" required 
+                               class="glass-input w-full rounded-xl py-2 px-3 text-xs font-bold text-slate-800 border border-slate-200 focus:border-sky-500">
+                    </div>
+                </div>
+                <div class="pt-2">
+                    <button type="submit" id="cust-reg-submit-btn" class="w-full py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black text-xs shadow-lg shadow-emerald-600/30 transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-user-plus"></i>
+                        <span>إنشاء الحساب وتفعيل السجل</span>
+                    </button>
+                </div>
+                <div class="text-center pt-2 border-t border-slate-100">
+                    <p class="text-xs text-slate-500">
+                        لديك حساب بالفعل؟
+                        <button type="button" onclick="switchCustomerAuthTab('login')" class="text-sky-600 font-bold hover:underline">تسجيل الدخول</button>
+                    </p>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Toast Notifications Root -->
     <div id="toast-container"></div>
 
     <!-- Scripts -->
     <script src="js/assets.js"></script>
     <script src="js/data.js"></script>
+    <script src="js/database.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>
