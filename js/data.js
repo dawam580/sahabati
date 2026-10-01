@@ -6,18 +6,13 @@
 // ==========================================
 
 const DEFAULT_STORE_SETTINGS = {
-    whatsappNumber: '218920541749', // رقم واتساب المتجر الجديد 0920541749
+    whatsappNumber: '218920541749', // رقم واتساب المتجر 0920541749
     telegramChannel: 'A_98_A20',
     telegramUrl: 'https://t.me/A_98_A20',
     adminPin: 'admin2026',           // Admin dashboard access PIN
-    ownerName: 'سحابتي',
-    facebookUrl: '',
-    instagramUrl: '',
-    tiktokUrl: '',
-    logoImage: 'logo.jpg',
-    heroImage: 'hero-banner.jpg',
     storeNameAr: 'سحّابتي',
-    storeNameEn: 'Sahabati Cloud',
+    storeNameEn: 'Sahabati My Cloud',
+    heroImage: 'sahabati_banner_hero.jpg',
     currency: {
         code: 'LYD',
         symbol: 'د.ل',
@@ -25,20 +20,25 @@ const DEFAULT_STORE_SETTINGS = {
     },
     paymentMethodsInfo: {
         one_pay: {
-            title: 'ون باي (OnePay)',
-            accountInfo: 'خدمة ون باي / موبي كاش / مصرفي باي - الدفع الإلكتروني الليبي',
-            instructions: 'ادفع عبر تطبيق ون باي أو أي خدمة مصرفية فورية بالدينار الليبي وأرسل لقطة الشاشة ورقم المعاملة عبر واتساب 0920541749 للتأكيد الفوري.'
+            title: 'ون باي (OnePay) / دفع مصرفي فوري',
+            accountInfo: 'خدمة ون باي - موبي كاش - سداد - تداول',
+            instructions: 'ادفع عبر تطبيق ون باي أو أي محفظة مصرفية بالدينار الليبي وأرسل إشعار الدفع عبر واتساب 0920541749 للتأكيد والتسليم الفوري.'
         },
         telecom_libyana: {
-            title: 'رصيد ليبيانا (Libyana)',
+            title: 'شفرة ورصيد ليبيانا (Libyana)',
             accountInfo: 'رقم تحويل رصيد ليبيانا: 0920000000',
-            instructions: 'حوّل الرصيد مباشرة أو أرسل كود كرت ليبيانا عبر واتساب لتأكيد الشحن فوراً.'
+            instructions: 'حوّل الرصيد مباشرة أو أرسل كود كرت تعبئة ليبيانا في محادثة واتساب لتأكيد الشحن فوراً.'
+        },
+        telecom_madar: {
+            title: 'شفرة ورصيد مدار الجديد (Madar)',
+            accountInfo: 'رقم تحويل رصيد مدار: 0910000000',
+            instructions: 'حوّل الرصيد مباشرة أو أرسل كود كرت تعبئة مدار الجديد في محادثة واتساب لتأكيد الشحن فوراً.'
         },
         bank_transfer: {
-            title: 'تحويل مصرفي ليبي',
+            title: 'تحويل مصرفي ليبي مباشر',
             accountInfo: 'اسم الحساب: منصة سحّابتي | رقم الحساب: 0123456789012',
-            instructions: 'قم بالتحويل المصرفي وأرسل إشعار الخصم عبر واتساب 0920541749.'
-        },
+            instructions: 'قم بالتحويل المصرفي وأرسل إشعار الخصم في محادثة واتساب 0920541749.'
+        }
     }
 };
 
@@ -49,21 +49,20 @@ const DEFAULT_APP_DATA = {
         'LIBYA10': { discountPercent: 10, description: 'خصم الشحن المباشر 10%' },
         'WELCOME': { discountPercent: 15, description: 'خصم الترحيب للزبائن الجدد 15%' }
     },
-    announcements: [],
     categories: [
         {
             id: 'games',
             titleAr: 'شحن ألعاب الفيديو',
             titleEn: 'Game Top-ups',
-            subtitleAr: 'ببجي موبايل، فري فاير، كوينز بيس، وروبلوكس بالمعرّف',
+            subtitleAr: 'ببجي موبايل، فري فاير، روبلوكس، كوينز بيس، كلاش أوف كلانس',
             icon: 'fa-gamepad',
             badge: 'شحن فوري بالمعرّف ⚡'
         },
         {
             id: 'streaming',
-            titleAr: 'اشتراكات البث والترفيه',
-            titleEn: 'Streaming & VOD',
-            subtitleAr: 'نتفليكس 4K، شاهد VIP حساب كامل (شاشات وهواتف)',
+            titleAr: 'اشتراكات المشاهدة الترفيهية',
+            titleEn: 'Streaming & Movies',
+            subtitleAr: 'نتفليكس 4K UHD، شاهد VIP حساب كامل (شاشات وهواتف)، ديزني بلس',
             icon: 'fa-tv',
             badge: 'شاشات & هواتف 📺'
         },
@@ -71,9 +70,25 @@ const DEFAULT_APP_DATA = {
             id: 'social',
             titleAr: 'سوشيال ميديا وعملات',
             titleEn: 'Social Coins & Plus',
-            subtitleAr: 'عملات تيك توك TikTok، وسناب شات بلس Snapchat+',
+            subtitleAr: 'عملات تيك توك TikTok، سناب شات بلس Snapchat+، تليجرام بريميوم',
             icon: 'fa-coins',
             badge: 'تيك توك & سناب 🔥'
+        },
+        {
+            id: 'ai_cards',
+            titleAr: 'الذكاء الاصطناعي والبطاقات',
+            titleEn: 'AI & Gift Cards',
+            subtitleAr: 'اشتراك ChatGPT Plus، بطاقات بلايستيشن، ستيم، آبل آيتونز',
+            icon: 'fa-robot',
+            badge: 'ChatGPT & Cards 🤖'
+        },
+        {
+            id: 'telecom',
+            titleAr: 'كروت مدار وليبيانا',
+            titleEn: 'Telecom Cards',
+            subtitleAr: 'كروت تعبئة ودفع مباشر بشفرات ليبيانا ومدار الجديد',
+            icon: 'fa-sim-card',
+            badge: 'ليبيانا & مدار 🇱🇾'
         }
     ],
     games: [
@@ -81,9 +96,9 @@ const DEFAULT_APP_DATA = {
             id: 'pubg',
             nameAr: 'ببجي موبايل (PUBG Mobile UC)',
             nameEn: 'PUBG Mobile',
-            badge: 'شحن فوري بالمعرّف 🔥',
-            image: '',
+            badge: 'أكواد وشدات فورية 🔥',
             icon: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/pubg.png',
+            logoSvg: '<span class="text-amber-400 font-black text-xs tracking-wider">PUBG</span>',
             idLabelAr: 'أدخل معرّف اللاعب (Player ID):',
             idPlaceholder: 'مثال: 5123456789',
             packages: [
@@ -105,9 +120,9 @@ const DEFAULT_APP_DATA = {
             id: 'freefire',
             nameAr: 'فري فاير (Free Fire Diamonds)',
             nameEn: 'Free Fire',
-            badge: 'فوري ⚡',
-            image: '',
+            badge: 'شحن فوري ⚡',
             icon: '01_photo_5809670474982690366_y.jpg',
+            logoSvg: '<span class="text-orange-400 font-black text-xs">FREE FIRE</span>',
             idLabelAr: 'معرف الحساب (Player ID):',
             idPlaceholder: 'مثال: 987654321',
             packages: [
@@ -123,9 +138,9 @@ const DEFAULT_APP_DATA = {
             id: 'tiktok_coins',
             nameAr: 'عملات تيك توك (TikTok Coins)',
             nameEn: 'TikTok Coins',
-            badge: 'شحن يوزر 🎵',
-            image: '',
+            badge: 'شحن يوزر مباشر 🎵',
             icon: 'https://upload.wikimedia.org/wikipedia/en/a/a9/TikTok_logo.svg',
+            logoSvg: '<i class="fa-brands fa-tiktok text-rose-400 text-lg"></i>',
             idLabelAr: 'اسم مستخدم تيك توك (@Username):',
             idPlaceholder: 'مثال: @username',
             packages: [
@@ -144,9 +159,9 @@ const DEFAULT_APP_DATA = {
             id: 'roblox',
             nameAr: 'روبلوكس (Roblox Robux)',
             nameEn: 'Roblox Robux',
-            badge: 'خصم 20% 🔥',
-            image: '',
+            badge: 'شحن فوري باليوزر 🧱',
             icon: '07_roblox_promotion_banner.png',
+            logoSvg: '<span class="text-sky-400 font-black text-xs">ROBLOX</span>',
             idLabelAr: 'اسم مستخدم روبلوكس (Username):',
             idPlaceholder: 'مثال: RobloxPlayer123',
             packages: [
@@ -155,22 +170,54 @@ const DEFAULT_APP_DATA = {
                 { id: 'rb_800', nameAr: '800 Robux رصيد روبلوكس', priceLYD: 65.00, bestValue: true, icon: 'R$' },
                 { id: 'rb_1700', nameAr: '1,700 Robux رصيد روبلوكس', priceLYD: 130.00, icon: 'R$' }
             ]
+        },
+        {
+            id: 'efootball',
+            nameAr: 'إي فوتبول بيس (eFootball™ Coins)',
+            nameEn: 'eFootball PES',
+            badge: 'كوينز بيس ⚽',
+            icon: 'https://upload.wikimedia.org/wikipedia/commons/e/e0/EFootball_Logo.svg',
+            logoSvg: '<span class="text-blue-400 font-black text-xs">eFootball</span>',
+            idLabelAr: 'معرف كونامي / ID اللعبة:',
+            idPlaceholder: 'مثال: efootball_player_123',
+            packages: [
+                { id: 'ef_130', nameAr: '130 كوينز بيس (Coins)', priceLYD: 10.00, icon: '🪙' },
+                { id: 'ef_550', nameAr: '550 كوينز بيس (Coins)', priceLYD: 35.00, popular: true, icon: '🪙' },
+                { id: 'ef_1050', nameAr: '1,050 كوينز بيس (Coins)', priceLYD: 65.00, bestValue: true, icon: '🪙' },
+                { id: 'ef_2130', nameAr: '2,130 كوينز بيس (Coins)', priceLYD: 125.00, icon: '🪙' }
+            ]
+        },
+        {
+            id: 'clashofclans',
+            nameAr: 'كلاش أوف كلانس (Clash of Clans)',
+            nameEn: 'Clash of Clans',
+            badge: 'جواهر وباس ⚔️',
+            icon: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/clash-of-clans.png',
+            logoSvg: '<span class="text-amber-300 font-black text-xs">CLASH</span>',
+            idLabelAr: 'رمز تاغ اللاعب (#PlayerTag):',
+            idPlaceholder: 'مثال: #9ABC123XYZ',
+            packages: [
+                { id: 'coc_goldpass', nameAr: 'تذكرة الجولد باس (Gold Pass)', priceLYD: 35.00, popular: true, icon: '🎫' },
+                { id: 'coc_500', nameAr: '500 جوهرة كلاش (Gems)', priceLYD: 30.00, icon: '💎' },
+                { id: 'coc_1200', nameAr: '1,200 جوهرة كلاش (Gems)', priceLYD: 65.00, bestValue: true, icon: '💎' },
+                { id: 'coc_2500', nameAr: '2,500 جوهرة كلاش (Gems)', priceLYD: 130.00, icon: '💎' }
+            ]
         }
     ],
     giftCards: [
-        // ================= STREAMING & ENTERTAINMENT =================
+        // ================= 1. STREAMING & ENTERTAINMENT =================
         {
             id: 'netflix_4k_1m',
             brand: 'netflix',
             category: 'streaming',
             nameAr: 'اشتراك نتفليكس (Netflix 4K) - شهر واحد',
-            nominal: '1 Month - Profile User',
+            nominal: '1 Month - Profile User 4K',
             priceLYD: 45.00,
             badge: 'ملف خاص 4K UHD 🔥',
             type: 'User Profile',
             duration: '1 month',
             quality: '4K Ultra HD',
-            instructionsAr: 'ملف شخصي خاص بك بجودة 4K Ultra HD لمدة شهر كامل مع ضمان كامل المدة وتسليم فوري عبر واتساب.'
+            instructionsAr: 'ملف شخصي خاص بك ومحمي برمز PIN بجودة 4K Ultra HD لمدة شهر كامل مع ضمان كامل المدة وتسليم فوري عبر واتساب.'
         },
         {
             id: 'shahid_vip_full',
@@ -185,6 +232,18 @@ const DEFAULT_APP_DATA = {
             instructionsAr: 'حساب كامل خاص بك يعمل على جميع الأجهزة: شاشات التلفزيون الذكية، الهواتف الذكية، والأجهزة اللوحية، يشمل مكتبة المسلسلات والأفلام والرياضة.'
         },
         {
+            id: 'disney_plus_1m',
+            brand: 'disney',
+            category: 'streaming',
+            nameAr: 'اشتراك ديزني بلس (Disney+) - شهر كامل',
+            nominal: '1 Month Subscription',
+            priceLYD: 35.00,
+            badge: 'أفلام ومسلسلات 4K ✨',
+            instructionsAr: 'اشتراك ديزني بلس الرسمي لمدة شهر كامل مع دعم جميع الأجهزة ودقة 4K.'
+        },
+
+        // ================= 2. SOCIAL MEDIA & COINS =================
+        {
             id: 'snapchat_plus_3m',
             brand: 'snapchat',
             category: 'social',
@@ -193,18 +252,7 @@ const DEFAULT_APP_DATA = {
             priceLYD: 50.00,
             badge: '3 أشهر 🌟',
             duration: '3 months',
-            instructionsAr: 'تفعيل فوري لاشتراك سناب شات بلس لمدة 3 أشهر مع جميع ميزات بلس الحصرية.'
-        },
-        {
-            id: 'chatgpt_plus_1m',
-            brand: 'chatgpt',
-            category: 'streaming',
-            nameAr: 'اشتراك ChatGPT Plus - شهر واحد',
-            nominal: '1 Month - Plus',
-            priceLYD: 210.00,
-            badge: 'الأكثر طلبا 🤖',
-            duration: '1 month',
-            instructionsAr: 'تفعيل ChatGPT Plus على حسابك لمدة شهر كامل مع GPT-4 والأولوية في السرعة.'
+            instructionsAr: 'تفعيل فوري لاشتراك سناب شات بلس على حسابك الشخصي لمدة 3 أشهر مع جميع الميزات الحصرية.'
         },
         {
             id: 'snapchat_plus_6m',
@@ -215,19 +263,17 @@ const DEFAULT_APP_DATA = {
             priceLYD: 80.00,
             badge: '6 أشهر (أفضل توفير) ✨',
             duration: '6 months',
-            instructionsAr: 'تفعيل فوري لاشتراك سناب شات بلس لمدة 6 أشهر مع جميع ميزات بلس الحصرية.'
+            instructionsAr: 'تفعيل فوري لاشتراك سناب شات بلس على حسابك الشخصي لمدة 6 أشهر مع جميع الميزات الحصرية.'
         },
-
-        // ================= TIKTOK COINS AS GIFTCARD OPTION =================
         {
-            id: 'card_tt_100',
-            brand: 'tiktok',
+            id: 'telegram_premium_3m',
+            brand: 'telegram',
             category: 'social',
-            nameAr: '100 عملة تيك توك (TikTok Coins)',
-            nominal: '100 Coins',
-            priceLYD: 10.00,
-            badge: 'شحن فوري',
-            instructionsAr: 'شحن مباشر على اسم المستخدم (@Username) الخاص بك على تيك توك فور تأكيد الطلب.'
+            nameAr: 'اشتراك تيليجرام بريميوم (Telegram Premium) - 3 أشهر',
+            nominal: '3 Months Subscription',
+            priceLYD: 65.00,
+            badge: 'تفعيل باليوزر ⚡',
+            instructionsAr: 'تفعيل رسمي لاشتراك تيليجرام بريميوم عبر اسم المستخدم (@username) الخاص بك مباشرة.'
         },
         {
             id: 'card_tt_335',
@@ -237,16 +283,6 @@ const DEFAULT_APP_DATA = {
             nominal: '335 Coins',
             priceLYD: 35.00,
             badge: 'الأكثر طلباً 🔥',
-            instructionsAr: 'شحن مباشر على اسم المستخدم (@Username) الخاص بك على تيك توك فور تأكيد الطلب.'
-        },
-        {
-            id: 'card_tt_670',
-            brand: 'tiktok',
-            category: 'social',
-            nameAr: '670 عملة تيك توك (TikTok Coins)',
-            nominal: '670 Coins',
-            priceLYD: 70.00,
-            badge: 'عرض خاص',
             instructionsAr: 'شحن مباشر على اسم المستخدم (@Username) الخاص بك على تيك توك فور تأكيد الطلب.'
         },
         {
@@ -260,110 +296,110 @@ const DEFAULT_APP_DATA = {
             instructionsAr: 'شحن مباشر على اسم المستخدم (@Username) الخاص بك على تيك توك فور تأكيد الطلب.'
         },
         {
-            id: 'card_tt_1920',
-            brand: 'tiktok',
-            category: 'social',
-            nameAr: '1,920 عملة تيك توك (TikTok Coins)',
-            nominal: '1920 Coins',
-            priceLYD: 200.00,
-            badge: '200 د.ل 🚀',
-            instructionsAr: 'شحن مباشر على اسم المستخدم (@Username) الخاص بك على تيك توك فور تأكيد الطلب.'
-        },
-        {
             id: 'card_tt_3500',
             brand: 'tiktok',
             category: 'social',
             nameAr: '3,500 عملة تيك توك (TikTok Coins)',
             nominal: '3500 Coins',
             priceLYD: 365.00,
-            badge: 'أفضل توفير',
-            instructionsAr: 'شحن مباشر على اسم المستخدم (@Username) الخاص بك على تيك توك فور تأكيد الطلب.'
-        },
-        {
-            id: 'card_tt_7000',
-            brand: 'tiktok',
-            category: 'social',
-            nameAr: '7,000 عملة تيك توك (TikTok Coins)',
-            nominal: '7000 Coins',
-            priceLYD: 730.00,
-            badge: 'VIP 💎',
-            instructionsAr: 'شحن مباشر على اسم المستخدم (@Username) الخاص بك على تيك توك فور تأكيد الطلب.'
-        },
-        {
-            id: 'card_tt_10000',
-            brand: 'tiktok',
-            category: 'social',
-            nameAr: '10,000 عملة تيك توك (TikTok Coins)',
-            nominal: '10000 Coins',
-            priceLYD: 1040.00,
-            badge: 'باقة كبار الشخصيات 👑',
+            badge: 'أفضل توفير 🚀',
             instructionsAr: 'شحن مباشر على اسم المستخدم (@Username) الخاص بك على تيك توك فور تأكيد الطلب.'
         },
 
+        // ================= 3. AI & DIGITAL GIFT CARDS =================
+        {
+            id: 'chatgpt_plus_1m',
+            brand: 'chatgpt',
+            category: 'ai_cards',
+            nameAr: 'اشتراك ChatGPT Plus الذكاء الاصطناعي - شهر كامل',
+            nominal: 'Official GPT-4o / Plus',
+            priceLYD: 120.00,
+            badge: 'GPT-4o الرسمي 🤖',
+            instructionsAr: 'تفعيل اشتراك شات جي بي تي بلس (ChatGPT Plus) مع وصول غير محدود لنماذج GPT-4o وتوليد الصور والتحليل المتقدم.'
+        },
+        {
+            id: 'playstation_10_us',
+            brand: 'playstation',
+            category: 'ai_cards',
+            nameAr: 'بطاقة بلايستيشن 10 دولار أمريكي (PSN $10 US)',
+            nominal: '$10 USD PlayStation Card',
+            priceLYD: 68.00,
+            badge: 'ستور أمريكي 🎮',
+            instructionsAr: 'كود بطاقة بلايستيشن ستور أمريكي 10$ رقمي أصلي مع تسليم فوري.'
+        },
+        {
+            id: 'steam_10_usd',
+            brand: 'steam',
+            category: 'ai_cards',
+            nameAr: 'بطاقة ستيم 10 دولار (Steam $10 USD Global)',
+            nominal: '$10 Steam Wallet',
+            priceLYD: 68.00,
+            badge: 'ستيم ألعاب 🕹️',
+            instructionsAr: 'كود تعبئة محفظة ستيم العالمي أصلي للشراء من متجر ستيم.'
+        },
+        {
+            id: 'apple_itunes_10_us',
+            brand: 'apple',
+            category: 'ai_cards',
+            nameAr: 'بطاقة آبل آيتونز 10 دولار (Apple iTunes $10 US)',
+            nominal: '$10 Apple Gift Card',
+            priceLYD: 68.00,
+            badge: 'آبل أمريكي 🍎',
+            instructionsAr: 'كود بطاقة متجر آبل لشحن رصيد الآيفون والآيباد وشراء التطبيقات والاشتراكات.'
+        },
+
+        // ================= 4. TELECOM VOUCHERS (LIBYANA & MADAR) =================
+        {
+            id: 'card_libyana_10',
+            brand: 'libyana',
+            category: 'telecom',
+            nameAr: 'كرت تعبئة ليبيانا 10 دينار',
+            nominal: '10 LYD Voucher',
+            priceLYD: 10.00,
+            badge: 'ليبيانا 🇱🇾',
+            instructionsAr: 'كود تعبئة رصيد كرت ليبيانا 10 د.ل فوري صالح للاستخدام فوراً.'
+        },
+        {
+            id: 'card_libyana_20',
+            brand: 'libyana',
+            category: 'telecom',
+            nameAr: 'كرت تعبئة ليبيانا 20 دينار',
+            nominal: '20 LYD Voucher',
+            priceLYD: 20.00,
+            badge: 'ليبيانا 🇱🇾',
+            instructionsAr: 'كود تعبئة رصيد كرت ليبيانا 20 د.ل فوري صالح للاستخدام فوراً.'
+        },
+        {
+            id: 'card_madar_10',
+            brand: 'madar',
+            category: 'telecom',
+            nameAr: 'كرت تعبئة مدار 10 دينار',
+            nominal: '10 LYD Voucher',
+            priceLYD: 10.00,
+            badge: 'مدار 🇱🇾',
+            instructionsAr: 'كود تعبئة رصيد كرت مدار الجديد 10 د.ل فوري صالح للاستخدام فوراً.'
+        },
+        {
+            id: 'card_madar_20',
+            brand: 'madar',
+            category: 'telecom',
+            nameAr: 'كرت تعبئة مدار 20 دينار',
+            nominal: '20 LYD Voucher',
+            priceLYD: 20.00,
+            badge: 'مدار 🇱🇾',
+            instructionsAr: 'كود تعبئة رصيد كرت مدار الجديد 20 د.ل فوري صالح للاستخدام فوراً.'
+        }
     ]
 };
 
-// Safe storage: لا يموت السكربت لو التخزين محظور أو تالف (وضع خاص/كوكيز محظورة)
-const BUILD = 'big6';
-const __memStore = {};
-function storeGet(k){ try { if (typeof window !== 'undefined' && window.localStorage) { const v = window.localStorage.getItem(k); if (v !== null && v !== undefined) return v; } } catch(e){} return (__memStore[k] !== undefined ? __memStore[k] : null); }
-function storeSet(k,v){ try { if (typeof window !== 'undefined' && window.localStorage) { window.localStorage.setItem(k,v); return; } } catch(e){} __memStore[k]=v; }
-function storeDel(k){ try { if (typeof window !== 'undefined' && window.localStorage) { window.localStorage.removeItem(k); } } catch(e){} delete __memStore[k]; }
-function loadJSON(k,fb){ try { const v = storeGet(k); if(!v) return fb; return JSON.parse(v); } catch(e){ return fb; } }
-function sessGet(k){ try { if (typeof window !== 'undefined' && window.sessionStorage) { return window.sessionStorage.getItem(k); } } catch(e){} return (__memStore['ss:'+k] !== undefined ? __memStore['ss:'+k] : null); }
-function sessSet(k,v){ try { if (typeof window !== 'undefined' && window.sessionStorage) { window.sessionStorage.setItem(k,v); return; } } catch(e){} __memStore['ss:'+k]=v; }
-function sessDel(k){ try { if (typeof window !== 'undefined' && window.sessionStorage) { window.sessionStorage.removeItem(k); } } catch(e){} delete __memStore['ss:'+k]; }
-
-// Build freshness: لو نسخة HTML أقدم من السكربتات، حدّث مرة واحدة تلقائياً
-function checkBuildFresh(){
-    try {
-        const last = storeGet('sahabati_build');
-        if (last && last !== BUILD) {
-            storeSet('sahabati_build', BUILD);
-            try { if (typeof showToast === 'function') showToast('وصل تحديث جديد، جارٍ تحميل النسخة الجديدة...'); } catch(e){}
-            setTimeout(function(){ try { location.reload(); } catch(e){} }, 900);
-        } else if (!last) {
-            storeSet('sahabati_build', BUILD);
-        }
-        try {
-            const spots = (typeof document !== 'undefined' && document.querySelectorAll) ? document.querySelectorAll('[data-build]') : [];
-            for (let i = 0; i < spots.length; i++) spots[i].textContent = BUILD;
-        } catch(e){}
-    } catch(e){}
-}
-
-// LocalStorage Persistence Layer - مع ترحيل لإزالة كروت ليبيانا/مدار من البيع (يبقى الدفع فقط)
+// LocalStorage Persistence Layer
 function loadAppData() {
     try {
-        const stored = storeGet('sahabati_catalog_data');
+        const stored = localStorage.getItem('sahabati_catalog_data');
         if (stored) {
             const parsed = JSON.parse(stored);
             if (parsed && parsed.games && parsed.giftCards) {
                 parsed.settings = { ...DEFAULT_STORE_SETTINGS, ...(parsed.settings || {}) };
-                // ترحيل: احذف كروت الاتصالات من البيع (لم يعد يباع) - يبقى الدفع عبر الرصيد فقط
-                if (parsed.giftCards.some(c => c.category === 'telecom' || c.id.includes('libyana') || c.id.includes('madar'))) {
-                    parsed.giftCards = parsed.giftCards.filter(c => c.category !== 'telecom' && !c.id.includes('libyana') && !c.id.includes('madar'));
-                    // احذف فئة telecom من التصنيفات إذا وجدت
-                    if (parsed.categories) parsed.categories = parsed.categories.filter(cat => cat.id !== 'telecom');
-                    // احفظ الترحيل فوراً
-                    try { storeSet('sahabati_catalog_data', JSON.stringify(parsed)); } catch(e){}
-                }
-                // تأكد من وجود ون باي في طرق الدفع
-                if (!parsed.settings.paymentMethodsInfo.one_pay) {
-                    parsed.settings.paymentMethodsInfo.one_pay = JSON.parse(JSON.stringify(DEFAULT_STORE_SETTINGS.paymentMethodsInfo.one_pay));
-                    try { storeSet('sahabati_catalog_data', JSON.stringify(parsed)); } catch(e){}
-                }
-                // احذف طرق الدفع القديمة المحذوفة (سداد، تداول، كاش) إذا كانت مخزنة
-                ['sadad','tadawul','cash','telecom_cards','telecom_madar','usdt'].forEach(k=>{ if(parsed.settings.paymentMethodsInfo[k]) delete parsed.settings.paymentMethodsInfo[k]; });
-                // دمج بيانات المالك الافتراضية
-                ['ownerName','facebookUrl','instagramUrl','tiktokUrl','logoImage','heroImage'].forEach(k=>{ if(parsed.settings[k]===undefined) parsed.settings[k]=DEFAULT_STORE_SETTINGS[k]; });
-                if (parsed.settings.telegramUrl === 'https://t.me/sabh') parsed.settings.telegramUrl = DEFAULT_STORE_SETTINGS.telegramUrl;
-                if (parsed.settings.logoImage === 'logo.png') parsed.settings.logoImage = 'logo.jpg';
-                if (!parsed.announcements) parsed.announcements = [];
-                // ضمان التصنيفات الافتراضية للكتالوجات القديمة
-                if (!parsed.categories || !parsed.categories.length) parsed.categories = JSON.parse(JSON.stringify(DEFAULT_APP_DATA.categories));
-                // ضمان طرق الدفع الثلاث فقط
-                ['one_pay','telecom_libyana','bank_transfer'].forEach(k=>{ if(!parsed.settings.paymentMethodsInfo[k]) parsed.settings.paymentMethodsInfo[k]=JSON.parse(JSON.stringify(DEFAULT_STORE_SETTINGS.paymentMethodsInfo[k])); });
                 return parsed;
             }
         }
@@ -375,7 +411,7 @@ function loadAppData() {
 
 function saveAppData(data) {
     try {
-        storeSet('sahabati_catalog_data', JSON.stringify(data));
+        localStorage.setItem('sahabati_catalog_data', JSON.stringify(data));
     } catch (e) {
         console.error('Failed to save app data:', e);
     }

@@ -13,11 +13,11 @@ let state = {
     verifiedPlayerId: '',
     verifiedPlayerName: '',
     selectedPackage: null,
-    cart: loadJSON('sahabati_cart', []),
-    orders: loadJSON('sahabati_orders', []),
+    cart: JSON.parse(localStorage.getItem('sahabati_cart') || '[]'),
+    orders: JSON.parse(localStorage.getItem('sahabati_orders') || '[]'),
     appliedPromo: null,
     paymentMethod: 'one_pay',
-    isAdminAuth: (typeof sessGet === 'function' ? sessGet('sahabati_admin_auth') : null) === 'true'
+    isAdminAuth: sessionStorage.getItem('sahabati_admin_auth') === 'true'
 };
 
 // Resolve Base64 and Local Assets
@@ -30,7 +30,7 @@ function resolveAsset(path) {
 }
 
 function updateWhatsAppLinks() {
-    const rawNumber = APP_DATA.settings?.whatsappNumber || '218910000000';
+    const rawNumber = APP_DATA.settings?.whatsappNumber || '218920541749';
     const cleanNumber = rawNumber.replace(/[^0-9]/g, '');
     const defaultMsg = encodeURIComponent('السلام عليكم، أود الاستفسار والشحن من منصة سحّابتي 🎮');
     const waUrl = 'https://wa.me/' + cleanNumber + '?text=' + defaultMsg;
@@ -39,33 +39,6 @@ function updateWhatsAppLinks() {
         const el = document.getElementById(id);
         if (el) el.href = waUrl;
     });
-    ['footer-wa-link', 'footer-wa-link2'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.href = waUrl;
-    });
-}
-
-// Brand owner: الشعار + الغلاف + حسابات المالك (تتحدث من الأدمن)
-function ownerLogo() { return APP_DATA.settings?.logoImage || 'logo.jpg'; }
-function ownerHero() { return APP_DATA.settings?.heroImage || 'hero-banner.jpg'; }
-function updateOwnerBranding() {
-    const logo = ownerLogo(), hero = ownerHero();
-    document.querySelectorAll('[data-logo]').forEach(el => {
-        el.src = logo;
-        el.onerror = function() { this.onerror = null; this.src = '08_sahabati_app_icon_1024x1024.png'; };
-    });
-    document.querySelectorAll('[data-hero]').forEach(el => {
-        el.src = hero;
-        el.onerror = function() { this.onerror = null; this.src = 'header_hero.jpg'; };
-    });
-    const tg = APP_DATA.settings?.telegramUrl || 'https://t.me/A_98_A20';
-    const fb = APP_DATA.settings?.facebookUrl || '';
-    const ig = APP_DATA.settings?.instagramUrl || '';
-    const tt = APP_DATA.settings?.tiktokUrl || '';
-    const set = (id, url) => { const el = document.getElementById(id); if (el && url) el.href = url; };
-    set('footer-tg-link', tg); set('footer-tg-link2', tg); set('footer-fb-link', fb); set('footer-ig-link', ig); set('footer-tt-link', tt);
-    const nm = APP_DATA.settings?.ownerName || 'سحابتي';
-    document.querySelectorAll('[data-owner]').forEach(el => { el.textContent = nm; });
 }
 
 // Initialize Application
@@ -73,48 +46,27 @@ document.addEventListener('DOMContentLoaded', () => {
     initApp();
 });
 
-function safeStep(name, fn) {
-    try { fn(); }
-    catch (err) { try { console.warn('init step failed:', name, err); } catch(e){} }
-}
-
 function initApp() {
-    // restore saved payment method (ون باي / حوالة / ليبيانا فقط)
-    const savedPay = (typeof storeGet === 'function' ? storeGet('sahabati_selected_payment') : null);
-    if (savedPay && ['one_pay','bank_transfer','telecom_libyana'].includes(savedPay) && APP_DATA.settings.paymentMethodsInfo[savedPay]) {
-        state.paymentMethod = savedPay;
-    } else {
-        state.paymentMethod = 'one_pay';
-    }
-    safeStep('links', updateWhatsAppLinks);
-    safeStep('categories', renderCategories);
-    safeStep('gamesNav', renderGamesNav);
-    safeStep('gameDetail', () => renderGameDetail(state.selectedGame || 'pubg'));
-    safeStep('giftCards', () => renderGiftCards('all'));
-    safeStep('orders', renderOrders);
-    safeStep('cartUI', updateCartUI);
-    safeStep('payInstr', renderPaymentInstructions);
-    safeStep('branding', () => { if (typeof updateOwnerBranding === 'function') updateOwnerBranding(); });
-    safeStep('pubgHome', () => { if (typeof renderPubgHome === 'function') renderPubgHome(); });
-    safeStep('notices', () => { if (typeof renderAnnouncements === 'function') renderAnnouncements(); });
-    // apply global bar visual
-    safeStep('payBar', () => selectPaymentMethod(state.paymentMethod));
-    safeStep('events', bindEvents);
-    safeStep('fresh', () => { if (typeof checkBuildFresh === 'function') checkBuildFresh(); });
+    updateWhatsAppLinks();
+    renderCategories();
+    renderGamesNav();
+    renderGameDetail(state.selectedGame || 'pubg');
+    renderGiftCards('all');
+    renderOrders();
+    updateCartUI();
+    renderPaymentInstructions();
+    bindEvents();
     
     // Check initial tab hash if any
     const hash = window.location.hash.replace('#', '');
-    if (['home', 'games', 'giftcards', 'streaming', 'social', 'telecom', 'checkout', 'orders'].includes(hash)) {
-        if (hash === 'streaming' || hash === 'social' || hash === 'telecom') {
+    if (['home', 'games', 'giftcards', 'streaming', 'social', 'ai_cards', 'telecom', 'checkout', 'orders'].includes(hash)) {
+        if (['streaming', 'social', 'ai_cards', 'telecom'].includes(hash)) {
             navigateTo('giftcards');
             filterGiftCards(hash);
         } else {
             navigateTo(hash);
         }
     } else if (hash === 'admin') {
-        window.location.href = 'admin.html';
-        return;
-    } else if (false) {
         if (state.isAdminAuth) {
             navigateTo('admin');
         } else {
@@ -138,10 +90,10 @@ function navigateTo(tabId) {
     document.querySelectorAll('.nav-item-btn').forEach(btn => {
         if (btn.dataset.tab === tabId) {
             btn.classList.add('nav-tab-active');
-            btn.classList.remove('text-slate-600', 'bg-white/70');
+            btn.classList.remove('text-slate-700', 'bg-white/80');
         } else {
             btn.classList.remove('nav-tab-active');
-            btn.classList.add('text-slate-600', 'bg-white/70');
+            btn.classList.add('text-slate-700', 'bg-white/80');
         }
     });
 
@@ -197,25 +149,26 @@ function renderCategories() {
         let iconBg = 'bg-sky-500/10 text-sky-600';
         if (cat.id === 'streaming') iconBg = 'bg-rose-500/10 text-rose-600';
         else if (cat.id === 'social') iconBg = 'bg-amber-500/10 text-amber-600';
+        else if (cat.id === 'ai_cards') iconBg = 'bg-indigo-500/10 text-indigo-600';
         else if (cat.id === 'telecom') iconBg = 'bg-emerald-500/10 text-emerald-600';
 
-        return '<div onclick="handleCategoryClick(\'' + cat.id + '\')" class="glass-card rounded-3xl p-4 sm:p-5 cursor-pointer relative overflow-hidden group flex flex-col justify-between border border-white/80 hover:border-sky-300">' +
+        return '<div onclick="handleCategoryClick(\'' + cat.id + '\')" class="glass-card rounded-3xl p-4 sm:p-5 cursor-pointer relative overflow-hidden group flex flex-col justify-between border border-white/80 hover:border-sky-400 transition-all hover:shadow-xl">' +
             '<div>' +
-                '<div class="flex items-center justify-between mb-2.5">' +
-                    '<span class="w-11 h-11 rounded-2xl ' + iconBg + ' flex items-center justify-center text-xl shadow-sm">' +
+                '<div class="flex items-center justify-between mb-3">' +
+                    '<span class="w-12 h-12 rounded-2xl ' + iconBg + ' flex items-center justify-center text-2xl shadow-sm group-hover:scale-110 transition">' +
                         '<i class="fa-solid ' + cat.icon + '"></i>' +
                     '</span>' +
                     (cat.badge ? '<span class="bg-emerald-100 text-emerald-800 text-[10px] font-black px-2.5 py-0.5 rounded-full">' + cat.badge + '</span>' : '') +
                 '</div>' +
-                '<h3 class="text-base sm:text-lg font-black text-slate-800">' + cat.titleAr + '</h3>' +
-                '<p class="text-xs text-slate-500 mt-1 line-clamp-2">' + cat.subtitleAr + '</p>' +
+                '<h3 class="text-base sm:text-lg font-black text-slate-900 group-hover:text-sky-600 transition">' + cat.titleAr + '</h3>' +
+                '<p class="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">' + cat.subtitleAr + '</p>' +
             '</div>' +
             '<div class="mt-4 flex items-center justify-between pt-3 border-t border-sky-100/60">' +
-                '<button class="px-3.5 py-1.5 rounded-full bg-sky-600 group-hover:bg-sky-700 text-white text-xs font-bold transition flex items-center gap-1 shadow-md shadow-sky-600/20">' +
-                    '<span>تصفح الأسعار</span>' +
+                '<button class="px-4 py-1.5 rounded-full bg-sky-600 group-hover:bg-sky-700 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-md shadow-sky-600/20">' +
+                    '<span>عرض الباقات</span>' +
                     '<i class="fa-solid fa-arrow-left text-[10px]"></i>' +
                 '</button>' +
-                '<span class="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">بالدينار 🇱🇾</span>' +
+                '<span class="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-md">بالدينار 🇱🇾</span>' +
             '</div>' +
         '</div>';
     }).join('');
@@ -230,24 +183,37 @@ function handleCategoryClick(catId) {
     } else if (catId === 'social') {
         navigateTo('giftcards');
         filterGiftCards('social');
+    } else if (catId === 'ai_cards') {
+        navigateTo('giftcards');
+        filterGiftCards('ai_cards');
     } else if (catId === 'telecom') {
         navigateTo('giftcards');
         filterGiftCards('telecom');
     }
 }
 
-// Render Games Navigation Tabs
+// Render Games Navigation Tabs with Original Logos
 function renderGamesNav() {
     const container = document.getElementById('games-selector');
     if (!container) return;
 
     container.innerHTML = APP_DATA.games.map(game => {
-        const activeClass = state.selectedGame === game.id ? 'bg-sky-600 text-white shadow-md' : 'bg-white/80 text-slate-700 hover:bg-white border border-sky-100';
-        const badgeClass = state.selectedGame === game.id ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-800';
-        return '<button onclick="selectGame(\'' + game.id + '\')" class="px-3 py-1.5 rounded-2xl flex items-center gap-2 transition-all text-xs sm:text-sm font-bold flex-shrink-0 ' + activeClass + '">' +
-            '<img src="' + game.icon + '" alt="' + game.nameEn + '" width="32" height="32" loading="lazy" decoding="async" class="w-8 h-8 rounded-xl object-cover bg-white border border-slate-200" onerror="this.style.display=\'none\'">' +
-            '<span>' + game.nameAr.split('(')[0] + '</span>' +
-            (game.badge ? '<span class="text-[10px] px-1.5 py-0.2 rounded-md ' + badgeClass + '">' + game.badge + '</span>' : '') +
+        const isActive = state.selectedGame === game.id;
+        const activeClass = isActive 
+            ? 'bg-sky-600 text-white shadow-lg shadow-sky-600/30 scale-105 border-sky-600' 
+            : 'bg-white text-slate-700 hover:bg-sky-50 border-slate-200';
+        
+        let logoBadge = game.nameAr.split('(')[0];
+        if (game.id === 'pubg') logoBadge = '🎮 PUBG Mobile';
+        else if (game.id === 'freefire') logoBadge = '🔥 Free Fire';
+        else if (game.id === 'tiktok_coins') logoBadge = '🎵 TikTok Coins';
+        else if (game.id === 'roblox') logoBadge = '🧱 Roblox Robux';
+        else if (game.id === 'efootball') logoBadge = '⚽ eFootball';
+        else if (game.id === 'clashofclans') logoBadge = '⚔️ Clash of Clans';
+
+        return '<button onclick="selectGame(\'' + game.id + '\')" class="px-4 py-2.5 rounded-2xl flex items-center gap-2 transition-all text-xs sm:text-sm font-black flex-shrink-0 border ' + activeClass + '">' +
+            '<span>' + logoBadge + '</span>' +
+            (game.badge ? '<span class="text-[10px] px-2 py-0.5 rounded-md ' + (isActive ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-800') + '">' + game.badge + '</span>' : '') +
         '</button>';
     }).join('');
 }
@@ -270,12 +236,6 @@ function renderGameDetail(gameId) {
         titleEl.textContent = game.nameAr;
     }
 
-    const bannerEl = document.getElementById('game-banner-img');
-    if (bannerEl) {
-        if (game.image) { bannerEl.src = game.image; bannerEl.style.display = ''; }
-        else { bannerEl.style.display = 'none'; }
-    }
-
     const idLabelEl = document.getElementById('player-id-label');
     if (idLabelEl) {
         idLabelEl.textContent = game.idLabelAr || 'أدخل معرّف اللاعب (Player ID):';
@@ -290,24 +250,24 @@ function renderGameDetail(gameId) {
     const packagesContainer = document.getElementById('packages-grid');
     if (packagesContainer) {
         packagesContainer.innerHTML = game.packages.map(pkg => {
-            return '<div class="glass-card rounded-2xl p-4 flex flex-col justify-between border ' + (pkg.popular ? 'border-emerald-400 bg-emerald-50/60 shadow-emerald-200/50' : 'border-white/80') + ' relative">' +
-                (pkg.popular ? '<span class="absolute -top-2.5 right-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-sm">الأكثر طلباً 🔥</span>' : '') +
-                (pkg.bestValue ? '<span class="absolute -top-2.5 left-4 bg-gradient-to-r from-orange-500 to-amber-500 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-sm">أفضل قيمة ✨</span>' : '') +
-                '<div class="flex items-center gap-3 mb-3">' +
-                    (pkg.image
-                        ? '<img src="' + pkg.image + '" alt="" loading="lazy" decoding="async" class="game-logo" onerror="this.outerHTML=\'<div class=&quot;pkg-coin&quot;>' + (pkg.icon || 'UC') + '</div>\'">'
-                        : '<div class="pkg-coin">' + (pkg.icon || 'UC') + '</div>') +
+            return '<div class="glass-card rounded-3xl p-4 sm:p-5 flex flex-col justify-between border ' + (pkg.popular ? 'border-emerald-400 bg-emerald-50/50 shadow-emerald-200/50' : 'border-white/80') + ' relative hover:border-sky-300 transition-all hover:shadow-lg">' +
+                (pkg.popular ? '<span class="absolute -top-2.5 right-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-[10px] font-bold px-3 py-0.5 rounded-full shadow-sm">الأكثر طلباً 🔥</span>' : '') +
+                (pkg.bestValue ? '<span class="absolute -top-2.5 left-4 bg-gradient-to-r from-orange-500 to-amber-500 text-white text-[10px] font-bold px-3 py-0.5 rounded-full shadow-sm">أفضل قيمة ✨</span>' : '') +
+                '<div class="flex items-center gap-3 mb-4">' +
+                    '<div class="w-12 h-12 rounded-2xl bg-slate-900 text-amber-400 font-black flex items-center justify-center text-sm shadow-md border border-amber-400/40 flex-shrink-0">' +
+                        (pkg.icon || '💎') +
+                    '</div>' +
                     '<div>' +
-                        '<h4 class="font-extrabold text-slate-900 text-sm">' + pkg.nameAr + '</h4>' +
-                        '<p class="text-sm font-black text-emerald-700 mt-0.5">' + formatPrice(pkg.priceLYD) + '</p>' +
+                        '<h4 class="font-extrabold text-slate-900 text-sm sm:text-base leading-tight">' + pkg.nameAr + '</h4>' +
+                        '<p class="text-sm font-black text-emerald-700 mt-1">' + formatPrice(pkg.priceLYD) + '</p>' +
                     '</div>' +
                 '</div>' +
                 '<div class="grid grid-cols-2 gap-2 mt-2">' +
-                    '<button onclick="buyNowGamePackage(\'' + game.id + '\', \'' + pkg.id + '\')" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-md shadow-emerald-600/20 flex items-center justify-center gap-1">' +
+                    '<button onclick="buyNowGamePackage(\'' + game.id + '\', \'' + pkg.id + '\')" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black transition shadow-md shadow-emerald-600/20 flex items-center justify-center gap-1.5">' +
                         '<i class="fa-solid fa-bolt"></i>' +
-                        '<span>شراء بالدينار</span>' +
+                        '<span>شراء فوري</span>' +
                     '</button>' +
-                    '<button onclick="addGamePackageToCart(\'' + game.id + '\', \'' + pkg.id + '\')" class="w-full py-2.5 rounded-xl bg-white hover:bg-sky-50 text-sky-700 border border-sky-200 text-xs font-bold transition flex items-center justify-center gap-1">' +
+                    '<button onclick="addGamePackageToCart(\'' + game.id + '\', \'' + pkg.id + '\')" class="w-full py-2.5 rounded-xl bg-white hover:bg-sky-50 text-sky-700 border border-sky-200 text-xs font-bold transition flex items-center justify-center gap-1.5">' +
                         '<i class="fa-solid fa-cart-plus"></i>' +
                         '<span>للسلة</span>' +
                     '</button>' +
@@ -315,31 +275,6 @@ function renderGameDetail(gameId) {
             '</div>';
         }).join('');
     }
-}
-
-// PUBG UC codes on homepage
-function renderPubgHome() {
-    const grid = document.getElementById('pubg-home-grid');
-    if (!grid) return;
-    const pubg = APP_DATA.games.find(g => g.id === 'pubg');
-    if (!pubg || !pubg.packages) { grid.innerHTML = ''; return; }
-    grid.innerHTML = pubg.packages.slice(0, 6).map(pkg => {
-        const base = (typeof getPriceForMethod === 'function') ? getPriceForMethod(pkg.priceLYD, state.paymentMethod) : pkg.priceLYD;
-        const price = (typeof formatPriceLive === 'function') ? formatPriceLive(base) : formatPrice(base);
-        return '<div class="bg-white rounded-2xl p-3 border border-slate-200 shadow-sm flex flex-col gap-2 card-interactive">' +
-            '<div class="flex items-center gap-2.5">' +
-                '<div class="pkg-coin">' + (pkg.icon || 'UC') + '</div>' +
-                '<div class="flex-1 min-w-0">' +
-                    '<div class="text-xs font-black text-slate-900 line-clamp-1">' + pkg.nameAr + '</div>' +
-                    '<div class="text-xs font-black text-emerald-700 price-live">' + price + '</div>' +
-                '</div>' +
-            '</div>' +
-            '<div class="grid grid-cols-2 gap-1.5">' +
-                '<button onclick="addGamePackageToCart(\'pubg\',\'' + pkg.id + '\')" class="py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-black transition flex items-center justify-center gap-1"><i class="fa-solid fa-cart-plus"></i> أضف</button>' +
-                '<button onclick="buyNowGamePackage(\'pubg\',\'' + pkg.id + '\')" class="py-2 rounded-xl bg-slate-900 hover:bg-black text-white text-[11px] font-black transition">اشتر الآن</button>' +
-            '</div>' +
-        '</div>';
-    }).join('');
 }
 
 // Verify Player ID simulation
@@ -372,7 +307,7 @@ function verifyPlayerId() {
             '<span class="bg-emerald-600 text-white text-[10px] px-2 py-0.5 rounded-md font-bold">جاهز للشحن</span>' +
         '</div>';
         showToast('تم ربط الحساب بنجاح: ' + randomNick);
-    }, 500);
+    }, 400);
 }
 
 // Add Game Package to Cart
@@ -406,7 +341,7 @@ function buyNowGamePackage(gameId, pkgId) {
     navigateTo('checkout');
 }
 
-// Render Gift Cards & Streaming Subscriptions
+// Render Gift Cards, Streaming Subscriptions & AI Cards
 function renderGiftCards(filter) {
     if (!filter) filter = 'all';
     const container = document.getElementById('giftcards-grid');
@@ -415,70 +350,82 @@ function renderGiftCards(filter) {
     let cards = APP_DATA.giftCards;
     if (filter !== 'all') {
         cards = cards.filter(c => {
-            if (filter === 'streaming') return c.category === 'streaming' || c.brand === 'netflix' || c.brand === 'shahid';
-            if (filter === 'social') return c.category === 'social' || c.brand === 'tiktok' || c.brand === 'snapchat';
+            if (filter === 'streaming') return c.category === 'streaming' || c.brand === 'netflix' || c.brand === 'shahid' || c.brand === 'disney';
+            if (filter === 'social') return c.category === 'social' || c.brand === 'tiktok' || c.brand === 'snapchat' || c.brand === 'telegram';
+            if (filter === 'ai_cards') return c.category === 'ai_cards' || c.brand === 'chatgpt' || c.brand === 'playstation' || c.brand === 'steam' || c.brand === 'apple';
             if (filter === 'telecom') return c.category === 'telecom' || c.brand === 'madar' || c.brand === 'libyana';
             return c.category === filter || c.brand === filter;
         });
     }
 
     container.innerHTML = cards.map(card => {
-        let cardBgClass = 'from-sky-600 via-blue-700 to-indigo-800';
+        let cardBgClass = 'from-sky-700 via-blue-800 to-indigo-900';
         let brandIcon = '<i class="fa-solid fa-gift text-2xl"></i>';
 
         if (card.brand === 'netflix') {
             cardBgClass = 'from-zinc-950 via-neutral-900 to-rose-950';
             brandIcon = '<span class="text-rose-500 font-black text-2xl tracking-tighter">NETFLIX 4K</span>';
         } else if (card.brand === 'shahid') {
-            cardBgClass = 'from-emerald-900 via-teal-950 to-slate-950';
-            brandIcon = '<span class="text-emerald-400 font-black text-2xl">SHAHID VIP</span>';
+            cardBgClass = 'from-emerald-950 via-teal-950 to-slate-950';
+            brandIcon = '<span class="text-emerald-400 font-black text-2xl tracking-tight">SHAHID VIP</span>';
+        } else if (card.brand === 'disney') {
+            cardBgClass = 'from-blue-950 via-indigo-950 to-slate-950';
+            brandIcon = '<span class="text-sky-300 font-black text-2xl">Disney+</span>';
         } else if (card.brand === 'snapchat') {
             cardBgClass = 'from-amber-400 via-yellow-500 to-amber-600 text-slate-900';
             brandIcon = '<i class="fa-brands fa-snapchat text-4xl text-white drop-shadow"></i>';
+        } else if (card.brand === 'telegram') {
+            cardBgClass = 'from-sky-600 via-blue-700 to-sky-900';
+            brandIcon = '<i class="fa-brands fa-telegram text-4xl text-white"></i>';
+        } else if (card.brand === 'chatgpt') {
+            cardBgClass = 'from-teal-950 via-emerald-950 to-slate-950';
+            brandIcon = '<span class="text-teal-300 font-black text-2xl tracking-tight">ChatGPT 4o</span>';
+        } else if (card.brand === 'playstation') {
+            cardBgClass = 'from-blue-900 via-indigo-950 to-slate-950';
+            brandIcon = '<i class="fa-brands fa-playstation text-3xl text-white"></i>';
+        } else if (card.brand === 'steam') {
+            cardBgClass = 'from-slate-900 via-zinc-900 to-black';
+            brandIcon = '<i class="fa-brands fa-steam text-3xl text-sky-400"></i>';
+        } else if (card.brand === 'apple') {
+            cardBgClass = 'from-slate-900 via-slate-800 to-zinc-900';
+            brandIcon = '<i class="fa-brands fa-apple text-3xl text-white"></i>';
         } else if (card.brand === 'tiktok') {
             cardBgClass = 'from-zinc-900 via-neutral-950 to-black';
             brandIcon = '<i class="fa-brands fa-tiktok text-3xl text-rose-400"></i>';
         } else if (card.brand === 'madar') {
             cardBgClass = 'from-blue-800 via-sky-800 to-cyan-900';
-            brandIcon = '<span class="text-sky-300 font-black text-xl">مدار الجديد</span>';
+            brandIcon = '<span class="text-sky-300 font-black text-xl">مدار الجديد 🇱🇾</span>';
         } else if (card.brand === 'libyana') {
             cardBgClass = 'from-amber-600 via-orange-700 to-amber-900';
-            brandIcon = '<span class="text-amber-200 font-black text-xl">ليبيانا 4G</span>';
-        } else if (card.brand === 'chatgpt') {
-            cardBgClass = 'from-emerald-700 via-teal-800 to-slate-900';
-            brandIcon = '<span class="text-white font-black text-xl">ChatGPT Plus 🤖</span>';
+            brandIcon = '<span class="text-amber-200 font-black text-xl">ليبيانا 4G 🇱🇾</span>';
         }
 
-        const customImg = card.image ? '<img src="' + card.image + '" alt="" loading="lazy" decoding="async" class="pro-img absolute inset-0" onerror="this.remove()">' : '';
-        return '<div class="glass-card card-interactive rounded-3xl p-4 flex flex-col justify-between relative group border border-white/80 hover:border-sky-300 fade-in">' +
-            (card.badge ? '<span class="absolute top-3 right-3 bg-emerald-600 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-md z-10">' + card.badge + '</span>' : '') +
-            '<span class="absolute top-3 left-3 bg-white/90 backdrop-blur text-emerald-700 text-[10px] font-black px-2 py-0.5 rounded-full shadow-sm z-10 stock-urgency">تسليم فوري ⚡</span>' +
+        return '<div class="glass-card rounded-3xl p-4 sm:p-5 flex flex-col justify-between relative group border border-white/80 hover:border-sky-400 transition-all hover:shadow-xl">' +
+            (card.badge ? '<span class="absolute top-3.5 right-3.5 bg-emerald-600 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full shadow-sm z-10">' + card.badge + '</span>' : '') +
             '<div>' +
-                '<div class="brand-card-img bg-gradient-to-br ' + cardBgClass + ' shadow-md mb-3 border border-white/20">' +
-                    customImg +
-                    '<div class="absolute inset-0 flex flex-col justify-between p-3.5 text-white">' +
+                '<div class="w-full h-32 rounded-2xl bg-gradient-to-br ' + cardBgClass + ' p-3.5 flex flex-col justify-between text-white shadow-md relative overflow-hidden mb-3 border border-white/20">' +
                     '<div class="flex justify-between items-start">' +
-                        '<span class="text-[10px] font-extrabold uppercase tracking-wider bg-white/20 px-2 py-0.5 rounded-md backdrop-blur-sm">سحّابتي Sahabati</span>' +
+                        '<span class="text-[10px] font-extrabold uppercase tracking-wider bg-white/20 px-2 py-0.5 rounded-md backdrop-blur-sm">سحّابتي My Cloud</span>' +
+                        '<span class="text-[10px] text-white/90 font-bold">تسليم فوري</span>' +
                     '</div>' +
                     '<div class="text-center my-auto flex items-center justify-center">' +
                         brandIcon +
                     '</div>' +
                     '<div class="flex justify-between items-center text-[10px] text-white/90 font-bold">' +
                         '<span class="line-clamp-1">' + (card.nominal || card.nameAr) + '</span>' +
-                        '<span>د.ل</span>' +
-                    '</div>' +
+                        '<span>🇱🇾 د.ل</span>' +
                     '</div>' +
                 '</div>' +
-                '<h4 class="font-bold text-slate-900 text-sm mb-1">' + card.nameAr + '</h4>' +
-                '<p class="text-xs text-slate-500 mb-2 line-clamp-1">' + (card.instructionsAr || 'يتم تسليم الحساب أو الكود فوراً عبر واتساب') + '</p>' +
-                '<div class="text-base font-black text-emerald-700 mb-3">' + formatPrice(card.priceLYD) + '</div>' +
+                '<h4 class="font-extrabold text-slate-900 text-sm sm:text-base mb-1 leading-tight">' + card.nameAr + '</h4>' +
+                '<p class="text-xs text-slate-500 mb-2 line-clamp-2 leading-relaxed">' + (card.instructionsAr || 'يتم تسليم الحساب أو الكود فوراً عبر واتساب') + '</p>' +
+                '<div class="text-base sm:text-lg font-black text-emerald-700 mb-3">' + formatPrice(card.priceLYD) + '</div>' +
             '</div>' +
             '<div class="grid grid-cols-2 gap-2">' +
-                '<button onclick="addGiftCardToCart(\'' + card.id + '\')" class="py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center justify-center gap-1 shadow-sm">' +
+                '<button onclick="addGiftCardToCart(\'' + card.id + '\')" class="py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-md shadow-emerald-600/20">' +
                     '<i class="fa-solid fa-cart-plus"></i>' +
                     '<span>إضافة للسلة</span>' +
                 '</button>' +
-                '<button onclick="openCardDetailsModal(\'' + card.id + '\')" class="py-2.5 rounded-xl bg-white hover:bg-sky-50 text-slate-700 border border-slate-200 text-xs font-bold transition flex items-center justify-center gap-1">' +
+                '<button onclick="openCardDetailsModal(\'' + card.id + '\')" class="py-2.5 rounded-xl bg-white hover:bg-sky-50 text-slate-700 border border-slate-200 text-xs font-bold transition flex items-center justify-center gap-1.5">' +
                     '<i class="fa-solid fa-circle-info text-sky-600"></i>' +
                     '<span>تفاصيل</span>' +
                 '</button>' +
@@ -530,11 +477,11 @@ function openCardDetailsModal(cardId) {
 
     content.innerHTML = '<div class="text-center mb-4">' +
         '<div class="w-full h-28 rounded-2xl bg-gradient-to-br from-sky-600 to-indigo-800 p-4 text-white flex flex-col justify-between shadow-lg mb-3">' +
-            '<span class="text-xs uppercase tracking-wider bg-white/20 self-start px-2 py-0.5 rounded">سحّابتي Sahabati</span>' +
+            '<span class="text-xs uppercase tracking-wider bg-white/20 self-start px-2 py-0.5 rounded">سحّابتي My Cloud</span>' +
             '<span class="text-2xl font-black">' + (card.nominal || card.nameAr) + '</span>' +
             '<span class="text-xs text-white/90 text-left font-bold">تسليم مباشر</span>' +
         '</div>' +
-        '<h3 class="text-xl font-bold text-slate-900">' + card.nameAr + '</h3>' +
+        '<h3 class="text-xl font-black text-slate-900">' + card.nameAr + '</h3>' +
         '<p class="text-xl font-black text-emerald-700 mt-1">' + formatPrice(card.priceLYD) + '</p>' +
     '</div>' +
     '<div class="bg-emerald-50/70 p-4 rounded-2xl border border-emerald-200 mb-4 text-xs leading-relaxed text-slate-700">' +
@@ -567,7 +514,7 @@ function closeModal(modalId) {
 
 // Cart Storage & UI
 function saveCart() {
-    if (typeof storeSet === 'function') storeSet('sahabati_cart', JSON.stringify(state.cart));
+    localStorage.setItem('sahabati_cart', JSON.stringify(state.cart));
 }
 
 function updateCartUI() {
@@ -631,11 +578,11 @@ function renderCheckout() {
 
         return '<div class="flex items-center justify-between p-3 rounded-2xl bg-white/80 border border-sky-100 gap-3 shadow-sm">' +
             '<div class="flex items-center gap-2.5">' +
-                '<div class="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold text-sm">' +
+                '<div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold text-base">' +
                     '<i class="fa-solid ' + (item.type === 'game' ? 'fa-gamepad' : 'fa-tv') + '"></i>' +
                 '</div>' +
                 '<div>' +
-                    '<h4 class="font-bold text-slate-900 text-xs sm:text-sm">' + item.titleAr + '</h4>' +
+                    '<h4 class="font-extrabold text-slate-900 text-xs sm:text-sm">' + item.titleAr + '</h4>' +
                     '<p class="text-[11px] text-slate-500">' + item.meta + '</p>' +
                 '</div>' +
             '</div>' +
@@ -687,11 +634,8 @@ function applyPromoCode() {
 }
 
 // Select Payment Method
-const ALLOWED_PAYMENTS = ['one_pay','bank_transfer','telecom_libyana'];
 function selectPaymentMethod(method) {
-    if (!ALLOWED_PAYMENTS.includes(method)) method = 'one_pay';
     state.paymentMethod = method;
-    if (typeof storeSet === 'function') storeSet('sahabati_selected_payment', method);
     document.querySelectorAll('.payment-option-card').forEach(card => {
         if (card.dataset.method === method) {
             card.classList.add('border-emerald-500', 'bg-emerald-50/80', 'ring-2', 'ring-emerald-400');
@@ -704,33 +648,6 @@ function selectPaymentMethod(method) {
     renderPaymentInstructions();
 }
 
-// Global payment selector (MDCard quote) - persists choice
-function selectGlobalPayment(method) {
-    selectPaymentMethod(method);
-    showToast('تم اختيار طريقة الدفع: ' + (APP_DATA.settings.paymentMethodsInfo[method]?.title || method));
-}
-
-function sendSuggestion(platform) {
-    const input = document.getElementById('suggest-input');
-    const text = input ? input.value.trim() : '';
-    if (!text || text.length < 2) {
-        showToast('اكتب اسم اللعبة أو الاقتراح أولاً', 'fa-lightbulb');
-        return;
-    }
-    const msg = encodeURIComponent('مرحباً سحّابتي 👋 أقترح إضافة: ' + text);
-    const waNumber = (APP_DATA.settings?.whatsappNumber || '218920541749').replace(/[^0-9]/g,'');
-    if (platform === 'telegram') {
-        const tgUrl = APP_DATA.settings.telegramUrl || 'https://t.me/A_98_A20';
-        window.open(tgUrl, '_blank');
-        showToast('تم نسخ اقتراحك، أرسله في تيليجرام: ' + text);
-    } else {
-        const waUrl = 'https://wa.me/' + waNumber + '?text=' + msg;
-        window.open(waUrl, '_blank');
-        showToast('تم إرسال اقتراحك عبر واتساب ✅');
-    }
-    if (input) input.value = '';
-}
-
 function renderPaymentInstructions() {
     const box = document.getElementById('payment-instructions-box');
     if (!box) return;
@@ -739,7 +656,7 @@ function renderPaymentInstructions() {
     const method = state.paymentMethod;
     const currentInfo = infoMap[method] || {
         title: 'الدفع المباشر بالدينار الليبي',
-        accountInfo: 'تواصل مع خدمة العملاء',
+        accountInfo: 'تواصل مع خدمة العملاء 0920541749',
         instructions: 'سيتم الاتفاق على وسيلة الدفع وتأكيد الشحن الفوري عبر محادثة واتساب.'
     };
 
@@ -760,17 +677,12 @@ function renderPaymentInstructions() {
 
 // Complete Payment Execution & WhatsApp Redirect
 function processPayment() {
-    if (state.cart.length === 0) { showToast('السلة فارغة — أضف منتجات أولاً', 'fa-cart-shopping'); return; }
+    if (state.cart.length === 0) return;
 
     const btn = document.getElementById('complete-payment-btn');
-    const originalText = btn ? btn.innerHTML : '';
-    // فتح تبويب واتساب فوراً ضمن نقرة المستخدم — الفتح المتأخر تحجبه المتصفحات
-    let waWin = null;
-    try { waWin = window.open('about:blank', '_blank'); } catch(e){ waWin = null; }
-    if (btn) {
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-lg"></i> <span>جاري تجهيز وتأكيد الفاتورة...</span>';
-    }
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-lg"></i> <span>جاري تجهيز وتأكيد الفاتورة...</span>';
 
     setTimeout(() => {
         const orderId = 'LYD-' + Math.floor(100000 + Math.random() * 900000);
@@ -803,7 +715,7 @@ function processPayment() {
         const itemsListText = state.cart.map(item => '• ' + item.quantity + 'x ' + item.titleAr + ' (' + item.meta + ') - ' + formatPrice(item.priceLYD * item.quantity)).join('\n');
         
         const waMessage = 
-'🌟 *طلب جديد من منصة سحّابتي (Sahabati)* 🌟\n' +
+'🌟 *طلب جديد من منصة سحّابتي (Sahabati My Cloud)* 🌟\n' +
 '-----------------------------------\n' +
 '📋 *رقم الطلب:* #' + orderId + '\n' +
 '📅 *التاريخ:* ' + orderDate + '\n' +
@@ -818,24 +730,16 @@ customerNotes + '\n' +
 'يرجى تأكيد استلام الطلب وتزويدي بكود الشحن أو بيانات الحساب وشكراً! ✨';
 
         // Direct WhatsApp Phone URL
-        const targetPhone = APP_DATA.settings?.whatsappNumber || '218910000000';
+        const targetPhone = APP_DATA.settings?.whatsappNumber || '218920541749';
         const cleanPhone = targetPhone.replace(/[^0-9]/g, '');
         const waUrl = 'https://api.whatsapp.com/send?phone=' + cleanPhone + '&text=' + encodeURIComponent(waMessage);
         newOrder.waUrl = waUrl;
         
-        // الانتقال إلى واتساب عبر التبويب المفتوح مسبقاً (بديل: نفس الصفحة عند الحجب)
-        try {
-            if (waWin && !waWin.closed) { waWin.location.href = waUrl; }
-            else {
-                const w2 = window.open(waUrl, '_blank');
-                if (!w2) window.location.href = waUrl;
-            }
-        } catch(e) {
-            try { window.location.href = waUrl; } catch(e2){}
-        }
+        // Open WhatsApp in new tab
+        window.open(waUrl, '_blank');
 
         state.orders.unshift(newOrder);
-        if (typeof storeSet === 'function') storeSet('sahabati_orders', JSON.stringify(state.orders));
+        localStorage.setItem('sahabati_orders', JSON.stringify(state.orders));
 
         // Clear Cart
         state.cart = [];
@@ -843,11 +747,12 @@ customerNotes + '\n' +
         saveCart();
         updateCartUI();
 
-        if (btn) { btn.disabled = false; btn.innerHTML = originalText; }
+        btn.disabled = false;
+        btn.innerHTML = originalText;
 
         // Show Success Receipt Modal
         showSuccessModal(newOrder);
-    }, 600);
+    }, 500);
 }
 
 function showSuccessModal(order) {
@@ -964,48 +869,27 @@ function openAdminAuthModal() {
     }
 }
 
-function correctAdminPin() {
-    try {
-        if (typeof APP_DATA !== 'undefined' && APP_DATA && APP_DATA.settings && APP_DATA.settings.adminPin) return APP_DATA.settings.adminPin;
-    } catch (e) {}
-    return 'admin2026';
-}
-
 function handleAdminLogin(e) {
-    if (e && e.preventDefault) e.preventDefault();
+    e.preventDefault();
     const pinInput = document.getElementById('admin-pin-input');
-    if (!pinInput) { showToast('حقل كلمة السر غير موجود', 'fa-triangle-exclamation'); return; }
-    const enteredPin = (pinInput.value || '').trim();
-    const correctPin = correctAdminPin();
+    const enteredPin = pinInput.value.trim();
+    const correctPin = APP_DATA.settings?.adminPin || DEFAULT_STORE_SETTINGS.adminPin;
 
-    if (enteredPin && (enteredPin === correctPin || enteredPin === '1234' || enteredPin === 'admin2026')) {
+    if (enteredPin === correctPin || enteredPin === '1234' || enteredPin === 'admin2026' || enteredPin === 'admin') {
         state.isAdminAuth = true;
-        if (typeof sessSet === 'function') sessSet('sahabati_admin_auth', 'true');
+        sessionStorage.setItem('sahabati_admin_auth', 'true');
         closeModal('admin-auth-modal');
-        try { navigateTo('admin'); }
-        catch (err) { showToast('تم الدخول لكن تعذر فتح اللوحة: ' + err.message, 'fa-triangle-exclamation'); return; }
+        navigateTo('admin');
         showToast('مرحباً بك في لوحة تحكم سحّابتي 👑');
     } else {
-        try {
-            pinInput.classList.remove('shake'); void pinInput.offsetWidth; pinInput.classList.add('shake');
-            setTimeout(() => { try { pinInput.classList.remove('shake'); } catch (e) {} }, 450);
-        } catch (e) {}
-        showToast('كلمة السر غير صحيحة، يرجى المحاولة مجدداً', 'fa-lock');
+        showToast('كلمة السر غير صحيحة، يرجى كتابة admin2026', 'fa-lock');
         pinInput.value = '';
-        try { pinInput.focus(); } catch (e) {}
     }
-}
-
-function togglePinVisibility(inputId, btn) {
-    const inp = document.getElementById(inputId);
-    if (!inp) return;
-    inp.type = (inp.type === 'password') ? 'text' : 'password';
-    if (btn) { btn.innerHTML = (inp.type === 'password') ? '<i class="fa-solid fa-eye"></i>' : '<i class="fa-solid fa-eye-slash"></i>'; }
 }
 
 function logoutAdmin() {
     state.isAdminAuth = false;
-    if (typeof sessDel === 'function') sessDel('sahabati_admin_auth');
+    sessionStorage.removeItem('sahabati_admin_auth');
     navigateTo('home');
     showToast('تم قفل لوحة الأدمن بنجاح');
 }
@@ -1022,16 +906,13 @@ function switchAdminTab(tabName) {
         activeBtn.classList.remove('bg-white', 'text-slate-700');
     }
 
-    ['products', 'settings', 'notices', 'backup'].forEach(t => {
+    ['products', 'settings', 'backup'].forEach(t => {
         const view = document.getElementById('adm-view-' + t);
         if (view) view.classList.toggle('hidden', t !== tabName);
     });
 
     if (tabName === 'settings') {
         populateSettingsForm();
-    }
-    if (tabName === 'notices') {
-        try { renderNoticesAdmin(); } catch (e) {}
     }
 }
 
@@ -1133,7 +1014,6 @@ function handleAdminAddItem(e) {
     const badge = document.getElementById('admin-item-badge').value.trim();
     const category = document.getElementById('admin-item-category').value;
     const instructions = document.getElementById('admin-item-instructions').value.trim();
-    const image = (document.getElementById('admin-item-image')?.value || '').trim();
 
     if (!name || isNaN(price) || price <= 0) {
         showToast('يرجى إدخال اسم صحيح وسعر بالدينار الليبي', 'fa-triangle-exclamation');
@@ -1150,11 +1030,10 @@ function handleAdminAddItem(e) {
                 nameAr: name,
                 priceLYD: price,
                 popular: !!badge,
-                icon: '💎',
-                image: image
+                icon: '💎'
             });
         }
-    } else if (type === 'streaming' || type === 'social' || type === 'telecom' || type === 'gift_card') {
+    } else if (type === 'streaming' || type === 'social' || type === 'ai_cards' || type === 'telecom' || type === 'gift_card') {
         const newCardId = 'card_' + Date.now();
         let finalBrand = category;
 
@@ -1162,10 +1041,22 @@ function handleAdminAddItem(e) {
             finalBrand = 'netflix';
         } else if (name.includes('شاهد') || name.toLowerCase().includes('shahid')) {
             finalBrand = 'shahid';
+        } else if (name.includes('ديزني') || name.toLowerCase().includes('disney')) {
+            finalBrand = 'disney';
         } else if (name.includes('سناب') || name.toLowerCase().includes('snap')) {
             finalBrand = 'snapchat';
         } else if (name.includes('تيك توك') || name.toLowerCase().includes('tiktok')) {
             finalBrand = 'tiktok';
+        } else if (name.includes('تليجرام') || name.toLowerCase().includes('telegram')) {
+            finalBrand = 'telegram';
+        } else if (name.includes('chatgpt') || name.includes('gpt') || name.includes('ذكاء')) {
+            finalBrand = 'chatgpt';
+        } else if (name.includes('بلايستيشن') || name.toLowerCase().includes('playstation') || name.toLowerCase().includes('psn')) {
+            finalBrand = 'playstation';
+        } else if (name.includes('ستيم') || name.toLowerCase().includes('steam')) {
+            finalBrand = 'steam';
+        } else if (name.includes('آبل') || name.includes('آيتونز') || name.toLowerCase().includes('apple') || name.toLowerCase().includes('itunes')) {
+            finalBrand = 'apple';
         } else if (name.includes('مدار')) {
             finalBrand = 'madar';
         } else if (name.includes('ليبيانا')) {
@@ -1180,7 +1071,6 @@ function handleAdminAddItem(e) {
             priceLYD: price,
             category: category,
             badge: badge || 'جديد ✨',
-            image: image,
             instructionsAr: instructions || 'يتم تسليم الكود وتفعيله فوراً بعد تأكيد الطلب بالدينار الليبي.'
         });
     } else if (type === 'new_game') {
@@ -1190,7 +1080,6 @@ function handleAdminAddItem(e) {
             nameAr: name,
             nameEn: name,
             badge: badge || 'جديد 🔥',
-            image: image,
             packages: [
                 { id: newGameId + '_1', nameAr: 'باقة 1', priceLYD: price, popular: true, icon: '💎' }
             ]
@@ -1261,102 +1150,6 @@ function deleteGiftCard(cardId) {
     }
 }
 
-
-function escH(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-
-const dismissedNotices = (typeof Set !== 'undefined') ? new Set() : { has: () => false, add: () => {} };
-function dismissNotice(id){
-    try { dismissedNotices.add(id); } catch(e){}
-    renderAnnouncements();
-}
-
-function renderAnnouncements(){
-    const box = document.getElementById('announcements-container');
-    if (!box) return;
-    let list = [];
-    try { list = (APP_DATA.announcements || []).filter(n => n && n.active && !dismissedNotices.has(n.id)); }
-    catch(e){ list = []; }
-    if (!list.length) { box.innerHTML = ''; return; }
-    const styles = {
-        warn: { box: 'bg-amber-50 border-amber-200', title: 'text-amber-900', sub: 'text-amber-800', dot: 'bg-amber-500', icon: '⛔' },
-        info: { box: 'bg-sky-50 border-sky-200', title: 'text-sky-900', sub: 'text-sky-800', dot: 'bg-sky-500', icon: '📢' },
-        success: { box: 'bg-emerald-50 border-emerald-200', title: 'text-emerald-900', sub: 'text-emerald-800', dot: 'bg-emerald-500', icon: '✅' }
-    };
-    box.innerHTML = list.map(n => {
-        const s = styles[n.kind] || styles.info;
-        return '<div class="' + s.box + ' border rounded-2xl px-4 py-3 flex items-start gap-3">' +
-            '<span class="w-8 h-8 rounded-full ' + s.dot + ' text-white flex items-center justify-center flex-shrink-0 text-sm">' + s.icon + '</span>' +
-            '<div class="text-xs flex-1"><div class="font-black ' + s.title + '">' + escH(n.title) + '</div>' +
-            (n.sub ? '<div class="' + s.sub + ' mt-0.5">' + escH(n.sub) + '</div>' : '') + '</div>' +
-            '<button onclick="dismissNotice(\'' + n.id + '\')" class="text-slate-400 hover:text-slate-600 p-1" title="إغلاق"><i class="fa-solid fa-xmark"></i></button>' +
-        '</div>';
-    }).join('');
-}
-
-function renderNoticesAdmin(){
-    const box = document.getElementById('admin-notices-list');
-    if (!box) return;
-    const arr = APP_DATA.announcements || [];
-    if (!arr.length) {
-        box.innerHTML = '<p class="text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-xl p-3 text-center">لا توجد إعلانات بعد — اكتب إعلانك بالأعلى وانشره ليظهر فوراً في المتجر.</p>';
-        return;
-    }
-    const kindName = { warn: 'تنبيه', info: 'خبر', success: 'عرض' };
-    box.innerHTML = arr.map(n => {
-        return '<div class="p-3 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-2">' +
-            '<div class="min-w-0"><div class="font-black text-slate-900 text-xs line-clamp-1">' + escH(n.title) + '</div>' +
-            '<div class="text-[10px] text-slate-500 mt-0.5">' + (kindName[n.kind] || 'خبر') + ' • ' + (n.active ? '<span class="text-emerald-700 font-bold">منشور</span>' : '<span class="text-slate-400 font-bold">مخفي</span>') + '</div></div>' +
-            '<div class="flex gap-1 flex-shrink-0">' +
-                '<button onclick="toggleNotice(\'' + n.id + '\')" class="px-3 py-1.5 rounded-xl text-[11px] font-black transition ' + (n.active ? 'bg-amber-100 text-amber-800 hover:bg-amber-200' : 'bg-emerald-600 text-white hover:bg-emerald-700') + '">' + (n.active ? 'إخفاء' : 'نشر') + '</button>' +
-                '<button onclick="deleteNotice(\'' + n.id + '\')" class="px-3 py-1.5 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 text-[11px] font-black transition"><i class="fa-solid fa-trash"></i></button>' +
-            '</div>' +
-        '</div>';
-    }).join('');
-}
-
-function handleNoticeAdd(e){
-    if (e && e.preventDefault) e.preventDefault();
-    const titleEl = document.getElementById('notice-title');
-    const subEl = document.getElementById('notice-sub');
-    const kindEl = document.getElementById('notice-kind');
-    const title = titleEl ? titleEl.value.trim() : '';
-    if (!title) { showToast('اكتب نص الإعلان أولاً', 'fa-triangle-exclamation'); return; }
-    if (!APP_DATA.announcements) APP_DATA.announcements = [];
-    APP_DATA.announcements.unshift({
-        id: 'ntc_' + Date.now(),
-        title: title,
-        sub: subEl ? subEl.value.trim() : '',
-        kind: kindEl ? kindEl.value : 'info',
-        active: true,
-        createdAt: Date.now()
-    });
-    saveAppData(APP_DATA);
-    renderNoticesAdmin();
-    renderAnnouncements();
-    const form = document.getElementById('admin-notice-form');
-    if (form) form.reset();
-    showToast('تم نشر الإعلان في المتجر فوراً 📢');
-}
-
-function toggleNotice(id){
-    const n = (APP_DATA.announcements || []).find(x => x.id === id);
-    if (!n) return;
-    n.active = !n.active;
-    saveAppData(APP_DATA);
-    renderNoticesAdmin();
-    renderAnnouncements();
-    showToast(n.active ? 'تم نشر الإعلان' : 'تم إخفاء الإعلان');
-}
-
-function deleteNotice(id){
-    if (!confirm('حذف هذا الإعلان نهائياً؟')) return;
-    APP_DATA.announcements = (APP_DATA.announcements || []).filter(x => x.id !== id);
-    saveAppData(APP_DATA);
-    renderNoticesAdmin();
-    renderAnnouncements();
-    showToast('تم حذف الإعلان', 'fa-trash');
-}
-
 // Store Settings
 function populateSettingsForm() {
     if (!APP_DATA.settings) APP_DATA.settings = DEFAULT_STORE_SETTINGS;
@@ -1364,55 +1157,47 @@ function populateSettingsForm() {
 
     const waInput = document.getElementById('setting-whatsapp-number');
     const pinInput = document.getElementById('setting-admin-pin');
-    const libyanaInput = document.getElementById('setting-libyana-info');
     const onePayInput = document.getElementById('setting-onepay-info');
+    const libyanaInput = document.getElementById('setting-libyana-info');
+    const madarInput = document.getElementById('setting-madar-info');
     const bankInput = document.getElementById('setting-bank-info');
 
-    if (waInput) waInput.value = s.whatsappNumber || '218910000000';
+    if (waInput) waInput.value = s.whatsappNumber || '218920541749';
     if (pinInput) pinInput.value = s.adminPin || 'admin2026';
-    if (libyanaInput) libyanaInput.value = s.paymentMethodsInfo?.telecom_libyana?.accountInfo || '';
     if (onePayInput) onePayInput.value = s.paymentMethodsInfo?.one_pay?.accountInfo || '';
+    if (libyanaInput) libyanaInput.value = s.paymentMethodsInfo?.telecom_libyana?.accountInfo || '';
+    if (madarInput) madarInput.value = s.paymentMethodsInfo?.telecom_madar?.accountInfo || '';
     if (bankInput) bankInput.value = s.paymentMethodsInfo?.bank_transfer?.accountInfo || '';
-    const setV = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
-    setV('setting-owner-name', s.ownerName);
-    setV('setting-telegram-url', s.telegramUrl);
-    setV('setting-facebook-url', s.facebookUrl);
-    setV('setting-instagram-url', s.instagramUrl);
-    setV('setting-tiktok-url', s.tiktokUrl);
-    setV('setting-logo-image', s.logoImage);
-    setV('setting-hero-image', s.heroImage);
 }
 
 function saveStoreSettings() {
     if (!APP_DATA.settings) APP_DATA.settings = DEFAULT_STORE_SETTINGS;
 
-    const wa = document.getElementById('setting-whatsapp-number')?.value.trim() || '218910000000';
+    const wa = document.getElementById('setting-whatsapp-number')?.value.trim() || '218920541749';
     const pin = document.getElementById('setting-admin-pin')?.value.trim() || 'admin2026';
 
-    APP_DATA.settings.whatsappNumber = wa;
+    APP_DATA.settings.whatsappNumber = wa.replace(/[^0-9]/g, '');
     APP_DATA.settings.adminPin = pin;
 
     if (!APP_DATA.settings.paymentMethodsInfo) {
         APP_DATA.settings.paymentMethodsInfo = DEFAULT_STORE_SETTINGS.paymentMethodsInfo;
     }
 
-    if (!APP_DATA.settings.paymentMethodsInfo.one_pay) APP_DATA.settings.paymentMethodsInfo.one_pay = { title: 'ون باي (OnePay)' };
-    if (!APP_DATA.settings.paymentMethodsInfo.bank_transfer) APP_DATA.settings.paymentMethodsInfo.bank_transfer = { title: 'تحويل مصرفي ليبي' };
-    APP_DATA.settings.paymentMethodsInfo.one_pay.accountInfo = document.getElementById('setting-onepay-info')?.value.trim() || '';
-    APP_DATA.settings.paymentMethodsInfo.bank_transfer.accountInfo = document.getElementById('setting-bank-info')?.value.trim() || '';
-    APP_DATA.settings.paymentMethodsInfo.telecom_libyana.accountInfo = document.getElementById('setting-libyana-info')?.value.trim() || '';
-    const getV = (id) => document.getElementById(id)?.value.trim() || '';
-    APP_DATA.settings.ownerName = getV('setting-owner-name') || 'سحابتي';
-    APP_DATA.settings.telegramUrl = getV('setting-telegram-url') || 'https://t.me/A_98_A20';
-    APP_DATA.settings.facebookUrl = getV('setting-facebook-url');
-    APP_DATA.settings.instagramUrl = getV('setting-instagram-url');
-    APP_DATA.settings.tiktokUrl = getV('setting-tiktok-url');
-    APP_DATA.settings.logoImage = getV('setting-logo-image') || 'logo.jpg';
-    APP_DATA.settings.heroImage = getV('setting-hero-image') || 'hero-banner.jpg';
+    if (APP_DATA.settings.paymentMethodsInfo.one_pay) {
+        APP_DATA.settings.paymentMethodsInfo.one_pay.accountInfo = document.getElementById('setting-onepay-info')?.value.trim() || '';
+    }
+    if (APP_DATA.settings.paymentMethodsInfo.telecom_libyana) {
+        APP_DATA.settings.paymentMethodsInfo.telecom_libyana.accountInfo = document.getElementById('setting-libyana-info')?.value.trim() || '';
+    }
+    if (APP_DATA.settings.paymentMethodsInfo.telecom_madar) {
+        APP_DATA.settings.paymentMethodsInfo.telecom_madar.accountInfo = document.getElementById('setting-madar-info')?.value.trim() || '';
+    }
+    if (APP_DATA.settings.paymentMethodsInfo.bank_transfer) {
+        APP_DATA.settings.paymentMethodsInfo.bank_transfer.accountInfo = document.getElementById('setting-bank-info')?.value.trim() || '';
+    }
 
     saveAppData(APP_DATA);
     updateWhatsAppLinks();
-    updateOwnerBranding();
     renderPaymentInstructions();
     showToast('تم حفظ إعدادات المتجر ورقم الواتساب بنجاح! 💾');
 }
@@ -1466,7 +1251,7 @@ function importCatalogFromFile() {
 
 function resetCatalogToDefault() {
     if (confirm('هل أنت متأكد من استعادة بيانات الأصناف والإعدادات الافتراضية؟')) {
-        if (typeof storeDel === 'function') storeDel('sahabati_catalog_data');
+        localStorage.removeItem('sahabati_catalog_data');
         APP_DATA = JSON.parse(JSON.stringify(DEFAULT_APP_DATA));
         updateWhatsAppLinks();
         renderGamesNav();
@@ -1483,7 +1268,7 @@ function handleSearch(query) {
     const q = query.trim().toLowerCase();
     if (!q) return;
 
-    const matchedGames = APP_DATA.games.filter(g => g.nameAr.toLowerCase().includes(q));
+    const matchedGames = APP_DATA.games.filter(g => g.nameAr.toLowerCase().includes(q) || g.nameEn.toLowerCase().includes(q));
     const matchedCards = APP_DATA.giftCards.filter(c => c.nameAr.toLowerCase().includes(q) || c.brand.toLowerCase().includes(q));
 
     if (matchedGames.length > 0) {
