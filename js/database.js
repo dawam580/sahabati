@@ -187,9 +187,9 @@
 
     class SahabatiDatabase {
         constructor() {
+            this.listeners = [];
             this.db = this.loadDB();
             this.currentUser = this.loadCurrentUserSession();
-            this.listeners = [];
             this.syncWithServer();
         }
 
@@ -252,12 +252,14 @@
         }
 
         subscribe(callback) {
+            if (!Array.isArray(this.listeners)) this.listeners = [];
             if (typeof callback === 'function') {
                 this.listeners.push(callback);
             }
         }
 
         notify() {
+            if (!Array.isArray(this.listeners)) return;
             this.listeners.forEach(cb => {
                 try { cb(this.db); } catch(e){}
             });
