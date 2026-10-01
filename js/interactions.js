@@ -307,12 +307,11 @@ window.addGamePackageToCart = function(gameId, pkgId){
   const game = APP_DATA.games.find(g=>g.id===gameId);
   const pkg = game?.packages.find(p=>p.id===pkgId);
   if(!game || !pkg) return;
-  const playerId = state.verifiedPlayerId || document.getElementById('player-id-input')?.value || 'Player_LY';
   const item = {
     cartItemId: 'item_'+Date.now()+Math.random().toString(36).substr(2,4),
     type:'game', gameId:game.id, packageId:pkg.id,
     titleAr: game.nameAr.split('(')[0]+' - '+pkg.nameAr,
-    meta:'Player ID: '+playerId,
+    meta:game.id === 'pubg' ? 'كود شدات ببجي' : 'باقة شحن',
     priceLYD: pkg.priceLYD,
     quantity:1
   };
@@ -348,7 +347,7 @@ function initPhoneMask(){
   const badge = document.getElementById('phone-operator-badge');
   if(!input) return;
   input.addEventListener('input', (e)=>{
-    let v = e.target.value.replace(/\D/g,'');
+    let v = e.target.value.replace(/[٠-٩]/g, digit => '٠١٢٣٤٥٦٧٨٩'.indexOf(digit)).replace(/\D/g,'');
     // limit to 10 digits (libya 09xxxxxxxx)
     if(v.length>10) v=v.slice(0,10);
     // auto prefix 09 if starts with 9

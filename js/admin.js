@@ -573,9 +573,39 @@ function deleteVaultCode(codeId) {
 
 // ================= CUSTOMERS & ORDERS DATABASE PANEL =================
 
+let currentAdminOrderFilter = 'all';
+
+function filterAdminOrders(status) {
+    currentAdminOrderFilter = status;
+    ['all', 'pending_payment', 'paid', 'cancelled'].forEach(s => {
+        const btn = document.getElementById('adm-order-filter-' + s);
+        if (btn) {
+            if (s === status) {
+                btn.className = 'px-3 py-1.5 rounded-xl text-xs font-black bg-indigo-600 text-white shadow-sm transition';
+            } else {
+                btn.className = 'px-3 py-1.5 rounded-xl text-xs font-bold bg-white text-slate-700 hover:bg-slate-100 border border-slate-200 transition';
+            }
+        }
+    });
+    renderOrdersAdminTable();
+}
+
 function renderCustomersPanel() {
     if (typeof SahabatiDB === 'undefined') return;
 
+    // 1. Update Analytics Statistics
+    const stats = SahabatiDB.getOrderStats();
+    const statTotal = document.getElementById('admin-stats-total-orders');
+    const statPaid = document.getElementById('admin-stats-paid-orders');
+    const statPending = document.getElementById('admin-stats-pending-orders');
+    const statRevenue = document.getElementById('admin-stats-total-revenue');
+
+    if (statTotal) statTotal.textContent = stats.total + ' طلب';
+    if (statPaid) statPaid.textContent = stats.paid + ' ناجح';
+    if (statPending) statPending.textContent = stats.pending + ' معلق';
+    if (statRevenue) statRevenue.textContent = stats.totalRevenueLYD.toFixed(2) + ' د.ل';
+
+    // 2. Render Customers Table
     const users = SahabatiDB.getAllUsers();
     const orders = SahabatiDB.getAllOrders();
 
@@ -584,7 +614,6 @@ function renderCustomersPanel() {
     if (userBadge) userBadge.textContent = users.length + ' عميل';
     if (ordersBadge) ordersBadge.textContent = orders.length + ' طلب';
 
-    // 1. Render Customers Table
     const custContainer = document.getElementById('customers-table-container');
     if (custContainer) {
         if (users.length === 0) {
@@ -621,39 +650,247 @@ function renderCustomersPanel() {
         }
     }
 
-    // 2. Render All Orders Table
+    // 3. Render Orders Table with Filter
+    renderOrdersAdminTable();
+}
+
+function renderOrdersAdminTable() {
+    if (typeof SahabatiDB === 'undefined') return;
+
     const ordersContainer = document.getElementById('all-orders-table-container');
-    if (ordersContainer) {
-        if (orders.length === 0) {
-            ordersContainer.innerHTML = '<p class="text-xs text-slate-500 text-center p-4">لا توجد طلبات مسجلة بعد في قاعدة البيانات.</p>';
-        } else {
-            ordersContainer.innerHTML = orders.map(order => {
-                return '<div class="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-2.5">' +
-                    '<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-2">' +
-                        '<div>' +
-                            '<span class="font-black text-slate-900 text-sm">#' + escapeHtml(order.id) + '</span>' +
-                            '<span class="text-xs text-slate-500 font-bold mr-2">' + escapeHtml(order.customerName || 'عميل') + ' (' + escapeHtml(order.customerPhone || '') + ')</span>' +
-                        '</div>' +
-                        '<div class="flex items-center gap-2">' +
-                            '<span class="text-xs font-mono text-slate-400">' + escapeHtml(order.date || '') + '</span>' +
-                            (order.waUrl ? '<a href="' + escapeAttr(order.waUrl) + '" target="_blank" class="px-2.5 py-1 rounded-xl bg-emerald-100 text-emerald-800 font-black text-[10px] hover:bg-emerald-200 transition flex items-center gap-1"><i class="fa-brands fa-whatsapp"></i> واتساب</a>' : '') +
-                        '</div>' +
-                    '</div>' +
-                    '<div class="space-y-1 text-xs">' +
-                        (order.vouchers || []).map(v => {
-                            return '<div class="p-2 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">' +
-                                '<div><span class="font-bold text-slate-800">' + escapeHtml(v.title) + ': </span><code class="font-mono font-black text-sky-800">' + escapeHtml(v.voucherCode) + '</code></div>' +
-                                '<button onclick="copyToClipboard(\'' + escapeAttr(v.voucherCode) + '\')" class="px-2 py-0.5 rounded bg-sky-600 text-white font-bold text-[10px]">نسخ</button>' +
-                            '</div>';
-                        }).join('') +
-                    '</div>' +
-                    (order.cardCode13 ? '<div class="p-2 bg-amber-50 rounded-xl text-amber-900 text-xs font-mono font-bold">🎟️ كود كارت التعبئة (13 رقم): ' + escapeHtml(order.cardCode13) + '</div>' : '') +
-                    '<div class="flex items-center justify-between text-xs pt-1">' +
-                        '<span class="text-slate-500 font-medium">وسيلة الدفع: <strong>' + escapeHtml(order.paymentMethod || '') + '</strong></span>' +
-                        '<span class="font-black text-emerald-700 text-sm">' + escapeHtml(order.totalFormatted || '') + '</span>' +
-                    '</div>' +
-                '</div>';
-            }).join('');
+    if (!ordersContainer) return;
+
+    let orders = SahabatiDB.getAllOrders();
+    const searchQuery = (document.getElementById('admin-orders-search')?.value || '').trim().toLowerCase();
+
+    // Filter by status
+    if (currentAdminOrderFilter !== 'all') {
+        if (currentAdminOrderFilter === 'paid') {
+            orders = orders.filter(o => o.status === 'paid' || o.paymentConfirmed);
+        } else if (currentAdminOrderFilter === 'pending_payment') {
+            orders = orders.filter(o => o.status === 'pending_payment' || o.status === 'whatsapp_pending' || (!o.status && !o.paymentConfirmed));
+        } else if (currentAdminOrderFilter === 'cancelled') {
+            orders = orders.filter(o => o.status === 'cancelled');
         }
+    }
+
+    // Filter by search
+    if (searchQuery) {
+        orders = orders.filter(o => 
+            (o.id && o.id.toLowerCase().includes(searchQuery)) ||
+            (o.customerName && o.customerName.toLowerCase().includes(searchQuery)) ||
+            (o.customerPhone && o.customerPhone.includes(searchQuery)) ||
+            (o.cardCode13 && o.cardCode13.includes(searchQuery))
+        );
+    }
+
+    if (orders.length === 0) {
+        ordersContainer.innerHTML = '<p class="text-xs text-slate-500 text-center p-6 bg-slate-50 rounded-2xl border border-slate-200">' +
+            'لا توجد طلبات مطابقة للفلاتر الحالية.' +
+        '</p>';
+        return;
+    }
+
+    ordersContainer.innerHTML = orders.map(order => {
+        const isPaid = order.status === 'paid' || order.paymentConfirmed;
+        const isCancelled = order.status === 'cancelled';
+        const isPending = !isPaid && !isCancelled;
+
+        let statusBadge = '';
+        if (isPaid) {
+            statusBadge = '<span class="px-2.5 py-1 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 flex items-center gap-1"><i class="fa-solid fa-circle-check text-emerald-600"></i><span>مدفوع ومسلّم بنجاح ✅</span></span>';
+        } else if (isCancelled) {
+            statusBadge = '<span class="px-2.5 py-1 rounded-full text-[10px] font-black bg-rose-100 text-rose-800 flex items-center gap-1"><i class="fa-solid fa-ban text-rose-600"></i><span>ملغي ❌</span></span>';
+        } else {
+            statusBadge = '<span class="px-2.5 py-1 rounded-full text-[10px] font-black bg-amber-100 text-amber-900 flex items-center gap-1 animate-pulse"><i class="fa-solid fa-clock text-amber-600"></i><span>قيد انتظار الدفع ⏳</span></span>';
+        }
+
+        return '<div class="p-4 sm:p-5 rounded-2xl bg-white border ' + (isPaid ? 'border-emerald-300' : (isPending ? 'border-amber-300' : 'border-slate-200')) + ' shadow-sm space-y-3">' +
+            '<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">' +
+                '<div>' +
+                    '<div class="flex items-center gap-2">' +
+                        '<span class="font-black text-slate-900 text-sm sm:text-base">#' + escapeHtml(order.id) + '</span>' +
+                        statusBadge +
+                    '</div>' +
+                    '<div class="text-xs text-slate-600 mt-1 flex flex-wrap items-center gap-2">' +
+                        '<span class="font-bold text-slate-900"><i class="fa-solid fa-user text-slate-400 ml-1"></i> ' + escapeHtml(order.customerName || 'عميل سحّابتي') + '</span>' +
+                        '<span class="font-mono text-slate-700 font-bold"><i class="fa-solid fa-phone text-slate-400 ml-1"></i> ' + escapeHtml(order.customerPhone || '-') + '</span>' +
+                        '<span class="text-slate-400 font-mono text-[11px]">' + escapeHtml(order.date || '') + '</span>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="text-left sm:text-right">' +
+                    '<span class="font-black text-emerald-700 text-base sm:text-lg block">' + escapeHtml(order.totalFormatted || '') + '</span>' +
+                    '<span class="text-[11px] text-slate-500 font-medium">وسيلة الدفع: <strong>' + escapeHtml(order.paymentMethod || '') + '</strong></span>' +
+                '</div>' +
+            '</div>' +
+
+            (order.cardCode13 ? 
+                '<div class="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-950 font-mono text-xs font-bold flex items-center justify-between">' +
+                    '<span>🎟️ كود كارت التعبئة (13 رقم): <strong class="text-amber-900 tracking-wider text-sm select-all">' + escapeHtml(order.cardCode13) + '</strong></span>' +
+                    '<button onclick="copyToClipboard(\'' + escapeAttr(order.cardCode13) + '\')" class="px-2.5 py-1 rounded bg-amber-200 hover:bg-amber-300 text-amber-900 text-xs font-bold">نسخ</button>' +
+                '</div>' : '') +
+
+            '<div class="space-y-1.5 text-xs">' +
+                '<span class="font-bold text-slate-600 block text-[11px]">المنتجات والأكواد المخصصة:</span>' +
+                (order.vouchers || []).map(v => {
+                    const hasPassword = v.accountPassword || (v.voucherCode && v.voucherCode.includes('PASS:'));
+                    return '<div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">' +
+                        '<div>' +
+                            '<span class="font-bold text-slate-900 block">' + escapeHtml(v.title) + '</span>' +
+                            '<code class="font-mono font-black text-indigo-950 text-xs mt-0.5 block select-all">' + escapeHtml(v.accountUsername ? ('حساب: ' + v.accountUsername + ' | سر: ' + (v.accountPassword || '••••••••')) : v.voucherCode) + '</code>' +
+                        '</div>' +
+                        '<div class="flex items-center gap-1.5 self-end sm:self-center">' +
+                            (v.pin ? '<span class="text-[10px] font-mono text-slate-600 font-bold px-1.5 py-0.5 rounded bg-slate-200">PIN: ' + escapeHtml(v.pin) + '</span>' : '') +
+                            '<button onclick="copyToClipboard(\'' + escapeAttr(v.voucherCode) + '\')" class="px-2.5 py-1 rounded-lg bg-sky-600 text-white font-bold text-[11px] shadow-sm flex items-center gap-1">' +
+                                '<i class="fa-solid fa-copy text-[10px]"></i> <span>نسخ</span>' +
+                            '</button>' +
+                        '</div>' +
+                    '</div>';
+                }).join('') +
+            '</div>' +
+
+            '<div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100">' +
+                '<div class="flex items-center gap-2">' +
+                    (isPending ? 
+                        '<button type="button" onclick="openAdminConfirmPaymentModal(\'' + escapeAttr(order.id) + '\')" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-black text-xs shadow-md shadow-emerald-600/20 transition flex items-center gap-1.5">' +
+                            '<i class="fa-solid fa-circle-check"></i>' +
+                            '<span>تأكيد الدفع وتسليم الحساب فوراً ✅</span>' +
+                        '</button>' : 
+                        '<button type="button" onclick="openAdminConfirmPaymentModal(\'' + escapeAttr(order.id) + '\')" class="px-3.5 py-2 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-800 font-bold text-xs border border-sky-200 transition flex items-center gap-1.5">' +
+                            '<i class="fa-solid fa-pen-to-square"></i>' +
+                            '<span>تعديل بيانات الحساب المسلّم</span>' +
+                        '</button>') +
+                    (isPending ? 
+                        '<button type="button" onclick="adminCancelOrder(\'' + escapeAttr(order.id) + '\')" class="px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs border border-rose-200 transition flex items-center gap-1">' +
+                            '<i class="fa-solid fa-ban"></i>' +
+                            '<span>إلغاء</span>' +
+                        '</button>' : '') +
+                '</div>' +
+                '<div class="flex items-center gap-2">' +
+                    (order.customerPhone ? 
+                        '<a href="https://wa.me/' + order.customerPhone.replace(/[^0-9]/g, '') + '?text=' + encodeURIComponent('مرحباً ' + (order.customerName || '') + '، بخصوص طلبك #' + order.id + ' في سحّابتي:') + '" target="_blank" class="px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-xs border border-emerald-200 transition flex items-center gap-1.5">' +
+                            '<i class="fa-brands fa-whatsapp text-emerald-600"></i>' +
+                            '<span>واتساب العميل</span>' +
+                        '</a>' : '') +
+                '</div>' +
+            '</div>' +
+        '</div>';
+    }).join('');
+}
+
+function openAdminConfirmPaymentModal(orderId) {
+    if (typeof SahabatiDB === 'undefined') return;
+
+    const order = SahabatiDB.getAllOrders().find(o => o.id === orderId);
+    if (!order) {
+        showToast('الطلب غير موجود', 'fa-triangle-exclamation');
+        return;
+    }
+
+    const modal = document.getElementById('admin-confirm-payment-modal');
+    const summary = document.getElementById('admin-confirm-order-summary');
+    const targetInput = document.getElementById('confirm-target-order-id');
+    const usernameInput = document.getElementById('confirm-account-username');
+    const passwordInput = document.getElementById('confirm-account-password');
+    const pinInput = document.getElementById('confirm-account-pin');
+    const notesInput = document.getElementById('confirm-account-notes');
+
+    if (targetInput) targetInput.value = order.id;
+
+    if (summary) {
+        summary.innerHTML = '<div class="flex justify-between items-center">' +
+            '<span class="font-extrabold text-slate-900 text-sm">طلب #' + order.id + '</span>' +
+            '<span class="font-black text-emerald-700">' + order.totalFormatted + '</span>' +
+        '</div>' +
+        '<div class="text-slate-600 text-xs">' +
+            '<span>العميل: <strong>' + (order.customerName || 'عميل') + '</strong> (' + (order.customerPhone || '') + ')</span>' +
+        '</div>' +
+        '<div class="text-slate-500 text-[11px]">' +
+            'المنتج: ' + (order.items?.map(i => i.titleAr).join(', ') || 'شحن/اشتراك') +
+        '</div>';
+    }
+
+    // Pre-fill fields
+    let initialUser = order.accountDetails?.username || '';
+    let initialPass = order.accountDetails?.password || '';
+    let initialPin = order.accountDetails?.pin || '';
+
+    // Check if vouchers has pre-allocated data
+    if (!initialUser && order.vouchers?.[0]) {
+        const vCode = order.vouchers[0].voucherCode || '';
+        if (vCode.includes('EMAIL:') && vCode.includes('PASS:')) {
+            const parts = vCode.split('|');
+            initialUser = (parts[0] || '').replace('EMAIL:', '').trim();
+            initialPass = (parts[1] || '').replace('PASS:', '').trim();
+            if (parts[2]) initialPin = parts[2].replace('PIN:', '').trim();
+        } else {
+            initialPass = vCode;
+        }
+        if (!initialPin && order.vouchers[0].pin) initialPin = order.vouchers[0].pin;
+    }
+
+    if (usernameInput) usernameInput.value = initialUser;
+    if (passwordInput) passwordInput.value = initialPass;
+    if (pinInput) pinInput.value = initialPin;
+    if (notesInput) notesInput.value = order.accountDetails?.notes || 'شاشات وهواتف - يعمل على جميع الأجهزة';
+
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        passwordInput?.focus();
+    }
+}
+
+function handleAdminConfirmPaymentSubmit(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    if (typeof SahabatiDB === 'undefined') return;
+
+    const orderId = document.getElementById('confirm-target-order-id')?.value;
+    const username = document.getElementById('confirm-account-username')?.value.trim();
+    const password = document.getElementById('confirm-account-password')?.value.trim();
+    const pin = document.getElementById('confirm-account-pin')?.value.trim();
+    const notes = document.getElementById('confirm-account-notes')?.value.trim();
+
+    if (!orderId || !password) {
+        showToast('يرجى إدخال كلمة السر على الأقل', 'fa-triangle-exclamation');
+        return;
+    }
+
+    try {
+        const confirmedOrder = SahabatiDB.confirmOrderPayment(orderId, {
+            username: username,
+            password: password,
+            pin: pin,
+            notes: notes
+        });
+
+        closeModal('admin-confirm-payment-modal');
+        renderCustomersPanel();
+        showToast('تم تأكيد الدفع بنجاح! ستظهر كلمة السر فوراً في شاشة العميل 🎉', 'fa-circle-check');
+
+        // Optional WhatsApp confirmation prompt
+        if (confirmedOrder.customerPhone) {
+            const notifyCustomer = confirm('هل تود إرسال إشعار للعميل عبر واتساب يفيد بأن حسابه وكلمة السر جاهزة في شاشته بالموقع؟');
+            if (notifyCustomer) {
+                const cleanPhone = confirmedOrder.customerPhone.replace(/[^0-9]/g, '');
+                const waText = encodeURIComponent('مرحباً ' + (confirmedOrder.customerName || '') + '،\nتم استلام وتأكيد دفع طلبك رقم #' + confirmedOrder.id + ' بنجاح! ✨\nيمكنك الآن الدخول إلى حسابك في موقع سحّابتي وفتح شاشة طلباتك لاستعراض بيانات الحساب وكلمة السر فوراً.');
+                window.open('https://wa.me/' + cleanPhone + '?text=' + waText, '_blank');
+            }
+        }
+    } catch(err) {
+        showToast(err.message || 'حدث خطأ أثناء اعتماد الطلب', 'fa-triangle-exclamation');
+    }
+}
+
+function adminCancelOrder(orderId) {
+    if (!confirm('هل أنت متأكد من إلغاء هذا الطلب؟')) return;
+    if (typeof SahabatiDB === 'undefined') return;
+
+    try {
+        SahabatiDB.cancelOrder(orderId, 'ملغي من قبل الإدارة');
+        renderCustomersPanel();
+        showToast('تم إلغاء الطلب بنجاح', 'fa-ban');
+    } catch(err) {
+        showToast(err.message, 'fa-triangle-exclamation');
     }
 }

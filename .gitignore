@@ -1,2 +1,12 @@
-﻿node_modules
+node_modules
 .git
+.orders/
+tunnel_url.txt
+start_tunnel.js
+temp_push_helper.json
+push_data.json
+push_payload.json
+download.ps1
+b64_icon.txt
+assets_head.txt
+skills-lock.json

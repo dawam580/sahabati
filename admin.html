@@ -336,6 +336,71 @@
 
             <!-- TAB: CUSTOMERS & ORDERS (سجل العملاء والطلبات) -->
             <div id="adm-view-customers" class="hidden space-y-5">
+                <!-- Analytics & Purchase Logs Grid (سجلات وإحصائيات الشراء) -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+                    <div class="glass-card rounded-2xl p-4 border border-indigo-200 bg-white/80 shadow-sm">
+                        <span class="text-xs text-indigo-700 font-bold block">إجمالي الطلبات</span>
+                        <span id="admin-stats-total-orders" class="text-2xl font-black text-indigo-950 mt-1 block">0</span>
+                    </div>
+                    <div class="glass-card rounded-2xl p-4 border border-emerald-200 bg-white/80 shadow-sm">
+                        <span class="text-xs text-emerald-700 font-bold block">الطلبات المدفوعة والناجحة</span>
+                        <span id="admin-stats-paid-orders" class="text-2xl font-black text-emerald-800 mt-1 block">0</span>
+                    </div>
+                    <div class="glass-card rounded-2xl p-4 border border-amber-200 bg-white/80 shadow-sm">
+                        <span class="text-xs text-amber-700 font-bold block">قيد انتظار الدفع</span>
+                        <span id="admin-stats-pending-orders" class="text-2xl font-black text-amber-800 mt-1 block">0</span>
+                    </div>
+                    <div class="glass-card rounded-2xl p-4 border border-teal-200 bg-white/80 shadow-sm">
+                        <span class="text-xs text-teal-700 font-bold block">إجمالي المبيعات المؤكدة</span>
+                        <span id="admin-stats-total-revenue" class="text-2xl font-black text-teal-900 mt-1 block">0.00 د.ل</span>
+                    </div>
+                </div>
+
+                <!-- Complete Orders History Table with Status Filters -->
+                <div class="glass-panel bg-white/95 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                        <div>
+                            <h3 class="font-extrabold text-slate-900 text-base flex items-center gap-2">
+                                <i class="fa-solid fa-clipboard-list text-emerald-600"></i>
+                                <span>سجلات الشراء والطلبات بالدينار الليبي:</span>
+                            </h3>
+                            <p class="text-xs text-slate-500 font-medium mt-0.5">تحكم في تأكيد الدفع وإظهار بيانات الحساب وكلمة السر لشاشة العميل</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span id="all-orders-count-badge" class="bg-emerald-100 text-emerald-800 text-xs font-black px-2.5 py-1 rounded-full">0 طلب</span>
+                        </div>
+                    </div>
+
+                    <!-- Status Filter Tabs & Search -->
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                        <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+                            <button type="button" onclick="filterAdminOrders('all')" id="adm-order-filter-all" class="px-3 py-1.5 rounded-xl text-xs font-black bg-indigo-600 text-white shadow-sm transition">
+                                كل الطلبات
+                            </button>
+                            <button type="button" onclick="filterAdminOrders('pending_payment')" id="adm-order-filter-pending_payment" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-white text-slate-700 hover:bg-slate-100 border border-slate-200 transition">
+                                ⏳ قيد انتظار الدفع
+                            </button>
+                            <button type="button" onclick="filterAdminOrders('paid')" id="adm-order-filter-paid" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-white text-slate-700 hover:bg-slate-100 border border-slate-200 transition">
+                                ✅ المدفوعة والمسلمة
+                            </button>
+                            <button type="button" onclick="filterAdminOrders('cancelled')" id="adm-order-filter-cancelled" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-white text-slate-700 hover:bg-slate-100 border border-slate-200 transition">
+                                ❌ الملغية
+                            </button>
+                        </div>
+                        <div class="relative w-full sm:w-64">
+                            <input type="text" id="admin-orders-search" oninput="renderOrdersAdminTable()" placeholder="ابحث برقم الطلب أو الهاتف أو العميل..." 
+                                   class="glass-input w-full rounded-xl py-2 pr-8 pl-3 text-xs font-bold text-slate-800 border border-slate-200">
+                            <span class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div id="all-orders-table-container" class="space-y-3">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
                 <!-- Customers Table -->
                 <div class="glass-panel bg-white/95 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4">
                     <div class="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -346,20 +411,6 @@
                         <span id="customers-count-badge" class="bg-sky-100 text-sky-800 text-xs font-black px-2.5 py-1 rounded-full">0 عميل</span>
                     </div>
                     <div id="customers-table-container" class="overflow-x-auto">
-                        <!-- Populated by JS -->
-                    </div>
-                </div>
-
-                <!-- Complete Orders History Table -->
-                <div class="glass-panel bg-white/95 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4">
-                    <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-                        <h3 class="font-extrabold text-slate-900 text-base flex items-center gap-2">
-                            <i class="fa-solid fa-clipboard-list text-emerald-600"></i>
-                            <span>جميع طلبات المشتريات بالدينار الليبي:</span>
-                        </h3>
-                        <span id="all-orders-count-badge" class="bg-emerald-100 text-emerald-800 text-xs font-black px-2.5 py-1 rounded-full">0 طلب</span>
-                    </div>
-                    <div id="all-orders-table-container" class="space-y-3">
                         <!-- Populated by JS -->
                     </div>
                 </div>
@@ -525,6 +576,63 @@
         </div>
 
     </main>
+
+    <!-- Modal: Admin Confirm Payment & Deliver Credentials -->
+    <div id="admin-confirm-payment-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-md z-50 hidden items-center justify-center p-3 sm:p-4">
+        <div class="glass-panel bg-white/95 rounded-3xl max-w-lg w-full p-5 sm:p-7 shadow-2xl border-2 border-emerald-400 animate-toastIn relative">
+            <button onclick="closeModal('admin-confirm-payment-modal')" class="absolute top-4 left-4 text-slate-400 hover:text-slate-600 w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-sm transition" title="إغلاق">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <div class="text-center mb-4">
+                <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-2xl mx-auto mb-2 shadow-inner">
+                    <i class="fa-solid fa-circle-check"></i>
+                </div>
+                <h3 class="text-xl font-black text-slate-900">تأكيد استلام الدفع وتسليم الحساب</h3>
+                <p class="text-xs text-slate-500 mt-0.5">ستظهر البيانات المدخلة هنا فوراً وبشكل حصري في شاشة العميل</p>
+            </div>
+
+            <div id="admin-confirm-order-summary" class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 mb-4 text-xs space-y-1">
+                <!-- Injected by JS -->
+            </div>
+
+            <form id="admin-confirm-payment-form" onsubmit="handleAdminConfirmPaymentSubmit(event)" class="space-y-3.5 text-right">
+                <input type="hidden" id="confirm-target-order-id">
+                <div>
+                    <label class="text-xs font-bold text-slate-700 block mb-1">اسم الحساب / البريد الإلكتروني (Account / Email):</label>
+                    <input type="text" id="confirm-account-username" placeholder="مثال: user@example.com أو كود شحن" required 
+                           class="glass-input w-full rounded-xl py-2 px-3 text-xs font-bold font-mono text-slate-900 border border-emerald-300 focus:border-emerald-600">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-xs font-bold text-slate-700 block mb-1">كلمة السر (Password):</label>
+                        <input type="text" id="confirm-account-password" placeholder="••••••••" required 
+                               class="glass-input w-full rounded-xl py-2 px-3 text-xs font-bold font-mono text-slate-900 border border-emerald-300 focus:border-emerald-600">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-700 block mb-1">الرمز السري / الشاشة (PIN):</label>
+                        <input type="text" id="confirm-account-pin" placeholder="1402 (اختياري)" 
+                               class="glass-input w-full rounded-xl py-2 px-3 text-xs font-bold font-mono text-slate-900 border border-emerald-300 focus:border-emerald-600">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-700 block mb-1">تعليمات أو ملاحظات للعميل:</label>
+                    <input type="text" id="confirm-account-notes" placeholder="يعمل على جميع الأجهزة شاشات وهواتف" 
+                           class="glass-input w-full rounded-xl py-2 px-3 text-xs font-medium text-slate-800">
+                </div>
+
+                <div class="pt-2 flex flex-col sm:flex-row gap-2">
+                    <button type="submit" class="flex-1 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs shadow-lg shadow-emerald-600/30 transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-unlock-keyhole"></i>
+                        <span>اعتماد الدفع وإظهار البيانات لشاشة العميل</span>
+                    </button>
+                    <button type="button" onclick="closeModal('admin-confirm-payment-modal')" class="px-5 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs">
+                        إلغاء
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
 

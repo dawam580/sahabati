@@ -20,6 +20,23 @@ let state = {
     isAdminAuth: (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('sahabati_admin_auth') === 'true' : false)
 };
 
+function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function escapeAttr(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 // Resolve Base64 and Local Assets
 function resolveAsset(path) {
     if (!path) return '';
@@ -62,6 +79,18 @@ function initApp() {
         SahabatiDB.subscribe(() => {
             updateCustomerAuthUI();
             if (state.currentTab === 'orders') renderOrders();
+        });
+    }
+
+    if (typeof window !== 'undefined' && window.addEventListener) {
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'sahabati_database' || e.key === 'sahabati_orders') {
+                if (typeof SahabatiDB !== 'undefined' && SahabatiDB.loadDB) {
+                    try { SahabatiDB.loadDB(); } catch(err){}
+                }
+                updateCustomerAuthUI();
+                if (state.currentTab === 'orders') renderOrders();
+            }
         });
     }
     
@@ -894,49 +923,68 @@ function showSuccessModal(order) {
     const body = document.getElementById('success-modal-body');
     if (!modal || !body) return;
 
+    const isPaid = order.status === 'paid' || order.paymentConfirmed === true;
+
     let cardBanner = '';
     if (order.cardCode13) {
-        cardBanner = '<div class="p-2.5 rounded-xl bg-amber-100 text-amber-950 text-xs font-bold mb-2 font-mono flex items-center justify-between">' +
+        cardBanner = '<div class="p-2.5 rounded-xl bg-amber-100 text-amber-950 text-xs font-bold mb-3 font-mono flex items-center justify-between border border-amber-300">' +
             '<span>🎟️ كود كارت التعبئة (13 رقم):</span>' +
-            '<span class="font-black text-amber-900 tracking-wider">' + order.cardCode13 + '</span>' +
+            '<span class="font-black text-amber-900 tracking-wider">' + escapeHtml(order.cardCode13) + '</span>' +
         '</div>';
     }
 
-    body.innerHTML = '<div class="text-center mb-5">' +
-        '<div class="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-3xl mx-auto mb-2.5 shadow-inner">' +
-            '<i class="fa-brands fa-whatsapp"></i>' +
+    let credentialsNotice = '';
+    if (isPaid) {
+        credentialsNotice = '<div class="space-y-2 mb-4 text-right">' +
+            '<h4 class="font-bold text-xs text-slate-700 uppercase">بيانات الحساب وكلمة السر:</h4>' +
+            (order.vouchers || []).map(v => {
+                return '<div class="p-3 rounded-2xl bg-emerald-50 border border-emerald-300 flex items-center justify-between gap-2">' +
+                    '<div>' +
+                        '<h5 class="font-bold text-slate-900 text-xs">' + escapeHtml(v.title) + '</h5>' +
+                        '<code class="font-mono text-emerald-900 font-bold text-xs block mt-0.5 select-all">' + escapeHtml(v.accountPassword || v.voucherCode) + '</code>' +
+                    '</div>' +
+                    '<button onclick="copyToClipboard(\'' + escapeAttr(v.accountPassword || v.voucherCode) + '\')" class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center gap-1 shadow-sm">' +
+                        '<i class="fa-solid fa-copy"></i>' +
+                        '<span>نسخ</span>' +
+                    '</button>' +
+                '</div>';
+            }).join('') +
+        '</div>';
+    } else {
+        credentialsNotice = '<div class="p-4 rounded-2xl bg-amber-500/10 border-2 border-amber-300 mb-4 text-center space-y-2">' +
+            '<div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-900 text-xs font-black">' +
+                '<i class="fa-solid fa-shield-halved text-amber-600"></i>' +
+                '<span>بيانات الحساب وكلمة السر محمية 🔒</span>' +
+            '</div>' +
+            '<p class="text-xs text-amber-950 font-bold leading-relaxed">' +
+                'تظهر كلمة السر وبيانات الدخول <strong>في شاشتك الخاصة بسجل طلباتك</strong> فور قيام الإدارة بتأكيد استلام الدفع بالدينار الليبي.' +
+            '</p>' +
+        '</div>';
+    }
+
+    body.innerHTML = '<div class="text-center mb-4">' +
+        '<div class="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-3xl mx-auto mb-2 shadow-inner">' +
+            '<i class="fa-solid fa-receipt"></i>' +
         '</div>' +
-        '<h3 class="text-xl sm:text-2xl font-extrabold text-slate-900">تم تجهيز طلبك بنجاح!</h3>' +
-        '<p class="text-xs text-slate-500 mt-1">رقم الطلب: ' + order.id + ' | ' + order.date + '</p>' +
+        '<h3 class="text-xl sm:text-2xl font-black text-slate-900">تم تسجيل طلبك بنجاح!</h3>' +
+        '<p class="text-xs text-slate-500 mt-1">رقم الطلب: <strong class="font-mono text-slate-800">#' + escapeHtml(order.id) + '</strong> | ' + escapeHtml(order.date) + '</p>' +
     '</div>' +
-    '<div class="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-300 mb-4 text-center space-y-2">' +
-        cardBanner +
-        '<p class="text-xs font-bold text-emerald-950">تم إنشاء الفاتورة بالدينار الليبي وفتح محادثة واتساب خدمة العملاء لتسليم الشحن.</p>' +
-        '<a href="' + order.waUrl + '" target="_blank" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs shadow-md transition">' +
+    cardBanner +
+    credentialsNotice +
+    (order.waUrl ? 
+    '<div class="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 mb-4 text-center space-y-1.5">' +
+        '<p class="text-xs font-bold text-emerald-950">أرسل إشعار الدفع للإدارة عبر واتساب لتسريع تفعيل الحساب فوراً:</p>' +
+        '<a href="' + escapeAttr(order.waUrl) + '" target="_blank" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-black text-xs shadow-md transition">' +
             '<i class="fa-brands fa-whatsapp text-lg"></i>' +
             '<span>فتح محادثة واتساب لتأكيد الاستلام</span>' +
         '</a>' +
-    '</div>' +
-    '<div class="space-y-2.5 mb-5">' +
-        '<h4 class="font-bold text-xs text-slate-700 uppercase tracking-wider">أكواد وبيانات الطلب:</h4>' +
-        order.vouchers.map(v => {
-            return '<div class="p-3 rounded-2xl bg-sky-50/80 border border-sky-200 flex items-center justify-between gap-2">' +
-                '<div>' +
-                    '<h5 class="font-bold text-slate-900 text-xs">' + v.title + '</h5>' +
-                    '<code class="font-mono text-sky-800 font-bold text-xs block mt-0.5 select-all">' + v.voucherCode + '</code>' +
-                '</div>' +
-                '<button onclick="copyToClipboard(\'' + v.voucherCode + '\')" class="px-3 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold transition flex items-center gap-1 shadow-sm">' +
-                    '<i class="fa-solid fa-copy"></i>' +
-                    '<span>نسخ</span>' +
-                '</button>' +
-            '</div>';
-        }).join('') +
-    '</div>' +
-    '<div class="flex gap-2">' +
-        '<button onclick="closeModal(\'order-success-modal\'); navigateTo(\'orders\');" class="flex-1 py-3 rounded-xl bg-sky-600 text-white font-bold text-xs shadow-md">' +
-            'عرض في سجل طلباتي' +
+    '</div>' : '') +
+    '<div class="flex flex-col sm:flex-row gap-2">' +
+        '<button onclick="closeModal(\'order-success-modal\'); navigateTo(\'orders\');" class="flex-1 py-3 rounded-xl bg-sky-600 hover:bg-sky-700 active:scale-95 text-white font-black text-xs shadow-md transition flex items-center justify-center gap-1.5">' +
+            '<i class="fa-solid fa-receipt"></i>' +
+            '<span>متابعة الطلب في سجل مشترياتي</span>' +
         '</button>' +
-        '<button onclick="closeModal(\'order-success-modal\'); navigateTo(\'home\');" class="px-5 py-3 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs">' +
+        '<button onclick="closeModal(\'order-success-modal\'); navigateTo(\'home\');" class="px-5 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition">' +
             'الرئيسية' +
         '</button>' +
     '</div>';
@@ -1135,67 +1183,101 @@ function switchCustomerOrdersTab(tab) {
     }
 }
 
-// Render Profile Header Banner
+// Render Profile Header Banner with Purchase Logs Analytics
 function renderCustomerProfileBanner(customer, userOrders, userCodes) {
     const banner = document.getElementById('customer-profile-banner');
     if (!banner) return;
 
+    const totalOrders = userOrders.length;
+    const paidOrders = userOrders.filter(o => o.status === 'paid' || o.paymentConfirmed).length;
+    const pendingOrders = userOrders.filter(o => o.status === 'pending_payment' || o.status === 'whatsapp_pending' || (!o.status && !o.paymentConfirmed)).length;
+    const totalCodes = userCodes.length;
+
+    const statsGridHtml = '<div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">' +
+        '<div class="p-3 rounded-2xl bg-sky-50 border border-sky-200 text-center shadow-sm">' +
+            '<div class="flex items-center justify-center gap-1.5 text-sky-800 mb-1">' +
+                '<i class="fa-solid fa-receipt text-xs"></i>' +
+                '<span class="text-[11px] font-bold">إجمالي طلباتي</span>' +
+            '</div>' +
+            '<span class="font-black text-sky-950 text-base sm:text-xl">' + totalOrders + '</span>' +
+        '</div>' +
+        '<div class="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-center shadow-sm">' +
+            '<div class="flex items-center justify-center gap-1.5 text-emerald-800 mb-1">' +
+                '<i class="fa-solid fa-circle-check text-xs"></i>' +
+                '<span class="text-[11px] font-bold">طلبات تم تسليمها</span>' +
+            '</div>' +
+            '<span class="font-black text-emerald-950 text-base sm:text-xl">' + paidOrders + '</span>' +
+        '</div>' +
+        '<div class="p-3 rounded-2xl bg-amber-50 border border-amber-200 text-center shadow-sm">' +
+            '<div class="flex items-center justify-center gap-1.5 text-amber-800 mb-1">' +
+                '<i class="fa-solid fa-hourglass-half text-xs"></i>' +
+                '<span class="text-[11px] font-bold">قيد تأكيد الدفع</span>' +
+            '</div>' +
+            '<span class="font-black text-amber-950 text-base sm:text-xl">' + pendingOrders + '</span>' +
+        '</div>' +
+        '<div class="p-3 rounded-2xl bg-indigo-50 border border-indigo-200 text-center shadow-sm">' +
+            '<div class="flex items-center justify-center gap-1.5 text-indigo-800 mb-1">' +
+                '<i class="fa-solid fa-key text-xs"></i>' +
+                '<span class="text-[11px] font-bold">أكواد في محفظتي</span>' +
+            '</div>' +
+            '<span class="font-black text-indigo-950 text-base sm:text-xl">' + totalCodes + '</span>' +
+        '</div>' +
+    '</div>';
+
     if (customer) {
-        banner.innerHTML = '<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">' +
-            '<div class="flex items-center gap-3.5">' +
-                '<div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-sky-600 to-indigo-700 text-white flex items-center justify-center text-2xl font-black shadow-md flex-shrink-0 border-2 border-sky-200">' +
-                    customer.name.charAt(0) +
+        banner.innerHTML = '<div class="space-y-4">' +
+            '<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-slate-100">' +
+                '<div class="flex items-center gap-3.5">' +
+                    '<div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-sky-600 to-indigo-700 text-white flex items-center justify-center text-2xl font-black shadow-md flex-shrink-0 border-2 border-sky-200">' +
+                        escapeHtml(customer.name.charAt(0)) +
+                    '</div>' +
+                    '<div>' +
+                        '<div class="flex items-center gap-2">' +
+                            '<h3 class="font-extrabold text-slate-900 text-base sm:text-lg">' + escapeHtml(customer.name) + '</h3>' +
+                            '<span class="bg-emerald-100 text-emerald-800 text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1">' +
+                                '<i class="fa-solid fa-circle-check text-emerald-600"></i>' +
+                                '<span>حساب عميل مفعل</span>' +
+                            '</span>' +
+                        '</div>' +
+                        '<div class="flex items-center gap-3 text-xs text-slate-500 mt-1">' +
+                            '<span class="font-mono font-bold"><i class="fa-solid fa-phone text-slate-400 ml-1"></i> ' + escapeHtml(customer.phone) + '</span>' +
+                            (customer.email ? '<span class="hidden sm:inline">• ' + escapeHtml(customer.email) + '</span>' : '') +
+                        '</div>' +
+                    '</div>' +
                 '</div>' +
-                '<div>' +
-                    '<div class="flex items-center gap-2">' +
-                        '<h3 class="font-extrabold text-slate-900 text-base sm:text-lg">' + customer.name + '</h3>' +
-                        '<span class="bg-emerald-100 text-emerald-800 text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1">' +
-                            '<i class="fa-solid fa-circle-check text-emerald-600"></i>' +
-                            '<span>حساب عميل مفعل</span>' +
-                        '</span>' +
-                    '</div>' +
-                    '<div class="flex items-center gap-3 text-xs text-slate-500 mt-1">' +
-                        '<span class="font-mono font-bold"><i class="fa-solid fa-phone text-slate-400 ml-1"></i> ' + customer.phone + '</span>' +
-                        (customer.email ? '<span class="hidden sm:inline">• ' + customer.email + '</span>' : '') +
-                    '</div>' +
+                '<div class="flex items-center gap-2 self-end sm:self-center">' +
+                    '<button onclick="logoutCustomer()" class="px-3.5 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold transition flex items-center gap-1.5 border border-rose-200 shadow-sm" title="تسجيل الخروج من الحساب">' +
+                        '<i class="fa-solid fa-arrow-right-from-bracket"></i>' +
+                        '<span>خروج</span>' +
+                    '</button>' +
                 '</div>' +
             '</div>' +
-            '<div class="flex items-center gap-2 sm:gap-3 self-stretch sm:self-center justify-between sm:justify-end pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">' +
-                '<div class="text-center px-3.5 py-1.5 rounded-2xl bg-sky-50 border border-sky-200">' +
-                    '<span class="text-[10px] font-bold text-sky-800 block">إجمالي طلباتي</span>' +
-                    '<span class="font-black text-sky-950 text-sm sm:text-base">' + userOrders.length + '</span>' +
-                '</div>' +
-                '<div class="text-center px-3.5 py-1.5 rounded-2xl bg-amber-50 border border-amber-200">' +
-                    '<span class="text-[10px] font-bold text-amber-800 block">أكواد في محفظتي</span>' +
-                    '<span class="font-black text-amber-950 text-sm sm:text-base">' + userCodes.length + '</span>' +
-                '</div>' +
-                '<button onclick="logoutCustomer()" class="px-3.5 py-2.5 rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold transition flex items-center gap-1.5 border border-rose-200 shadow-sm" title="تسجيل الخروج من الحساب">' +
-                    '<i class="fa-solid fa-arrow-right-from-bracket"></i>' +
-                    '<span>خروج</span>' +
-                '</button>' +
-            '</div>' +
+            statsGridHtml +
         '</div>';
     } else {
-        banner.innerHTML = '<div class="flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-right">' +
-            '<div class="flex items-center gap-3.5">' +
-                '<div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-sky-500 to-indigo-600 text-white flex items-center justify-center text-xl shadow-md flex-shrink-0">' +
-                    '<i class="fa-solid fa-user-lock"></i>' +
+        banner.innerHTML = '<div class="space-y-4">' +
+            '<div class="flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-right pb-3 border-b border-slate-100">' +
+                '<div class="flex items-center gap-3.5">' +
+                    '<div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-sky-500 to-indigo-600 text-white flex items-center justify-center text-xl shadow-md flex-shrink-0">' +
+                        '<i class="fa-solid fa-user-lock"></i>' +
+                    '</div>' +
+                    '<div>' +
+                        '<h3 class="font-black text-slate-900 text-sm sm:text-base">سجّل دخولك لحفظ مشترياتك وأكوادك الرقمية</h3>' +
+                        '<p class="text-xs text-slate-500 mt-0.5">أنشئ حساباً مجانياً لتتبع فواتيرك بالدينار الليبي واستلام كلمات السر في شاشتك الخاصة فور تأكيد الدفع.</p>' +
+                    '</div>' +
                 '</div>' +
-                '<div>' +
-                    '<h3 class="font-black text-slate-900 text-sm sm:text-base">سجّل دخولك لحفظ مشترياتك وأكوادك الرقمية</h3>' +
-                    '<p class="text-xs text-slate-500 mt-0.5">أنشئ حساباً مجانياً للاحتفاظ بجميع فواتيرك وأكواد آيتونز وببجي وفري فاير في محفظتك دائماً.</p>' +
+                '<div class="flex items-center gap-2 flex-shrink-0 w-full sm:w-auto">' +
+                    '<button onclick="openCustomerAuthModal(\'login\')" class="flex-1 sm:flex-none px-4 py-2.5 rounded-2xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs shadow-md shadow-sky-600/20 transition flex items-center justify-center gap-1.5">' +
+                        '<i class="fa-solid fa-right-to-bracket"></i>' +
+                        '<span>تسجيل الدخول</span>' +
+                    '</button>' +
+                    '<button onclick="openCustomerAuthModal(\'register\')" class="flex-1 sm:flex-none px-4 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition flex items-center justify-center gap-1.5">' +
+                        '<i class="fa-solid fa-user-plus"></i>' +
+                        '<span>إنشاء حساب</span>' +
+                    '</button>' +
                 '</div>' +
             '</div>' +
-            '<div class="flex items-center gap-2 flex-shrink-0 w-full sm:w-auto">' +
-                '<button onclick="openCustomerAuthModal(\'login\')" class="flex-1 sm:flex-none px-4 py-2.5 rounded-2xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs shadow-md shadow-sky-600/20 transition flex items-center justify-center gap-1.5">' +
-                    '<i class="fa-solid fa-right-to-bracket"></i>' +
-                    '<span>تسجيل الدخول</span>' +
-                '</button>' +
-                '<button onclick="openCustomerAuthModal(\'register\')" class="flex-1 sm:flex-none px-4 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition flex items-center justify-center gap-1.5">' +
-                    '<i class="fa-solid fa-user-plus"></i>' +
-                    '<span>إنشاء حساب</span>' +
-                '</button>' +
-            '</div>' +
+            statsGridHtml +
         '</div>';
     }
 }
@@ -1222,20 +1304,36 @@ function renderOrders() {
         userOrders = state.orders;
     }
 
-    // Retrieve digital codes owned by this customer
+    // Retrieve digital codes owned by this customer (ONLY for confirmed/paid orders)
     let userCodes = [];
     userOrders.forEach(o => {
-        if (o.vouchers && Array.isArray(o.vouchers)) {
-            o.vouchers.forEach(v => {
+        const isPaid = o.status === 'paid' || o.paymentConfirmed === true;
+        if (isPaid) {
+            if (o.vouchers && Array.isArray(o.vouchers) && o.vouchers.length > 0) {
+                o.vouchers.forEach(v => {
+                    userCodes.push({
+                        orderId: o.id,
+                        date: o.date,
+                        title: v.title || o.items?.[0]?.titleAr || 'كود رقمي / حساب',
+                        code: v.accountPassword || v.voucherCode || o.accountDetails?.password || '',
+                        username: v.accountUsername || o.accountDetails?.username || '',
+                        pin: v.pin || o.accountDetails?.pin || '',
+                        notes: o.accountDetails?.notes || '',
+                        isRealVaultCode: v.isRealVaultCode || true
+                    });
+                });
+            } else if (o.accountDetails && o.accountDetails.password) {
                 userCodes.push({
                     orderId: o.id,
                     date: o.date,
-                    title: v.title,
-                    code: v.voucherCode,
-                    pin: v.pin || '',
-                    isRealVaultCode: v.isRealVaultCode || false
+                    title: o.items?.[0]?.titleAr || 'حساب رقمي',
+                    code: o.accountDetails.password,
+                    username: o.accountDetails.username || '',
+                    pin: o.accountDetails.pin || '',
+                    notes: o.accountDetails.notes || '',
+                    isRealVaultCode: true
                 });
-            });
+            }
         }
     });
 
@@ -1252,40 +1350,160 @@ function renderOrders() {
         } else {
             if (emptyState) emptyState.classList.add('hidden');
             container.innerHTML = userOrders.map(order => {
-                return '<div class="glass-card rounded-3xl p-4 sm:p-5 border border-white/80 shadow-md">' +
+                const isPaid = order.status === 'paid' || order.paymentConfirmed === true;
+                const isCancelled = order.status === 'cancelled';
+                const isPending = !isPaid && !isCancelled;
+
+                let statusBadge = '';
+                if (isPaid) {
+                    statusBadge = '<span class="px-2.5 py-1 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1 shadow-sm">' +
+                        '<i class="fa-solid fa-circle-check text-emerald-600"></i>' +
+                        '<span>تم استلام الدفع وتسليم الحساب ✓</span>' +
+                    '</span>';
+                } else if (isCancelled) {
+                    statusBadge = '<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200 flex items-center gap-1">' +
+                        '<i class="fa-solid fa-ban text-rose-600"></i>' +
+                        '<span>ملغي</span>' +
+                    '</span>';
+                } else {
+                    statusBadge = '<span class="px-2.5 py-1 rounded-full text-[10px] font-black bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1 shadow-sm">' +
+                        '<i class="fa-solid fa-hourglass-half fa-spin text-amber-600"></i>' +
+                        '<span>قيد مراجعة وتأكيد الدفع ⏳</span>' +
+                    '</span>';
+                }
+
+                let contentHtml = '';
+                if (isPaid) {
+                    const account = order.accountDetails || {};
+                    const username = account.username || (order.vouchers?.[0]?.accountUsername) || '';
+                    const password = account.password || (order.vouchers?.[0]?.accountPassword) || (order.vouchers?.[0]?.voucherCode) || '';
+                    const pin = account.pin || (order.vouchers?.[0]?.pin) || '';
+                    const notes = account.notes || '';
+
+                    contentHtml = '<div class="space-y-3 mb-3 p-3.5 sm:p-4 rounded-2xl bg-emerald-500/5 border-2 border-emerald-400 shadow-sm">' +
+                        '<div class="flex items-center justify-between pb-2 border-b border-emerald-200/60">' +
+                            '<div class="flex items-center gap-2">' +
+                                '<span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>' +
+                                '<h4 class="font-black text-emerald-950 text-xs sm:text-sm">بيانات الحساب وكلمة السر (في شاشتك الخاصة 👑)</h4>' +
+                            '</div>' +
+                            '<span class="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md">مُفعّل ومضمون</span>' +
+                        '</div>';
+
+                    if (username) {
+                        contentHtml += '<div class="p-2.5 rounded-xl bg-white border border-emerald-200 flex items-center justify-between gap-2">' +
+                            '<div class="min-w-0">' +
+                                '<span class="text-[10px] font-bold text-slate-400 block">اسم المستخدم / البريد الإلكتروني:</span>' +
+                                '<code class="font-mono text-slate-900 font-extrabold text-xs sm:text-sm select-all break-all">' + escapeHtml(username) + '</code>' +
+                            '</div>' +
+                            '<button onclick="copyToClipboard(\'' + escapeAttr(username) + '\')" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition flex items-center gap-1 flex-shrink-0">' +
+                                '<i class="fa-solid fa-copy"></i>' +
+                                '<span>نسخ</span>' +
+                            '</button>' +
+                        '</div>';
+                    }
+
+                    if (password) {
+                        const pwdId = 'pwd-elem-' + escapeAttr(order.id);
+                        contentHtml += '<div class="p-2.5 rounded-xl bg-white border-2 border-emerald-400 flex items-center justify-between gap-2 shadow-sm">' +
+                            '<div class="min-w-0">' +
+                                '<span class="text-[10px] font-extrabold text-emerald-700 block">كلمة السر (خاصة بك فقط 🔒):</span>' +
+                                '<div class="flex items-center gap-2 mt-0.5">' +
+                                    '<code id="' + pwdId + '" class="font-mono text-emerald-950 font-black text-xs sm:text-sm select-all tracking-wider break-all">••••••••</code>' +
+                                    '<button type="button" onclick="toggleSecretVisibility(\'' + pwdId + '\', \'' + escapeAttr(password) + '\', this)" class="text-slate-400 hover:text-emerald-700 p-1 transition" title="إظهار / إخفاء كلمة السر">' +
+                                        '<i class="fa-solid fa-eye"></i>' +
+                                    '</button>' +
+                                '</div>' +
+                            '</div>' +
+                            '<button onclick="copyToClipboard(\'' + escapeAttr(password) + '\')" class="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-black transition flex items-center gap-1 flex-shrink-0 shadow-sm">' +
+                                '<i class="fa-solid fa-copy"></i>' +
+                                '<span>نسخ السر</span>' +
+                            '</button>' +
+                        '</div>';
+                    }
+
+                    if (pin) {
+                        contentHtml += '<div class="p-2 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs">' +
+                            '<span class="text-slate-700 font-bold">رمز الشاشة / PIN: <strong class="font-mono text-slate-900 font-black">' + escapeHtml(pin) + '</strong></span>' +
+                            '<button onclick="copyToClipboard(\'' + escapeAttr(pin) + '\')" class="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 text-[11px] font-bold">نسخ</button>' +
+                        '</div>';
+                    }
+
+                    if (notes) {
+                        contentHtml += '<div class="p-2.5 rounded-xl bg-sky-50 text-sky-900 text-[11px] font-medium border border-sky-200 flex items-start gap-1.5">' +
+                            '<i class="fa-solid fa-circle-info text-sky-600 mt-0.5"></i>' +
+                            '<span>' + escapeHtml(notes) + '</span>' +
+                        '</div>';
+                    }
+
+                    if (order.vouchers && Array.isArray(order.vouchers)) {
+                        const extraVouchers = order.vouchers.filter(v => v.voucherCode && v.voucherCode !== password && v.voucherCode !== 'VIP-ACCESS');
+                        if (extraVouchers.length > 0) {
+                            contentHtml += '<div class="space-y-1.5 pt-2 border-t border-emerald-100">' +
+                                extraVouchers.map(v => {
+                                    return '<div class="p-2 rounded-xl bg-white border border-slate-200 flex items-center justify-between gap-2 text-xs">' +
+                                        '<div class="min-w-0"><span class="font-bold text-slate-800">' + escapeHtml(v.title) + ':</span> <code class="font-mono text-sky-700 font-bold">' + escapeHtml(v.voucherCode) + '</code></div>' +
+                                        '<button onclick="copyToClipboard(\'' + escapeAttr(v.voucherCode) + '\')" class="px-2.5 py-1 rounded-lg bg-sky-50 text-sky-700 font-bold text-[11px]">نسخ</button>' +
+                                    '</div>';
+                                }).join('') +
+                            '</div>';
+                        }
+                    }
+
+                    contentHtml += '</div>';
+
+                } else if (isPending) {
+                    contentHtml = '<div class="p-4 rounded-2xl bg-amber-500/10 border-2 border-amber-300 text-slate-800 space-y-3 mb-3">' +
+                        '<div class="flex items-start gap-3">' +
+                            '<div class="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center flex-shrink-0 text-base shadow-sm">' +
+                                '<i class="fa-solid fa-lock"></i>' +
+                            '</div>' +
+                            '<div>' +
+                                '<h5 class="font-extrabold text-amber-950 text-xs sm:text-sm">بيانات الحساب وكلمة السر محمية ومشفرة 🔒</h5>' +
+                                '<p class="text-[11px] sm:text-xs text-amber-900 mt-0.5 leading-relaxed">' +
+                                    'تظهر كلمة السر <strong>في شاشتك الخاصة هنا فقط</strong> فور تأكيد الإدارة لاستلام الدفع بالدينار الليبي.' +
+                                '</p>' +
+                            '</div>' +
+                        '</div>' +
+                        '<div class="flex flex-wrap items-center gap-2 pt-1 border-t border-amber-200">' +
+                            '<button onclick="checkCustomerOrderStatus(\'' + escapeAttr(order.id) + '\')" class="px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-extrabold text-xs shadow-sm transition flex items-center gap-1.5">' +
+                                '<i class="fa-solid fa-rotate"></i>' +
+                                '<span>تحديث حالة الطلب 🔄</span>' +
+                            '</button>' +
+                            (order.waUrl ? 
+                            '<a href="' + escapeAttr(order.waUrl) + '" target="_blank" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs shadow-sm transition flex items-center gap-1.5">' +
+                                '<i class="fa-brands fa-whatsapp text-sm"></i>' +
+                                '<span>إرسال إشعار الدفع لواتساب</span>' +
+                            '</a>' : '') +
+                        '</div>' +
+                    '</div>';
+
+                    if (order.items && order.items.length > 0) {
+                        contentHtml += '<div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs mb-2.5 space-y-1">' +
+                            '<span class="text-slate-500 block text-[10px] font-bold">المنتجات المطلوبة:</span>' +
+                            order.items.map(it => '<div class="text-slate-800 font-bold">• ' + escapeHtml(it.quantity || 1) + 'x ' + escapeHtml(it.titleAr) + '</div>').join('') +
+                        '</div>';
+                    }
+
+                } else {
+                    contentHtml = '<div class="p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 text-xs mb-3 flex items-center gap-2">' +
+                        '<i class="fa-solid fa-circle-exclamation text-rose-600 text-base"></i>' +
+                        '<span>تم إلغاء هذا الطلب: ' + escapeHtml(order.cancelReason || 'بناءً على طلب الإدارة أو عدم إتمام الدفع') + '</span>' +
+                    '</div>';
+                }
+
+                return '<div class="glass-card rounded-3xl p-4 sm:p-5 border border-white/80 shadow-md transition hover:shadow-lg">' +
                     '<div class="flex items-center justify-between border-b border-slate-100 pb-2.5 mb-2.5">' +
                         '<div>' +
-                            '<span class="font-extrabold text-slate-900 text-xs sm:text-sm">#' + order.id + '</span>' +
-                            '<span class="text-[10px] text-slate-500 block">' + order.date + '</span>' +
+                            '<span class="font-extrabold text-slate-900 text-xs sm:text-sm">#' + escapeHtml(order.id) + '</span>' +
+                            '<span class="text-[10px] text-slate-500 block">' + escapeHtml(order.date) + '</span>' +
                         '</div>' +
-                        '<div class="flex items-center gap-1.5">' +
-                            (order.waUrl ? '<a href="' + order.waUrl + '" target="_blank" class="px-2.5 py-1 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 hover:bg-emerald-200 transition flex items-center gap-1">' +
-                                '<i class="fa-brands fa-whatsapp text-xs"></i>' +
-                                '<span>واتساب</span>' +
-                            '</a>' : '') +
-                            '<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-sky-100 text-sky-800">' +
-                                (order.status === 'completed' ? 'مسجل ✓' : 'قيد المعالجة') +
-                            '</span>' +
-                        '</div>' +
+                        '<div>' + statusBadge + '</div>' +
                     '</div>' +
-                    '<div class="space-y-2 mb-2.5">' +
-                        (order.vouchers || []).map(v => {
-                            return '<div class="p-2.5 rounded-xl bg-sky-50/70 border border-sky-100 flex items-center justify-between gap-2">' +
-                                '<div class="min-w-0">' +
-                                    '<p class="font-bold text-xs text-slate-800 line-clamp-1">' + v.title + '</p>' +
-                                    '<code class="font-mono text-sky-700 font-bold text-xs block select-all mt-0.5">' + v.voucherCode + '</code>' +
-                                '</div>' +
-                                '<button onclick="copyToClipboard(\'' + v.voucherCode + '\')" class="px-3 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold transition flex items-center gap-1 flex-shrink-0 shadow-sm">' +
-                                    '<i class="fa-solid fa-copy"></i>' +
-                                    '<span>نسخ</span>' +
-                                '</button>' +
-                            '</div>';
-                        }).join('') +
-                    '</div>' +
-                    (order.cardCode13 ? '<div class="p-2 bg-amber-50 rounded-xl text-amber-900 text-[11px] font-mono font-bold mb-2">🎟️ كود كارت التعبئة: ' + order.cardCode13 + '</div>' : '') +
+                    contentHtml +
+                    (order.cardCode13 ? '<div class="p-2.5 bg-amber-50 rounded-xl text-amber-950 text-xs font-mono font-bold mb-2.5 border border-amber-200 flex items-center justify-between"><span>🎟️ كود كارت التعبئة (13 رقم):</span><span class="tracking-wider">' + escapeHtml(order.cardCode13) + '</span></div>' : '') +
                     '<div class="flex items-center justify-between text-xs font-bold text-slate-700 pt-2 border-t border-slate-100">' +
                         '<span>الإجمالي بالدينار الليبي:</span>' +
-                        '<span class="text-emerald-700 font-extrabold text-sm sm:text-base">' + (order.totalFormatted || formatPrice(order.totalLYD || 0)) + '</span>' +
+                        '<span class="text-emerald-700 font-extrabold text-sm sm:text-base">' + escapeHtml(order.totalFormatted || formatPrice(order.totalLYD || 0)) + '</span>' +
                     '</div>' +
                 '</div>';
             }).join('');
@@ -1300,32 +1518,80 @@ function renderOrders() {
         } else {
             if (codesEmpty) codesEmpty.classList.add('hidden');
             codesGrid.innerHTML = userCodes.map(codeItem => {
+                const codeId = 'vault-code-' + escapeAttr(codeItem.orderId) + '-' + Math.random().toString(36).substr(2, 4);
                 return '<div class="glass-card rounded-3xl p-4 sm:p-5 border-2 border-amber-200/80 bg-white/95 shadow-md flex flex-col justify-between space-y-3 relative overflow-hidden">' +
                     '<div class="flex items-center justify-between">' +
-                        '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-100 text-amber-900 flex items-center gap-1">' +
-                            '<i class="fa-solid fa-key text-amber-600"></i>' +
-                            '<span>كود رقمي نشط</span>' +
+                        '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-900 flex items-center gap-1 border border-emerald-300">' +
+                            '<i class="fa-solid fa-circle-check text-emerald-600"></i>' +
+                            '<span>تم تأكيد الدفع والتسليم ✓</span>' +
                         '</span>' +
-                        '<span class="text-[10px] text-slate-400 font-mono">#' + codeItem.orderId + '</span>' +
+                        '<span class="text-[10px] text-slate-400 font-mono">#' + escapeHtml(codeItem.orderId) + '</span>' +
                     '</div>' +
                     '<div>' +
-                        '<h4 class="font-black text-slate-900 text-xs sm:text-sm mb-1.5">' + codeItem.title + '</h4>' +
+                        '<h4 class="font-black text-slate-900 text-xs sm:text-sm mb-1.5">' + escapeHtml(codeItem.title) + '</h4>' +
+                        (codeItem.username ? '<p class="text-[11px] font-mono text-slate-600 mb-1.5"><strong>المستخدم:</strong> <span class="select-all font-bold text-slate-800">' + escapeHtml(codeItem.username) + '</span></p>' : '') +
                         '<div class="p-3 rounded-2xl bg-amber-50/80 border border-amber-200 flex items-center justify-between gap-2">' +
-                            '<code class="font-mono text-amber-950 font-black text-xs sm:text-sm select-all tracking-wider break-all">' + codeItem.code + '</code>' +
-                            '<button onclick="copyToClipboard(\'' + codeItem.code + '\')" class="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-black text-xs shadow-sm transition flex items-center gap-1 flex-shrink-0">' +
-                                '<i class="fa-solid fa-copy"></i>' +
-                                '<span>نسخ</span>' +
-                            '</button>' +
+                            '<div>' +
+                                '<span class="text-[9px] font-extrabold text-amber-800 block">الكود / كلمة السر:</span>' +
+                                '<code id="' + codeId + '" class="font-mono text-amber-950 font-black text-xs sm:text-sm select-all tracking-wider break-all">••••••••</code>' +
+                            '</div>' +
+                            '<div class="flex items-center gap-1 flex-shrink-0">' +
+                                '<button type="button" onclick="toggleSecretVisibility(\'' + codeId + '\', \'' + escapeAttr(codeItem.code) + '\', this)" class="p-1.5 rounded-lg text-amber-700 hover:bg-amber-100 transition" title="إظهار / إخفاء">' +
+                                    '<i class="fa-solid fa-eye"></i>' +
+                                '</button>' +
+                                '<button onclick="copyToClipboard(\'' + escapeAttr(codeItem.code) + '\')" class="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-black text-xs shadow-sm transition flex items-center gap-1">' +
+                                    '<i class="fa-solid fa-copy"></i>' +
+                                    '<span>نسخ</span>' +
+                                '</button>' +
+                            '</div>' +
                         '</div>' +
-                        (codeItem.pin ? '<p class="text-[10px] font-mono text-slate-500 mt-1 font-bold">الرمز السري (PIN): <span class="text-slate-800">' + codeItem.pin + '</span></p>' : '') +
+                        (codeItem.pin ? '<p class="text-[10px] font-mono text-slate-500 mt-1 font-bold">الرمز السري (PIN): <span class="text-slate-800">' + escapeHtml(codeItem.pin) + '</span></p>' : '') +
+                        (codeItem.notes ? '<p class="text-[10px] text-sky-700 mt-1"><i class="fa-solid fa-circle-info ml-1"></i>' + escapeHtml(codeItem.notes) + '</p>' : '') +
                     '</div>' +
                     '<div class="text-[10px] text-slate-400 border-t border-slate-100 pt-2 flex items-center justify-between">' +
-                        '<span>تاريخ الشراء: ' + codeItem.date + '</span>' +
+                        '<span>تاريخ الشراء: ' + escapeHtml(codeItem.date) + '</span>' +
                         '<span class="text-emerald-700 font-bold">صالح للاستخدام ✓</span>' +
                     '</div>' +
                 '</div>';
             }).join('');
         }
+    }
+}
+
+// Live Status Check by Customer
+function checkCustomerOrderStatus(orderId) {
+    if (typeof SahabatiDB !== 'undefined') {
+        const order = SahabatiDB.getAllOrders().find(o => o.id === orderId);
+        if (order) {
+            const localIdx = state.orders.findIndex(o => o.id === orderId);
+            if (localIdx !== -1) {
+                state.orders[localIdx] = { ...state.orders[localIdx], ...order };
+            }
+            if (order.status === 'paid' || order.paymentConfirmed) {
+                renderOrders();
+                showToast('🎉 تم تأكيد الدفع بنجاح! تم كشف بيانات الحساب وكلمة السر في شاشتك الآن.', 'fa-circle-check');
+                return;
+            } else if (order.status === 'cancelled') {
+                renderOrders();
+                showToast('تم إلغاء هذا الطلب: ' + (order.cancelReason || ''), 'fa-ban');
+                return;
+            }
+        }
+    }
+    showToast('⏳ ما زال الطلب قيد مراجعة وتأكيد الدفع من الإدارة. يتم التحديث تلقائياً فور الاعتماد.', 'fa-clock');
+}
+
+// Toggle Secret Password / Code Visibility
+function toggleSecretVisibility(elementId, realValue, button) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+    const isMasked = el.textContent === '••••••••';
+    if (isMasked) {
+        el.textContent = realValue;
+        if (button) button.innerHTML = '<i class="fa-solid fa-eye-slash text-slate-600"></i>';
+    } else {
+        el.textContent = '••••••••';
+        if (button) button.innerHTML = '<i class="fa-solid fa-eye text-slate-400"></i>';
     }
 }
 

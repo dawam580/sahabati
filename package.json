@@ -1,6 +1,7 @@
 {
   "scripts": {
     "start": "node server.js",
+    "test": "node --test tests/order-flow.test.js",
     "build:css": "tailwindcss -i ./css/input.css -o ./css/tailwind.css --minify",
     "dev": "tailwindcss -i ./css/input.css -o ./css/tailwind.css --watch"
   },

@@ -562,6 +562,18 @@
             // Claim actual codes from database
             const allocatedCodes = this.claimCodesForItems(orderData.items || [], orderId, userId);
 
+            // Extract pre-allocated credentials if matched from vault
+            let accountDetails = null;
+            const vaultCode = allocatedCodes.find(c => c.isRealVaultCode);
+            if (vaultCode) {
+                accountDetails = {
+                    username: vaultCode.voucherCode.includes('EMAIL:') ? (vaultCode.voucherCode.split('|')[0] || '').replace('EMAIL:', '').trim() : '',
+                    password: vaultCode.voucherCode.includes('PASS:') ? (vaultCode.voucherCode.split('|')[1] || '').replace('PASS:', '').trim() : vaultCode.voucherCode,
+                    pin: vaultCode.pin || '',
+                    fullCredentialString: vaultCode.voucherCode
+                };
+            }
+
             const newOrder = {
                 id: orderId,
                 userId: userId,
@@ -571,11 +583,14 @@
                 createdAt: new Date().toISOString(),
                 items: orderData.items || [],
                 vouchers: allocatedCodes,
+                accountDetails: accountDetails,
                 paymentMethod: orderData.paymentMethod || 'one_pay',
                 cardCode13: orderData.cardCode13 || '',
                 customerNotes: orderData.customerNotes || '',
                 totalFormatted: orderData.totalFormatted || '0.00 د.ل',
-                status: 'completed', // completed | pending | processing
+                status: 'pending_payment', // pending_payment | paid | cancelled
+                paymentConfirmed: false,
+                paymentConfirmedAt: null,
                 waUrl: orderData.waUrl || ''
             };
 
@@ -592,6 +607,94 @@
             } catch(e){}
 
             return newOrder;
+        }
+
+        confirmOrderPayment(orderId, credentials = {}) {
+            const order = this.db.orders.find(o => o.id === orderId);
+            if (!order) throw new Error('الطلب غير موجود برقم #' + orderId);
+
+            order.status = 'paid';
+            order.paymentConfirmed = true;
+            order.paymentConfirmedAt = new Date().toISOString();
+
+            if (credentials.username || credentials.password || credentials.pin) {
+                order.accountDetails = {
+                    username: credentials.username || order.accountDetails?.username || '',
+                    password: credentials.password || order.accountDetails?.password || '',
+                    pin: credentials.pin || order.accountDetails?.pin || '',
+                    notes: credentials.notes || ''
+                };
+
+                // Enrich vouchers with specific credentials
+                if (!order.vouchers || order.vouchers.length === 0) {
+                    order.vouchers = [{
+                        title: order.items?.[0]?.titleAr || 'بيانات الحساب المشترك',
+                        voucherCode: credentials.password || credentials.username || 'VIP-ACCESS',
+                        accountUsername: credentials.username || '',
+                        accountPassword: credentials.password || '',
+                        pin: credentials.pin || '',
+                        isRealVaultCode: true
+                    }];
+                } else {
+                    order.vouchers.forEach(v => {
+                        if (credentials.username) v.accountUsername = credentials.username;
+                        if (credentials.password) v.accountPassword = credentials.password;
+                        if (credentials.pin) v.pin = credentials.pin;
+                        v.isRealVaultCode = true;
+                    });
+                }
+            }
+
+            this.saveDB();
+
+            // Sync legacy localStorage
+            try {
+                if (typeof localStorage !== 'undefined') {
+                    const legacy = JSON.parse(localStorage.getItem('sahabati_orders') || '[]');
+                    const idx = legacy.findIndex(o => o.id === orderId);
+                    if (idx !== -1) {
+                        legacy[idx] = { ...legacy[idx], ...order };
+                        localStorage.setItem('sahabati_orders', JSON.stringify(legacy));
+                    }
+                }
+            } catch(e){}
+
+            return order;
+        }
+
+        cancelOrder(orderId, reason = '') {
+            const order = this.db.orders.find(o => o.id === orderId);
+            if (!order) throw new Error('الطلب غير موجود');
+            order.status = 'cancelled';
+            order.cancelReason = reason;
+            this.saveDB();
+            return order;
+        }
+
+        getOrderStats(userId = null) {
+            let orders = this.db.orders || [];
+            if (userId) {
+                orders = orders.filter(o => o.userId === userId);
+            }
+            const total = orders.length;
+            const paid = orders.filter(o => o.status === 'paid' || o.paymentConfirmed).length;
+            const pending = orders.filter(o => o.status === 'pending_payment' || o.status === 'whatsapp_pending' || (!o.status && !o.paymentConfirmed)).length;
+            const cancelled = orders.filter(o => o.status === 'cancelled').length;
+
+            const totalRevenueLYD = orders
+                .filter(o => o.status === 'paid' || o.paymentConfirmed)
+                .reduce((sum, o) => {
+                    const val = parseFloat(String(o.totalFormatted || '').replace(/[^0-9.]/g, '')) || 0;
+                    return sum + val;
+                }, 0);
+
+            return {
+                total,
+                paid,
+                pending,
+                cancelled,
+                totalRevenueLYD
+            };
         }
 
         getOrdersForUser(userId) {
