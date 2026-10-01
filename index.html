@@ -492,58 +492,17 @@
                             <span>ملخص طلب الدفع (بالدينار الليبي)</span>
                         </h3>
 
-                        <!-- Promo Code & Discount Box -->
-                        <div class="space-y-2 bg-gradient-to-br from-sky-50 to-indigo-50/50 p-3.5 rounded-2xl border border-sky-200">
-                            <div class="flex items-center justify-between">
-                                <label for="promo-code-input" class="text-xs font-black text-slate-800 flex items-center gap-1.5">
-                                    <i class="fa-solid fa-tags text-sky-600"></i>
-                                    <span>كوبون الخصم والتخفيض:</span>
-                                </label>
-                                <span class="text-[10px] font-bold text-sky-700 bg-sky-100 px-2 py-0.5 rounded-md">كوبونات سحّابتي</span>
-                            </div>
-                            
-                            <div class="flex gap-2">
-                                <input type="text" id="promo-code-input" placeholder="مثال: SAHABATI20" 
-                                       class="glass-input flex-1 rounded-xl py-2 px-3 text-xs font-mono uppercase font-bold text-slate-900 border border-sky-300 focus:border-sky-500">
-                                <button type="button" onclick="applyPromoCode()" class="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 active:scale-95 text-white font-black text-xs transition shadow-sm flex items-center gap-1">
-                                    <i class="fa-solid fa-circle-check"></i>
-                                    <span>تطبيق</span>
-                                </button>
-                            </div>
-
-                            <!-- Active Promo Status Box & Live Message -->
-                            <div id="promo-status-box" class="hidden"></div>
-
-                            <!-- Quick Promo Suggestions -->
-                            <div class="pt-1.5 border-t border-sky-100 flex items-center gap-1.5 flex-wrap">
-                                <span class="text-[10px] font-bold text-slate-500">كوبونات سريعة:</span>
-                                <button type="button" onclick="quickApplyPromo('SAHABATI20')" class="text-[10px] font-bold bg-white hover:bg-emerald-50 text-emerald-700 border border-emerald-300 px-2 py-0.5 rounded-lg transition active:scale-95">
-                                    🏷️ SAHABATI20 (20%)
-                                </button>
-                                <button type="button" onclick="quickApplyPromo('LIBYA10')" class="text-[10px] font-bold bg-white hover:bg-sky-50 text-sky-700 border border-sky-300 px-2 py-0.5 rounded-lg transition active:scale-95">
-                                    🏷️ LIBYA10 (10%)
-                                </button>
-                                <button type="button" onclick="quickApplyPromo('WELCOME')" class="text-[10px] font-bold bg-white hover:bg-indigo-50 text-indigo-700 border border-indigo-300 px-2 py-0.5 rounded-lg transition active:scale-95">
-                                    🏷️ WELCOME (15%)
-                                </button>
-                            </div>
-                        </div>
-
-                        <div class="space-y-2.5 pt-2 text-xs font-bold text-slate-700 border-t border-sky-100">
+                        <div class="space-y-3 pt-1 text-xs font-bold text-slate-700">
                             <div class="flex justify-between">
-                                <span>المجموع الفرعي:</span>
+                                <span>مجموع الباقات والاشتراكات:</span>
                                 <span id="checkout-subtotal" class="font-mono text-slate-900">0.00 د.ل</span>
                             </div>
-                            <div class="flex justify-between text-emerald-600">
-                                <span>الخصم المطبق:</span>
-                                <span id="checkout-discount" class="font-mono">0.00 د.ل</span>
-                            </div>
                             <div class="flex justify-between text-slate-500">
-                                <span>رسوم الخدمة والتسليم:</span>
+                                <span>رسوم الخدمة والتسليم الفوري:</span>
                                 <span class="text-emerald-600 font-bold">مجاناً (0.00 د.ل)</span>
                             </div>
                             <div class="flex justify-between text-base font-extrabold text-slate-900 pt-3 border-t border-sky-200">
-                                <span>الإجمالي النهائي بالدينار الليبي:</span>
+                                <span>الإجمالي النهائي للدفع:</span>
                                 <span id="checkout-total" class="text-emerald-700 font-black text-xl">0.00 د.ل</span>
                             </div>
                         </div>

@@ -597,108 +597,14 @@ function renderCheckout() {
         '</div>';
     }).join('');
 
-    // Calculate Promo Discount
-    let discountPercent = state.appliedPromo ? (state.appliedPromo.discountPercent || 0) : 0;
-    let discountLYD = subtotalLYD * (discountPercent / 100);
-    let totalLYD = Math.max(0, subtotalLYD - discountLYD);
-
+    // Clean Total without promo code
     const subtotalEl = document.getElementById('checkout-subtotal');
-    const discountEl = document.getElementById('checkout-discount');
     const totalEl = document.getElementById('checkout-total');
 
     if (subtotalEl) subtotalEl.textContent = formatPrice(subtotalLYD);
-    if (discountEl) {
-        discountEl.textContent = discountPercent > 0 
-            ? '-' + formatPrice(discountLYD) + ' (' + discountPercent + '% خصم)' 
-            : formatPrice(0);
-    }
-    if (totalEl) totalEl.textContent = formatPrice(totalLYD);
+    if (totalEl) totalEl.textContent = formatPrice(subtotalLYD);
 
-    renderPromoStatusUI();
     renderPaymentInstructions();
-}
-
-// Promo Code Logic
-function applyPromoCode() {
-    const input = document.getElementById('promo-code-input');
-    const statusBox = document.getElementById('promo-status-box');
-    const code = (input?.value || '').trim().toUpperCase();
-
-    if (!code) {
-        showToast('يرجى إدخال كود الكوبون أولاً', 'fa-triangle-exclamation');
-        return;
-    }
-
-    const promoMap = APP_DATA.promoCodes || DEFAULT_APP_DATA.promoCodes;
-
-    if (promoMap && promoMap[code]) {
-        state.appliedPromo = {
-            code: code,
-            ...promoMap[code]
-        };
-        showToast('تم تفعيل كوبون الخصم: ' + state.appliedPromo.description, 'fa-tags');
-        renderPromoStatusUI();
-        renderCheckout();
-    } else {
-        state.appliedPromo = null;
-        if (statusBox) {
-            statusBox.classList.remove('hidden');
-            statusBox.innerHTML = '<div class="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold flex items-center justify-between">' +
-                '<span class="flex items-center gap-1.5"><i class="fa-solid fa-circle-xmark text-rose-600"></i> كوبون غير صالح أو منتهي الصلاحية</span>' +
-                '<button type="button" onclick="clearPromoStatus()" class="text-rose-500 hover:text-rose-700 font-bold px-1">✕</button>' +
-            '</div>';
-        }
-        showToast('كوبون الخصم غير صالح أو منتهي الصلاحية', 'fa-circle-xmark');
-        renderCheckout();
-    }
-}
-
-function quickApplyPromo(code) {
-    const input = document.getElementById('promo-code-input');
-    if (input) input.value = code;
-    applyPromoCode();
-}
-
-function removePromoCode() {
-    state.appliedPromo = null;
-    const input = document.getElementById('promo-code-input');
-    if (input) input.value = '';
-    const statusBox = document.getElementById('promo-status-box');
-    if (statusBox) {
-        statusBox.classList.add('hidden');
-        statusBox.innerHTML = '';
-    }
-    showToast('تم إلغاء كوبون الخصم', 'fa-circle-info');
-    renderCheckout();
-}
-
-function clearPromoStatus() {
-    const statusBox = document.getElementById('promo-status-box');
-    if (statusBox) {
-        statusBox.classList.add('hidden');
-        statusBox.innerHTML = '';
-    }
-}
-
-function renderPromoStatusUI() {
-    const statusBox = document.getElementById('promo-status-box');
-    if (!statusBox) return;
-
-    if (state.appliedPromo) {
-        statusBox.classList.remove('hidden');
-        statusBox.innerHTML = '<div class="p-2.5 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-bold flex items-center justify-between shadow-sm">' +
-            '<div class="flex items-center gap-2">' +
-                '<i class="fa-solid fa-circle-check text-emerald-600 text-sm"></i>' +
-                '<span>كوبون مفعّل: <strong class="font-mono text-emerald-950">' + state.appliedPromo.code + '</strong> (' + state.appliedPromo.description + ')</span>' +
-            '</div>' +
-            '<button type="button" onclick="removePromoCode()" class="bg-rose-100 hover:bg-rose-200 text-rose-700 text-[10px] font-bold px-2 py-1 rounded-lg transition">' +
-                'إلغاء ✕' +
-            '</button>' +
-        '</div>';
-    } else if (!statusBox.querySelector('.bg-rose-50')) {
-        statusBox.classList.add('hidden');
-        statusBox.innerHTML = '';
-    }
 }
 
 // Select Payment Method & Update 13-Digit Voucher Label
@@ -723,7 +629,7 @@ function selectPaymentMethod(method) {
         if (method === 'telecom_libyana') {
             voucherLabel.textContent = 'كود كارت تعبئة ليبيانا (13 رقم بالضبط):';
             if (voucherContainer) {
-                voucherContainer.classList.remove('bg-blue-50/80', 'border-blue-300');
+                voucherContainer.classList.remove('bg-blue-50/90', 'border-blue-300');
                 voucherContainer.classList.add('bg-amber-50/90', 'border-amber-300');
             }
         } else if (method === 'telecom_madar') {
@@ -832,6 +738,243 @@ function renderPaymentInstructions() {
         '<i class="fa-solid fa-circle-info text-emerald-600 ml-1"></i>' +
         '<span>' + currentInfo.instructions + '</span>' +
     '</div>';
+}
+
+// Complete Payment Execution & WhatsApp Redirect
+function processPayment() {
+    if (state.cart.length === 0) {
+        showToast('سلة المشتريات فارغة!', 'fa-cart-shopping');
+        return;
+    }
+
+    const method = state.paymentMethod;
+    const voucherInput = document.getElementById('voucher-card-input');
+    const voucherVal = voucherInput ? voucherInput.value.trim() : '';
+    const cleanCardDigits = voucherVal.replace(/[^0-9]/g, '');
+
+    // Requirement: Strict 13 digits check for recharge cards
+    if (method === 'telecom_libyana' || method === 'telecom_madar') {
+        if (cleanCardDigits.length !== 13) {
+            showToast('⚠️ كارت غير صالح! يجب أن يتكون كود كارت التعبئة من 13 رقم بالضبط (أدخلت ' + cleanCardDigits.length + ' رقم)', 'fa-triangle-exclamation');
+            if (voucherInput) {
+                voucherInput.focus();
+                voucherInput.classList.add('border-rose-500', 'ring-2', 'ring-rose-400');
+                voucherInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            handleVoucherCardInput(voucherInput);
+            return; // Block order submission until exactly 13 digits!
+        }
+    } else if (cleanCardDigits.length > 0 && cleanCardDigits.length !== 13) {
+        showToast('⚠️ كارت غير صالح! كود كارت التعبئة يجب أن يتكون من 13 رقم بالضبط', 'fa-triangle-exclamation');
+        if (voucherInput) {
+            voucherInput.focus();
+            voucherInput.classList.add('border-rose-500', 'ring-2', 'ring-rose-400');
+        }
+        handleVoucherCardInput(voucherInput);
+        return;
+    }
+
+    const customerPhone = document.getElementById('whatsapp-phone-input')?.value.trim() || 'غير محدد';
+    const customerNotes = document.getElementById('whatsapp-note-input')?.value.trim() || 'طلب عبر متجر سحّابتي';
+
+    const btn = document.getElementById('complete-payment-btn');
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-lg"></i> <span>جاري تجهيز وتأكيد الفاتورة...</span>';
+
+    setTimeout(() => {
+        const orderId = 'LYD-' + Math.floor(100000 + Math.random() * 900000);
+        const orderDate = new Date().toLocaleString('ar-LY', { dateStyle: 'medium', timeStyle: 'short' });
+        
+        let totalLYD = state.cart.reduce((sum, item) => sum + (item.priceLYD * item.quantity), 0);
+        const totalAmountText = formatPrice(totalLYD);
+
+        const generatedVouchers = state.cart.map(item => ({
+            title: item.titleAr,
+            voucherCode: 'SHB-' + Array.from({length: 4}, () => Math.random().toString(36).substr(2, 4).toUpperCase()).join('-'),
+            quantity: item.quantity,
+            price: formatPrice(item.priceLYD * item.quantity)
+        }));
+
+        const newOrder = {
+            id: orderId,
+            date: orderDate,
+            items: [...state.cart],
+            vouchers: generatedVouchers,
+            paymentMethod: state.paymentMethod,
+            customerPhone: customerPhone,
+            cardCode13: cleanCardDigits.length === 13 ? cleanCardDigits : '',
+            customerNotes: customerNotes,
+            totalFormatted: totalAmountText,
+            status: 'whatsapp_pending'
+        };
+
+        // Prepare WhatsApp message with full details
+        const itemsListText = state.cart.map(item => '• ' + item.quantity + 'x ' + item.titleAr + ' (' + item.meta + ') - ' + formatPrice(item.priceLYD * item.quantity)).join('\n');
+        
+        let cardDetails = '';
+        if (cleanCardDigits.length === 13) {
+            const cardCompany = (state.paymentMethod === 'telecom_libyana') ? 'ليبيانا (Libyana)' : (state.paymentMethod === 'telecom_madar' ? 'مدار الجديد (Madar)' : 'كرت تعبئة');
+            cardDetails = 
+'🎟️ *كود كارت التعبئة (13 رقم):* `' + cleanCardDigits + '`\n' +
+'🏢 *الشركة:* ' + cardCompany + '\n';
+        }
+
+        const paymentMethodNames = {
+            'one_pay': 'ون باي (OnePay) / دفع مصرفي',
+            'telecom_libyana': 'شفرة / كرت تعبئة ليبيانا (13 رقم)',
+            'telecom_madar': 'شفرة / كرت تعبئة مدار (13 رقم)',
+            'bank_transfer': 'تحويل مصرفي ليبي'
+        };
+
+        const waMessage = 
+'🌟 *طلب جديد من منصة سحّابتي (Sahabati My Cloud)* 🌟\n' +
+'-----------------------------------\n' +
+'📋 *رقم الطلب:* #' + orderId + '\n' +
+'📅 *التاريخ:* ' + orderDate + '\n' +
+'📱 *رقم هاتف الزبون:* ' + customerPhone + '\n' +
+'💳 *وسيلة الدفع:* ' + (paymentMethodNames[state.paymentMethod] || state.paymentMethod) + '\n' +
+(cardDetails ? cardDetails : '') +
+'💰 *الإجمالي المطلوب للدفع:* ' + totalAmountText + '\n\n' +
+'🎮 *العناصر المطلوبة:*\n' +
+itemsListText + '\n\n' +
+'📝 *ملاحظات إضافية:*\n' +
+customerNotes + '\n' +
+'-----------------------------------\n' +
+'يرجى تأكيد استلام الطلب وتزويدي بكود الشحن أو بيانات الحساب وشكراً! ✨';
+
+        // Direct WhatsApp Phone URL
+        const targetPhone = APP_DATA.settings?.whatsappNumber || '218920541749';
+        const cleanPhone = targetPhone.replace(/[^0-9]/g, '');
+        const waUrl = 'https://api.whatsapp.com/send?phone=' + cleanPhone + '&text=' + encodeURIComponent(waMessage);
+        newOrder.waUrl = waUrl;
+        
+        // Open WhatsApp in new tab
+        window.open(waUrl, '_blank');
+
+        state.orders.unshift(newOrder);
+        localStorage.setItem('sahabati_orders', JSON.stringify(state.orders));
+
+        // Clear Cart
+        state.cart = [];
+        saveCart();
+        updateCartUI();
+
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+
+        // Show Success Receipt Modal
+        showSuccessModal(newOrder);
+    }, 500);
+}
+
+function showSuccessModal(order) {
+    const modal = document.getElementById('order-success-modal');
+    const body = document.getElementById('success-modal-body');
+    if (!modal || !body) return;
+
+    let cardBanner = '';
+    if (order.cardCode13) {
+        cardBanner = '<div class="p-2.5 rounded-xl bg-amber-100 text-amber-950 text-xs font-bold mb-2 font-mono flex items-center justify-between">' +
+            '<span>🎟️ كود كارت التعبئة (13 رقم):</span>' +
+            '<span class="font-black text-amber-900 tracking-wider">' + order.cardCode13 + '</span>' +
+        '</div>';
+    }
+
+    body.innerHTML = '<div class="text-center mb-5">' +
+        '<div class="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-3xl mx-auto mb-2.5 shadow-inner">' +
+            '<i class="fa-brands fa-whatsapp"></i>' +
+        '</div>' +
+        '<h3 class="text-xl sm:text-2xl font-extrabold text-slate-900">تم تجهيز طلبك بنجاح!</h3>' +
+        '<p class="text-xs text-slate-500 mt-1">رقم الطلب: ' + order.id + ' | ' + order.date + '</p>' +
+    '</div>' +
+    '<div class="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-300 mb-4 text-center space-y-2">' +
+        cardBanner +
+        '<p class="text-xs font-bold text-emerald-950">تم إنشاء الفاتورة بالدينار الليبي وفتح محادثة واتساب خدمة العملاء لتسليم الشحن.</p>' +
+        '<a href="' + order.waUrl + '" target="_blank" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs shadow-md transition">' +
+            '<i class="fa-brands fa-whatsapp text-lg"></i>' +
+            '<span>فتح محادثة واتساب لتأكيد الاستلام</span>' +
+        '</a>' +
+    '</div>' +
+    '<div class="space-y-2.5 mb-5">' +
+        '<h4 class="font-bold text-xs text-slate-700 uppercase tracking-wider">أكواد وبيانات الطلب:</h4>' +
+        order.vouchers.map(v => {
+            return '<div class="p-3 rounded-2xl bg-sky-50/80 border border-sky-200 flex items-center justify-between gap-2">' +
+                '<div>' +
+                    '<h5 class="font-bold text-slate-900 text-xs">' + v.title + '</h5>' +
+                    '<code class="font-mono text-sky-800 font-bold text-xs block mt-0.5 select-all">' + v.voucherCode + '</code>' +
+                '</div>' +
+                '<button onclick="copyToClipboard(\'' + v.voucherCode + '\')" class="px-3 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold transition flex items-center gap-1 shadow-sm">' +
+                    '<i class="fa-solid fa-copy"></i>' +
+                    '<span>نسخ</span>' +
+                '</button>' +
+            '</div>';
+        }).join('') +
+    '</div>' +
+    '<div class="flex gap-2">' +
+        '<button onclick="closeModal(\'order-success-modal\'); navigateTo(\'orders\');" class="flex-1 py-3 rounded-xl bg-sky-600 text-white font-bold text-xs shadow-md">' +
+            'عرض في سجل طلباتي' +
+        '</button>' +
+        '<button onclick="closeModal(\'order-success-modal\'); navigateTo(\'home\');" class="px-5 py-3 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs">' +
+            'الرئيسية' +
+        '</button>' +
+    '</div>';
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        showToast('تم نسخ الكود: ' + text, 'fa-clipboard-check');
+    });
+}
+
+// Render Orders History
+function renderOrders() {
+    const container = document.getElementById('orders-list-container');
+    const emptyState = document.getElementById('orders-empty-state');
+    if (!container) return;
+
+    if (state.orders.length === 0) {
+        if (emptyState) emptyState.classList.remove('hidden');
+        container.innerHTML = '';
+        return;
+    }
+
+    if (emptyState) emptyState.classList.add('hidden');
+    container.innerHTML = state.orders.map(order => {
+        return '<div class="glass-card rounded-3xl p-4 sm:p-5 border border-white/80 shadow-md">' +
+            '<div class="flex items-center justify-between border-b border-slate-100 pb-2.5 mb-2.5">' +
+                '<div>' +
+                    '<span class="font-extrabold text-slate-900 text-xs sm:text-sm">#' + order.id + '</span>' +
+                    '<span class="text-[10px] text-slate-500 block">' + order.date + '</span>' +
+                '</div>' +
+                '<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 flex items-center gap-1">' +
+                    '<i class="fa-brands fa-whatsapp"></i>' +
+                    '<span>طلب واتساب (ليبي)</span>' +
+                '</span>' +
+            '</div>' +
+            '<div class="space-y-2 mb-2.5">' +
+                order.vouchers.map(v => {
+                    return '<div class="p-2.5 rounded-xl bg-sky-50/60 border border-sky-100 flex items-center justify-between">' +
+                        '<div>' +
+                            '<p class="font-bold text-xs text-slate-800">' + v.title + '</p>' +
+                            '<code class="font-mono text-sky-700 font-bold text-xs">' + v.voucherCode + '</code>' +
+                        '</div>' +
+                        '<button onclick="copyToClipboard(\'' + v.voucherCode + '\')" class="px-2.5 py-1 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold">' +
+                            '<i class="fa-solid fa-copy"></i>' +
+                        '</button>' +
+                    '</div>';
+                }).join('') +
+            '</div>' +
+            (order.cardCode13 ? '<div class="p-2 bg-amber-50 rounded-xl text-amber-900 text-[11px] font-mono font-bold mb-2">🎟️ كود كارت التعبئة: ' + order.cardCode13 + '</div>' : '') +
+            '<div class="flex items-center justify-between text-xs font-bold text-slate-700 pt-2 border-t border-slate-100">' +
+                '<span>الإجمالي بالدينار الليبي:</span>' +
+                '<span class="text-emerald-700 font-extrabold text-sm sm:text-base">' + order.totalFormatted + '</span>' +
+            '</div>' +
+        '</div>';
+    }).join('');
 }
 
 // ================= ADMIN SECURITY & DASHBOARD (FOR DIRECT URL ADMIN PORTAL) =================

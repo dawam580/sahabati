@@ -44,11 +44,6 @@ const DEFAULT_STORE_SETTINGS = {
 
 const DEFAULT_APP_DATA = {
     settings: DEFAULT_STORE_SETTINGS,
-    promoCodes: {
-        'SAHABATI20': { discountPercent: 20, description: 'خصم سحّابتي الخاص 20%' },
-        'LIBYA10': { discountPercent: 10, description: 'خصم الشحن المباشر 10%' },
-        'WELCOME': { discountPercent: 15, description: 'خصم الترحيب للزبائن الجدد 15%' }
-    },
     categories: [
         {
             id: 'games',
