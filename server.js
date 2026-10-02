@@ -204,7 +204,7 @@ async function handleApi(req, res, url, headers) {
         }
         if (url === '/api/orders/status' && m === 'POST') {
             const r = store.orderStatus(await readJSONBody(req, 16 * 1024), clientIp(req));
-            return sendJSON(res, r.status, headers, r.error ? { error: r.error } : { orders: r.orders });
+            return sendJSON(res, r.status, headers, r.error ? { error: r.error } : { orders: r.orders, missing: r.missing || [] });
         }
         if (url === '/api/admin/login' && m === 'POST') {
             if (isRateLimited(req)) return sendJSON(res, 429, headers, { error: 'محاولات كثيرة، حاول بعد دقيقة' });
@@ -222,6 +222,7 @@ async function handleApi(req, res, url, headers) {
             store.mergeAdminDatabase(await readJSONBody(req, MAX_DB_BYTES));
             return sendJSON(res, 200, headers, { success: true });
         }
+        if (url === '/api/admin/status' && m === 'GET') return sendJSON(res, 200, headers, store.storageInfo());
         if (url === '/api/admin/orders/confirm' && m === 'POST') {
             return sendJSON(res, 200, headers, { order: store.adminConfirmOrder(await readJSONBody(req, 16 * 1024)) });
         }

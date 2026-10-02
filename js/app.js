@@ -149,8 +149,15 @@ function connectToServer() {
         renderGiftCards('all');
         sanitizeStoredCart();
         if (state.currentTab === 'checkout') renderCheckout();
-        if (state.currentTab === 'orders') refreshServerOrders();
+        refreshServerOrders().then(changed => { if (!changed) updateCustomerAuthUI(); });
     }).catch(() => { /* لا يوجد خادم: يعمل المتجر محلياً */ });
+}
+
+// تحديث تلقائي لحالة الطلبات كل 30 ثانية ما دامت صفحة «طلباتي» مفتوحة
+if (typeof setInterval === 'function' && typeof document !== 'undefined') {
+    setInterval(() => {
+        if (state.serverMode && state.currentTab === 'orders' && !document.hidden) refreshServerOrders();
+    }, 30000);
 }
 
 function saveLocalOrders() {
@@ -161,7 +168,7 @@ function saveLocalOrders() {
 let ordersRefreshInFlight = false;
 function refreshServerOrders(showResult) {
     if (!state.serverMode || ordersRefreshInFlight) return Promise.resolve(false);
-    const pending = state.orders.filter(o => o.serverOrder && o.status !== 'paid' && o.status !== 'cancelled');
+    const pending = state.orders.filter(o => o.serverOrder && o.status !== 'paid' && o.status !== 'cancelled' && o.status !== 'missing');
     if (!pending.length) return Promise.resolve(false);
     const byPhone = {};
     pending.forEach(o => { (byPhone[o.customerPhone] = byPhone[o.customerPhone] || []).push(o.id); });
@@ -169,12 +176,19 @@ function refreshServerOrders(showResult) {
     let changed = false;
     return Promise.all(Object.keys(byPhone).map(phone =>
         apiFetch('/api/orders/status', { method: 'POST', body: JSON.stringify({ phone: phone, ids: byPhone[phone] }) })
-            .then(data => (data.orders || []).forEach(fresh => {
-                const idx = state.orders.findIndex(o => o.id === fresh.id);
-                if (idx === -1) return;
-                if (state.orders[idx].status !== fresh.status) changed = true;
-                state.orders[idx] = Object.assign({}, state.orders[idx], fresh);
-            }))
+            .then(data => {
+                (data.orders || []).forEach(fresh => {
+                    const idx = state.orders.findIndex(o => o.id === fresh.id);
+                    if (idx === -1) return;
+                    if (state.orders[idx].status !== fresh.status) changed = true;
+                    state.orders[idx] = Object.assign({}, state.orders[idx], fresh);
+                });
+                // الخادم لا يعرف هذا الطلب: لا نتركه "قيد الدفع" للأبد
+                (data.missing || []).forEach(id => {
+                    const o = state.orders.find(x => x.id === id);
+                    if (o && o.status !== 'missing') { o.status = 'missing'; changed = true; }
+                });
+            })
             .catch(() => {})
     )).then(() => {
         ordersRefreshInFlight = false;
@@ -1658,13 +1672,19 @@ function renderOrders() {
             container.innerHTML = userOrders.map(order => {
                 const isPaid = order.status === 'paid' || order.paymentConfirmed === true;
                 const isCancelled = order.status === 'cancelled';
-                const isPending = !isPaid && !isCancelled;
+                const isMissing = order.status === 'missing';
+                const isPending = !isPaid && !isCancelled && !isMissing;
 
                 let statusBadge = '';
                 if (isPaid) {
                     statusBadge = '<span class="px-2.5 py-1 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1 shadow-sm">' +
                         '<i class="fa-solid fa-circle-check text-emerald-600"></i>' +
                         '<span>تم الدفع واكتمل الطلب ✓</span>' +
+                    '</span>';
+                } else if (isMissing) {
+                    statusBadge = '<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-300 flex items-center gap-1">' +
+                        '<i class="fa-solid fa-circle-question text-slate-500"></i>' +
+                        '<span>غير موجود لدى المتجر — تواصل معنا عبر واتساب برقم الطلب</span>' +
                     '</span>';
                 } else if (isCancelled) {
                     statusBadge = '<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200 flex items-center gap-1">' +

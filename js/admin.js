@@ -85,10 +85,28 @@ function loadServerData(){
             }
         }),
         (typeof SahabatiDB!=='undefined' && SahabatiDB.syncWithServer) ? SahabatiDB.syncWithServer() : null
-    ]).then(()=>{ try{ renderAdminPanel(); }catch(e){} }).catch(err=>{
+    ]).then(()=>{ try{ renderAdminPanel(); }catch(e){} checkServerStorage(); }).catch(err=>{
         if(err && err.status===401){ setAdminToken(''); adminState.isAdminAuth=false; showLogin(); showToast('انتهت الجلسة، يرجى تسجيل الدخول مجدداً','fa-lock'); }
     });
 }
+// تحذير واضح إذا كان الخادم يحفظ البيانات في مكان مؤقت (تُمسح الطلبات عند كل نشر)
+function checkServerStorage(){
+    if(!getAdminToken()) return;
+    adminApi('/api/admin/status').then(info=>{
+        const view=document.getElementById('admin-dashboard-view'); if(!view) return;
+        let box=document.getElementById('admin-storage-banner');
+        if(!box){ box=document.createElement('div'); box.id='admin-storage-banner'; view.prepend(box); }
+        if(info.persistent){
+            box.className='adm-storage ok';
+            box.innerHTML='<i class="fa-solid fa-database"></i><div><strong>البيانات محفوظة بشكل دائم</strong><small>'+info.orders+' طلب على الخادم · '+info.paid+' مدفوع · '+info.pending+' قيد الدفع · '+info.codesAvailable+' كود متاح في المخزن</small></div>';
+        } else {
+            box.className='adm-storage bad';
+            box.innerHTML='<i class="fa-solid fa-triangle-exclamation"></i><div><strong>تحذير: الطلبات والأكواد تُحفظ في مكان مؤقت وتُمسح عند كل تحديث للموقع!</strong>'+
+                '<small>في Railway: اضغط + ← Volume ← اختر خدمة sahabati ← المسار /data ← ثم Deploy. سيستخدمه الموقع تلقائياً.</small></div>';
+        }
+    }).catch(()=>{});
+}
+
 // Every catalog save in the panel is also sent to the server so customers see it
 const saveAppDataLocal = saveAppData;
 saveAppData = function(data){
