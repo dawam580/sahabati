@@ -1,7 +1,9 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const { handleOrders } = require('./order-api');
+const { createStore } = require('./store');
+
+const store = createStore();
 
 const PORT = process.env.PORT || 5000;
 const MIME_TYPES = {
@@ -31,6 +33,32 @@ const BLOCKED_PATTERNS = [
     /push_.*\.json$/,
     /temp_.*\.json$/
 ];
+
+const MAX_DB_BYTES = 2 * 1024 * 1024; // 2MB
+const WRITE_WINDOW_MS = 60 * 1000;
+const MAX_WRITES_PER_WINDOW = 30;
+const writeLog = new Map();
+
+// عنوان الزائر: لا نثق بترويسة X-Forwarded-For إلا خلف بروكسي معروف (مثل Render)
+// TRUST_PROXY = عدد البروكسيات الموثوقة أمام الخادم (0 افتراضياً)
+const TRUST_PROXY = Math.max(0, parseInt(process.env.TRUST_PROXY || '0', 10) || 0);
+function clientIp(req) {
+    if (TRUST_PROXY > 0) {
+        const chain = String(req.headers['x-forwarded-for'] || '').split(',').map(x => x.trim()).filter(Boolean);
+        if (chain.length >= TRUST_PROXY) return chain[chain.length - TRUST_PROXY];
+    }
+    return req.socket.remoteAddress || 'unknown';
+}
+
+function isRateLimited(req) {
+    const ip = clientIp(req);
+    const now = Date.now();
+    const recent = (writeLog.get(ip) || []).filter(t => now - t < WRITE_WINDOW_MS);
+    recent.push(now);
+    writeLog.set(ip, recent);
+    if (writeLog.size > 5000) writeLog.clear();
+    return recent.length > MAX_WRITES_PER_WINDOW;
+}
 
 function isPathBlocked(relativePath) {
     const normalized = relativePath.replace(/\\/g, '/').replace(/^\//, '');
@@ -64,36 +92,10 @@ const server = http.createServer(async (req, res) => {
     }
 
     const apiUrl = req.url.split('?')[0];
-    if (apiUrl === '/api/database') {
-        const dbDir = path.join(__dirname, '.data');
-        const dbFile = path.join(dbDir, 'database.json');
-        if (req.method === 'GET') {
-            try {
-                const data = await fs.promises.readFile(dbFile, 'utf8');
-                res.writeHead(200, { ...securityHeaders, 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
-                res.end(data);
-            } catch(e) {
-                res.writeHead(200, { ...securityHeaders, 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
-                res.end('{}');
-            }
-            return;
-        } else if (req.method === 'POST') {
-            let body = '';
-            for await (const chunk of req) body += chunk;
-            try {
-                JSON.parse(body); // validate json
-                await fs.promises.mkdir(dbDir, { recursive: true });
-                await fs.promises.writeFile(dbFile, body, 'utf8');
-                res.writeHead(200, { ...securityHeaders, 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
-                res.end(JSON.stringify({ success: true }));
-            } catch(e) {
-                res.writeHead(400, { ...securityHeaders, 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
-                res.end(JSON.stringify({ error: 'Invalid database payload: ' + e.message }));
-            }
-            return;
-        }
+    if (apiUrl.startsWith('/api/')) {
+        await handleApi(req, res, apiUrl, securityHeaders);
+        return;
     }
-    if (await handleOrders(req, res, securityHeaders, apiUrl)) return;
 
     // فقط GET/HEAD مسموح للملفات الثابتة
     if (req.method !== 'GET' && req.method !== 'HEAD') {
@@ -133,7 +135,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     // منع كشف الملفات المخفية (dotfiles)
-    if (relative.split(/[\\/]/).some(part => part.startsWith('.')) || ['server.js', 'order-api.js'].includes(relative)) {
+    if (relative.split(/[\\/]/).some(part => part.startsWith('.')) || ['server.js', 'store.js'].includes(relative)) {
         res.writeHead(404, { ...securityHeaders, 'Content-Type': 'text/plain; charset=utf-8' });
         res.end('404 Not Found');
         return;
@@ -155,7 +157,7 @@ const server = http.createServer(async (req, res) => {
         const headers = {
             ...securityHeaders,
             'Content-Type': contentType,
-            'Cache-Control': isAdminPage ? 'no-store, no-cache, must-revalidate, private' : (ext === '.html' ? 'no-cache, must-revalidate' : 'public, max-age=31536000, immutable'),
+            'Cache-Control': isAdminPage ? 'no-store, no-cache, must-revalidate, private' : (['.html', '.js', '.css', '.json'].includes(ext) ? 'no-cache, must-revalidate' : 'public, max-age=86400'),
             'X-Content-Type-Options': 'nosniff',
             ...(isAdminPage ? { 'X-Robots-Tag': 'noindex, nofollow, noarchive', 'Cache-Control': 'no-store, no-cache, must-revalidate, private' } : {})
         };
@@ -174,6 +176,61 @@ const server = http.createServer(async (req, res) => {
         fs.createReadStream(filePath).pipe(res);
     });
 });
+
+function sendJSON(res, status, headers, payload) {
+    res.writeHead(status, { ...headers, 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
+    res.end(JSON.stringify(payload));
+}
+
+async function readJSONBody(req, maxBytes) {
+    let body = '';
+    for await (const chunk of req) {
+        body += chunk;
+        if (body.length > maxBytes) { req.destroy(); const e = new Error('Payload too large'); e.status = 413; throw e; }
+    }
+    try { return JSON.parse(body || '{}'); } catch (e) { const err = new Error('Invalid JSON'); err.status = 400; throw err; }
+}
+
+
+async function handleApi(req, res, url, headers) {
+    try {
+        const m = req.method;
+        // ----- public -----
+        if (url === '/api/health' && m === 'GET') return sendJSON(res, 200, headers, { ok: true });
+        if (url === '/api/catalog' && m === 'GET') return sendJSON(res, 200, headers, store.publicCatalog());
+        if (url === '/api/orders' && m === 'POST') {
+            const r = store.createOrder(await readJSONBody(req, 64 * 1024), clientIp(req));
+            return sendJSON(res, r.status, headers, r.error ? { error: r.error } : r.order);
+        }
+        if (url === '/api/orders/status' && m === 'POST') {
+            const r = store.orderStatus(await readJSONBody(req, 16 * 1024), clientIp(req));
+            return sendJSON(res, r.status, headers, r.error ? { error: r.error } : { orders: r.orders });
+        }
+        if (url === '/api/admin/login' && m === 'POST') {
+            if (isRateLimited(req)) return sendJSON(res, 429, headers, { error: 'محاولات كثيرة، حاول بعد دقيقة' });
+            const body = await readJSONBody(req, 4 * 1024);
+            const token = store.adminLogin(body.pin);
+            return token ? sendJSON(res, 200, headers, { token }) : sendJSON(res, 401, headers, { error: 'كلمة السر غير صحيحة' });
+        }
+
+        // ----- admin only -----
+        if (!store.isAdmin(req)) return sendJSON(res, 401, headers, { error: 'Unauthorized' });
+        if (url === '/api/admin/logout' && m === 'POST') { store.adminLogout(req); return sendJSON(res, 200, headers, { ok: true }); }
+        if (url === '/api/database' && m === 'GET') return sendJSON(res, 200, headers, store.adminDatabase());
+        if (url === '/api/database' && m === 'POST') {
+            if (isRateLimited(req)) return sendJSON(res, 429, headers, { error: 'Too many requests' });
+            store.mergeAdminDatabase(await readJSONBody(req, MAX_DB_BYTES));
+            return sendJSON(res, 200, headers, { success: true });
+        }
+        if (url === '/api/catalog' && m === 'PUT') {
+            store.saveCatalog(await readJSONBody(req, MAX_DB_BYTES));
+            return sendJSON(res, 200, headers, { success: true });
+        }
+        return sendJSON(res, 404, headers, { error: 'Not found' });
+    } catch (e) {
+        return sendJSON(res, e.status || 400, headers, { error: e.message || 'Bad request' });
+    }
+}
 
 server.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running at http://localhost:${PORT} [secured]`);

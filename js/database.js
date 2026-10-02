@@ -9,6 +9,19 @@
 
     const DB_KEY = 'sahabati_database_v2';
     const SESSION_USER_KEY = 'sahabati_current_customer';
+    const ADMIN_TOKEN_KEY = 'sahabati_admin_token';
+
+    // قاعدة البيانات الكاملة على الخادم متاحة للمدير فقط (رمز دخول من /api/admin/login)
+    function adminToken() {
+        try {
+            if (typeof sessionStorage !== 'undefined') return sessionStorage.getItem(ADMIN_TOKEN_KEY) || '';
+        } catch (e) {}
+        return '';
+    }
+    function canSyncWithServer() {
+        return typeof fetch !== 'undefined' && typeof window !== 'undefined' && window.location?.hostname &&
+            !window.location.hostname.endsWith('github.io') && !!adminToken();
+    }
 
     // Simple SHA-256 hash helper using Web Crypto API or fallback
     async function sha256(message) {
@@ -194,9 +207,9 @@
         }
 
         async syncWithServer() {
-            if (typeof fetch !== 'undefined' && typeof window !== 'undefined' && window.location?.hostname && !window.location.hostname.endsWith('github.io')) {
+            if (canSyncWithServer()) {
                 try {
-                    const res = await fetch('/api/database');
+                    const res = await fetch('/api/database', { headers: { 'Authorization': 'Bearer ' + adminToken() } });
                     if (res.ok) {
                         const srvData = await res.json();
                         if (srvData && srvData.voucher_codes && srvData.users) {
@@ -241,10 +254,10 @@
             } catch (err) {
                 console.error('SahabatiDB: localStorage save failed', err);
             }
-            if (typeof fetch !== 'undefined' && typeof window !== 'undefined' && window.location?.hostname && !window.location.hostname.endsWith('github.io')) {
+            if (canSyncWithServer()) {
                 fetch('/api/database', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + adminToken() },
                     body: JSON.stringify(dataToSave)
                 }).catch(() => {});
             }
@@ -523,17 +536,19 @@
                     });
 
                     if (availableCode) {
-                        // Mark as sold and link to this order & user
-                        availableCode.status = 'sold';
+                        // حجز الكود فقط - لا يُنسخ الكود الحقيقي إلى الطلب قبل تأكيد الدفع
+                        // (منع الاحتيال: كان الكود يُحفظ في سجل العميل قبل الدفع ويمكن قراءته من المتصفح)
+                        availableCode.status = 'reserved';
                         availableCode.assignedOrderId = orderId;
                         availableCode.assignedUserId = userId || null;
-                        availableCode.soldAt = new Date().toISOString();
+                        availableCode.reservedAt = new Date().toISOString();
 
                         claimedCodes.push({
                             title: item.titleAr,
-                            voucherCode: availableCode.code,
-                            pin: availableCode.pin || '',
+                            voucherCode: '',
+                            pin: '',
                             isRealVaultCode: true,
+                            locked: true,
                             codeId: availableCode.id
                         });
                     } else {
@@ -562,17 +577,8 @@
             // Claim actual codes from database
             const allocatedCodes = this.claimCodesForItems(orderData.items || [], orderId, userId);
 
-            // Extract pre-allocated credentials if matched from vault
-            let accountDetails = null;
-            const vaultCode = allocatedCodes.find(c => c.isRealVaultCode);
-            if (vaultCode) {
-                accountDetails = {
-                    username: vaultCode.voucherCode.includes('EMAIL:') ? (vaultCode.voucherCode.split('|')[0] || '').replace('EMAIL:', '').trim() : '',
-                    password: vaultCode.voucherCode.includes('PASS:') ? (vaultCode.voucherCode.split('|')[1] || '').replace('PASS:', '').trim() : vaultCode.voucherCode,
-                    pin: vaultCode.pin || '',
-                    fullCredentialString: vaultCode.voucherCode
-                };
-            }
+            // بيانات الحساب تُكشف فقط عند تأكيد الدفع (confirmOrderPayment)
+            const accountDetails = null;
 
             const newOrder = {
                 id: orderId,
@@ -613,9 +619,33 @@
             const order = this.db.orders.find(o => o.id === orderId);
             if (!order) throw new Error('الطلب غير موجود برقم #' + orderId);
 
+            if (order.status === 'cancelled') throw new Error('لا يمكن تأكيد دفع طلب ملغي');
+
             order.status = 'paid';
             order.paymentConfirmed = true;
             order.paymentConfirmedAt = new Date().toISOString();
+
+            // كشف الأكواد المحجوزة لهذا الطلب الآن فقط
+            (order.vouchers || []).forEach(v => {
+                if (!v.codeId) return;
+                const vc = this.db.voucher_codes.find(c => c.id === v.codeId);
+                if (!vc) return;
+                vc.status = 'sold';
+                vc.soldAt = new Date().toISOString();
+                v.voucherCode = vc.code;
+                v.pin = vc.pin || '';
+                v.locked = false;
+            });
+            const vault = (order.vouchers || []).find(v => v.codeId && v.voucherCode);
+            if (vault && !order.accountDetails) {
+                const code = vault.voucherCode;
+                order.accountDetails = {
+                    username: code.includes('EMAIL:') ? (code.split('|')[0] || '').replace('EMAIL:', '').trim() : '',
+                    password: code.includes('PASS:') ? (code.split('|')[1] || '').replace('PASS:', '').trim() : code,
+                    pin: vault.pin || '',
+                    fullCredentialString: code
+                };
+            }
 
             if (credentials.username || credentials.password || credentials.pin) {
                 order.accountDetails = {
@@ -665,8 +695,19 @@
         cancelOrder(orderId, reason = '') {
             const order = this.db.orders.find(o => o.id === orderId);
             if (!order) throw new Error('الطلب غير موجود');
+            if (order.status === 'paid' || order.paymentConfirmed) throw new Error('لا يمكن إلغاء طلب مدفوع');
             order.status = 'cancelled';
             order.cancelReason = reason;
+            // إعادة الأكواد المحجوزة إلى المخزون
+            (order.vouchers || []).forEach(v => {
+                const vc = v.codeId && this.db.voucher_codes.find(c => c.id === v.codeId);
+                if (vc && vc.status === 'reserved') {
+                    vc.status = 'available';
+                    vc.assignedOrderId = null;
+                    vc.assignedUserId = null;
+                    vc.reservedAt = null;
+                }
+            });
             this.saveDB();
             return order;
         }
