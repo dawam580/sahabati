@@ -17,14 +17,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Readex+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- Tailwind CSS CDN -->
-    <link rel="stylesheet" href="css/tailwind.css?v=2.9">
+    <link rel="stylesheet" href="css/tailwind.css?v=3.0">
     
     <!-- Font Awesome -->
     <link rel="stylesheet" href="vendor/fontawesome/css/all.min.css">
     
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="css/style.css?v=2.9">
-    <link rel="stylesheet" href="css/admin.css?v=2.9">
+    <link rel="stylesheet" href="css/style.css?v=3.0">
+    <link rel="stylesheet" href="css/admin.css?v=3.0">
     
     <style>
         body {
@@ -295,20 +295,9 @@
 
                     <form id="vault-add-form" onsubmit="handleVaultAddCodes(event)" class="space-y-4">
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                            <div>
-                                <label class="text-xs font-bold text-slate-700 block mb-1">نوع اللعبة أو الخدمة:</label>
-                                <select id="vault-brand-select" onchange="updateVaultProductOptions(this.value)" class="glass-input w-full rounded-xl py-2.5 px-3 text-xs font-bold text-slate-800">
-                                    <option value="apple">🍏 آبل آيتونز (Apple iTunes Gift Cards)</option>
-                                    <option value="pubg">🎮 ببجي موبايل (PUBG Mobile UC)</option>
-                                    <option value="freefire">🔥 فري فاير (Free Fire Diamonds)</option>
-                                    <option value="netflix">🎬 نتفليكس (Netflix 4K Accounts/Cards)</option>
-                                    <option value="shahid">📺 شاهد VIP (Shahid VIP Accounts)</option>
-                                    <option value="general">✨ كود أو بطاقة رقمية أخرى</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="text-xs font-bold text-slate-700 block mb-1">اسم الصنف أو الباقة:</label>
-                                <input type="text" id="vault-product-name" placeholder="مثال: بطاقة آيتونز 10$ أو 60 شدة ببجي" required class="glass-input w-full rounded-xl py-2 px-3 text-xs font-bold text-slate-800">
+                            <div class="sm:col-span-2">
+                                <label for="vault-product-select" class="text-xs font-bold text-slate-700 block mb-1">المنتج الذي تخصه هذه الأكواد (يُسلَّم الكود فقط لمن يطلب هذا المنتج):</label>
+                                <select id="vault-product-select" class="glass-input w-full rounded-xl py-2.5 px-3 text-xs font-bold text-slate-800"></select>
                             </div>
                             <div>
                                 <label class="text-xs font-bold text-slate-700 block mb-1">ملاحظات / تعليمات:</label>
@@ -321,7 +310,7 @@
                                 <label class="text-xs font-bold text-slate-700">الأكواد الرقمية (كود في كل سطر لإضافة عشرات الأكواد دفعة واحدة):</label>
                                 <span class="text-[11px] text-slate-500 font-medium">يمكنك كتابة: <code class="bg-slate-100 px-1 rounded font-bold">الكود</code> أو <code class="bg-slate-100 px-1 rounded font-bold">الكود|PIN</code></span>
                             </div>
-                            <textarea id="vault-codes-textarea" rows="4" placeholder="ITUNES-ABCD-1234-XYZ|1024&#10;ITUNES-EFGH-5678-XYZ&#10;PUBG-UC60-99210-LIBYA" required 
+                            <textarea id="vault-codes-textarea" rows="4" placeholder="كود في كل سطر، ويمكن إضافة PIN بعد علامة |&#10;مثال: XXXX-XXXX-XXXX|1234" required 
                                       class="glass-input w-full rounded-2xl py-2.5 px-3 font-mono text-xs font-bold text-slate-800 border border-amber-200 focus:border-amber-500"></textarea>
                         </div>
 
@@ -606,47 +595,43 @@
                 <i class="fa-solid fa-xmark"></i>
             </button>
 
-            <div class="text-center mb-4">
+            <div class="text-center mb-3">
                 <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-2xl mx-auto mb-2 shadow-inner">
                     <i class="fa-solid fa-circle-check"></i>
                 </div>
-                <h3 class="text-xl font-black text-slate-900">تأكيد استلام الدفع وتسليم الحساب</h3>
-                <p class="text-xs text-slate-500 mt-0.5">ستظهر البيانات المدخلة هنا فوراً وبشكل حصري في شاشة العميل</p>
+                <h3 class="text-lg font-black text-slate-900">تأكيد الدفع وتسليم الطلب</h3>
+                <p class="text-xs text-slate-500 mt-0.5">تحقق من كرت ليبيانا أولاً، ثم نفّذ الشحن وسلّم الكود إن وُجد</p>
             </div>
 
-            <div id="admin-confirm-order-summary" class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 mb-4 text-xs space-y-1">
+            <div id="admin-confirm-order-summary" class="mb-3 text-xs space-y-2">
                 <!-- Injected by JS -->
             </div>
 
-            <form id="admin-confirm-payment-form" onsubmit="handleAdminConfirmPaymentSubmit(event)" class="space-y-3.5 text-right">
+            <form id="admin-confirm-payment-form" onsubmit="handleAdminConfirmPaymentSubmit(event)" class="space-y-3 text-right">
                 <input type="hidden" id="confirm-target-order-id">
                 <div>
-                    <label class="text-xs font-bold text-slate-700 block mb-1">اسم الحساب / البريد الإلكتروني (Account / Email):</label>
-                    <input type="text" id="confirm-account-username" placeholder="مثال: user@example.com أو كود شحن" required 
-                           class="glass-input w-full rounded-xl py-2 px-3 text-xs font-bold font-mono text-slate-900 border border-emerald-300 focus:border-emerald-600">
+                    <label for="confirm-account-password" class="text-xs font-bold text-slate-700 block mb-1">الكود أو بيانات التسليم للعميل <span class="text-slate-400 font-medium">(اتركه فارغاً إذا كان الشحن بالـ ID أو QR أو تسجيل الدخول)</span>:</label>
+                    <textarea id="confirm-account-password" rows="2" placeholder="مثال: كود بطاقة آيتونز، أو كلمة سر حساب نتفليكس" class="glass-input w-full rounded-xl py-2 px-3 text-xs font-bold font-mono text-slate-900 border border-emerald-300 focus:border-emerald-600"></textarea>
                 </div>
                 <div class="grid grid-cols-2 gap-2">
                     <div>
-                        <label class="text-xs font-bold text-slate-700 block mb-1">كلمة السر (Password):</label>
-                        <input type="text" id="confirm-account-password" placeholder="••••••••" required 
-                               class="glass-input w-full rounded-xl py-2 px-3 text-xs font-bold font-mono text-slate-900 border border-emerald-300 focus:border-emerald-600">
+                        <label for="confirm-account-username" class="text-xs font-bold text-slate-700 block mb-1">البريد / اسم الحساب (اختياري):</label>
+                        <input type="text" id="confirm-account-username" placeholder="لاشتراكات الحسابات فقط" class="glass-input w-full rounded-xl py-2 px-3 text-xs font-bold font-mono text-slate-900 border border-slate-200">
                     </div>
                     <div>
-                        <label class="text-xs font-bold text-slate-700 block mb-1">الرمز السري / الشاشة (PIN):</label>
-                        <input type="text" id="confirm-account-pin" placeholder="1402 (اختياري)" 
-                               class="glass-input w-full rounded-xl py-2 px-3 text-xs font-bold font-mono text-slate-900 border border-emerald-300 focus:border-emerald-600">
+                        <label for="confirm-account-pin" class="text-xs font-bold text-slate-700 block mb-1">PIN / رقم الشاشة (اختياري):</label>
+                        <input type="text" id="confirm-account-pin" placeholder="مثال: 1402" class="glass-input w-full rounded-xl py-2 px-3 text-xs font-bold font-mono text-slate-900 border border-slate-200">
                     </div>
                 </div>
                 <div>
-                    <label class="text-xs font-bold text-slate-700 block mb-1">تعليمات أو ملاحظات للعميل:</label>
-                    <input type="text" id="confirm-account-notes" placeholder="يعمل على جميع الأجهزة شاشات وهواتف" 
-                           class="glass-input w-full rounded-xl py-2 px-3 text-xs font-medium text-slate-800">
+                    <label for="confirm-account-notes" class="text-xs font-bold text-slate-700 block mb-1">رسالة للعميل تظهر في «طلباتي»:</label>
+                    <input type="text" id="confirm-account-notes" placeholder="مثال: تم شحن 325 شدة إلى حسابك ✅" class="glass-input w-full rounded-xl py-2 px-3 text-xs font-medium text-slate-800">
                 </div>
 
-                <div class="pt-2 flex flex-col sm:flex-row gap-2">
+                <div class="pt-1 flex flex-col sm:flex-row gap-2">
                     <button type="submit" class="flex-1 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs shadow-lg shadow-emerald-600/30 transition flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-unlock-keyhole"></i>
-                        <span>اعتماد الدفع وإظهار البيانات لشاشة العميل</span>
+                        <i class="fa-solid fa-circle-check"></i>
+                        <span>تأكيد الدفع وإتمام الطلب</span>
                     </button>
                     <button type="button" onclick="closeModal('admin-confirm-payment-modal')" class="px-5 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs">
                         إلغاء
@@ -658,10 +643,10 @@
 
     <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
 
-    <script src="js/assets.js?v=2.9"></script>
-    <script src="js/data.js?v=2.9"></script>
-    <script src="js/database.js?v=2.9"></script>
-    <script src="js/admin.js?v=2.9"></script>
+    <script src="js/assets.js?v=3.0"></script>
+    <script src="js/data.js?v=3.0"></script>
+    <script src="js/database.js?v=3.0"></script>
+    <script src="js/admin.js?v=3.0"></script>
 <script>
 window.addEventListener('DOMContentLoaded', function(){
   setTimeout(function(){

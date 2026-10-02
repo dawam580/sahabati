@@ -8,7 +8,10 @@ function freshStore() {
     process.env.DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'sahabati-store-'));
     process.env.ADMIN_PIN = 'secret-pin-1';
     delete require.cache[require.resolve('../store')];
-    return require('../store').createStore();
+    const store = require('../store').createStore();
+    // كود حقيقي واحد على الأقل لكل اختبار يحتاج المخزن
+    store._db.addBatchCodes({ productId: 'apple_itunes_10_us', brand: 'apple', productName: 'آيتونز أمريكي' }, 'US-1\nUS-2\nUS-3\nUS-4\nUS-5\nUS-6\nUS-7\nUS-8');
+    return store;
 }
 
 // كل طلب يحتاج كرت ليبيانا جديداً (الدفع عبر ليبيانا فقط)
@@ -35,7 +38,7 @@ test('server prices orders from its own catalog and hides codes until paid', () 
 
     store._db.confirmOrderPayment(r.order.id);
     const after = store.orderStatus({ phone: '0912345678', ids: [r.order.id] }, '1.1.1.1');
-    assert.equal(after.orders[0].vouchers[0].voucherCode, 'XX78-9921-ITUNES-10USD-LY');
+    assert.ok(/^US-\d$/.test(after.orders[0].vouchers[0].voucherCode));
 });
 
 test('server rejects bad phones, unknown items, missing player IDs, missing or reused cards and floods', () => {

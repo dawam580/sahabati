@@ -122,7 +122,8 @@ test('SahabatiDB: cancelOrder updates order status to cancelled', async () => {
 test('SahabatiDB: vault codes stay hidden until payment and return to stock on cancel', async () => {
     const ctx = await createDatabaseContext();
     const db = ctx.SahabatiDB;
-    const item = [{ titleAr: 'بطاقة آيتونز 10$', quantity: 1, priceLYD: 30 }];
+    const item = [{ type: 'giftcard', cardId: 'apple_itunes_10_us', titleAr: 'بطاقة آيتونز 10$', quantity: 1, priceLYD: 30 }];
+    db.addBatchCodes({ productId: 'apple_itunes_10_us', brand: 'apple', productName: 'آيتونز 10$' }, 'REAL-ITUNES-CODE-1|1234');
 
     const order = db.createOrder({ id: 'LYD-200001', items: item, totalFormatted: '30.00 د.ل' });
     assert.equal(order.vouchers[0].voucherCode, '', 'real code must not be copied into an unpaid order');
@@ -130,14 +131,50 @@ test('SahabatiDB: vault codes stay hidden until payment and return to stock on c
     assert.equal(db.getAllCodes().find(c => c.id === order.vouchers[0].codeId).status, 'reserved');
 
     const paid = db.confirmOrderPayment('LYD-200001');
-    assert.equal(paid.vouchers[0].voucherCode, 'XX78-9921-ITUNES-10USD-LY');
+    assert.equal(paid.vouchers[0].voucherCode, 'REAL-ITUNES-CODE-1');
+    assert.equal(paid.vouchers[0].pin, '1234');
     assert.equal(db.getAllCodes().find(c => c.id === paid.vouchers[0].codeId).status, 'sold');
     assert.throws(() => db.cancelOrder('LYD-200001'));
 
     const ctx2 = await createDatabaseContext();
     const db2 = ctx2.SahabatiDB;
+    db2.addBatchCodes({ productId: 'apple_itunes_10_us', brand: 'apple', productName: 'آيتونز 10$' }, 'REAL-ITUNES-CODE-2');
     const o2 = db2.createOrder({ id: 'LYD-200002', items: item, totalFormatted: '30.00 د.ل' });
     db2.cancelOrder('LYD-200002', 'لم يتم الدفع');
     assert.equal(db2.getAllCodes().find(c => c.id === o2.vouchers[0].codeId).status, 'available');
     assert.throws(() => db2.confirmOrderPayment('LYD-200002'));
+});
+
+test('SahabatiDB: starts with no demo codes; codes go only to their product; games never take codes', async () => {
+    const ctx = await createDatabaseContext();
+    const db = ctx.SahabatiDB;
+    assert.equal(db.getAllCodes().length, 0, 'vault starts empty');
+    db.addBatchCodes({ productId: 'apple_itunes_10_us', brand: 'apple', productName: 'آيتونز أمريكي' }, 'US-CODE-1');
+    const tr = db.createOrder({ id: 'LYD-300001', items: [{ type: 'giftcard', cardId: 'apple_itunes_tr_100', titleAr: 'بطاقة آيتونز تركي', quantity: 1 }] });
+    assert.ok(!tr.vouchers[0].codeId, 'Turkish order must not get the US code');
+    const pubg = db.createOrder({ id: 'LYD-300002', items: [{ type: 'game', gameId: 'pubg', packageId: 'pubg_325', titleAr: 'ببجي - 325 شدة', quantity: 1 }] });
+    assert.ok(!pubg.vouchers[0].codeId && pubg.vouchers[0].voucherCode === '', 'ID top-ups never take vault codes');
+    const us = db.createOrder({ id: 'LYD-300003', items: [{ type: 'giftcard', cardId: 'apple_itunes_10_us', titleAr: 'بطاقة آيتونز أمريكي', quantity: 1 }] });
+    assert.ok(us.vouchers[0].codeId);
+    // ID top-up confirmed with a message only
+    const done = db.confirmOrderPayment('LYD-300002', { notes: 'تم شحن 325 شدة' });
+    assert.equal(done.accountDetails.notes, 'تم شحن 325 شدة');
+    assert.equal(done.vouchers[0].voucherCode, '');
+});
+
+test('SahabatiDB: demo codes and demo user are removed from an existing database, sold codes kept', async () => {
+    const seeded = { version: '2.0.0', users: [{ id: 'usr_demo_01', name: 'x' }], orders: [], voucher_codes: [
+        { id: 'vc_pubg_60_01', status: 'available', code: 'DEMO' },
+        { id: 'vc_itunes_10_01', status: 'sold', code: 'DEMO-SOLD', assignedOrderId: 'LYD-1' },
+        { id: 'vc_real', status: 'available', code: 'REAL' }
+    ] };
+    const mem = { sahabati_database_v2: JSON.stringify(seeded) };
+    const context = vm.createContext({ console, Date, Math, JSON, parseFloat, String, Array,
+        localStorage: { getItem: k => mem[k] || null, setItem: (k, v) => { mem[k] = String(v); }, removeItem: k => { delete mem[k]; } },
+        sessionStorage: { getItem: () => null, setItem() {}, removeItem() {} } });
+    context.window = context;
+    vm.runInContext(await fs.readFile(path.join(__dirname, '..', 'js', 'database.js'), 'utf8'), context);
+    const ids = JSON.stringify(context.SahabatiDB.getAllCodes().map(c => c.id).sort());
+    assert.equal(ids, JSON.stringify(['vc_itunes_10_01', 'vc_real']));
+    assert.equal(context.SahabatiDB.getAllUsers().length, 0);
 });
