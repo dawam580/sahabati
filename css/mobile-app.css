@@ -589,3 +589,5 @@ body { background: transparent !important; }
 .cat-entertainment .cat-icon { background: linear-gradient(135deg, #1a1a1a, #7f1d1d); color: #e50914; }
 .pkg-icon { direction: ltr; unicode-bidi: isolate; }
 .chat-art { font-size: 22px; letter-spacing: 1px; }
+.chat-art.has-img { background: #fff; padding: 0; overflow: hidden; }
+.chat-art.has-img img { width: 100%; height: 100%; object-fit: cover; display: block; }

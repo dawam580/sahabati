@@ -26,3 +26,4 @@
 .adm-btn.off { background: #fef3c7; color: #92400e; }
 .adm-btn.danger { background: #ffe4e6; color: #be123c; }
 .adm-note { font-size: 12px; color: #64748b; font-weight: 700; padding: 8px; }
+.adm-thumb { width: 26px; height: 26px; border-radius: 8px; object-fit: cover; }
