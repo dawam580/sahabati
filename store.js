@@ -84,7 +84,11 @@ function createStore() {
     function adminLogin(pin) {
         const a = Buffer.from(cleanPin(pin));
         const b = Buffer.from(adminPin);
-        if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
+        if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+            // للتشخيص من سجل الاستضافة: الأطوال فقط، وليس كلمة السر نفسها
+            console.warn('[sahabati] محاولة دخول للوحة فاشلة: طول ما كُتب ' + a.length + ' والمطلوب ' + b.length + (a.length === b.length ? ' (الطول متطابق والأحرف مختلفة)' : ''));
+            return null;
+        }
         const token = crypto.randomBytes(32).toString('hex');
         sessions.set(token, Date.now() + ADMIN_SESSION_MS);
         return token;
