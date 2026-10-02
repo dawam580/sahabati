@@ -5,7 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>سحّابتي | Sahabati - عالم رقمي بين يديك | شحن ألعاب واشتراكات بالدينار الليبي</title>
     <meta name="description" content="منصة سحّابتي لشحن ألعاب ببجي وفري فاير وتيك توك وروبلوكس، واشتراكات نتفليكس 4K وشاهد VIP (حساب كامل شاشات وهواتف)، وسناب شات بلس، وChatGPT Plus بالدينار الليبي.">
-    <link rel="icon" href="08_sahabati_app_icon_1024x1024.png" type="image/png">
+    <link rel="icon" href="logo.jpg" type="image/jpeg">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0a1a5c">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="سحّابتي">
     
     <!-- Google Fonts: Cairo & Readex Pro for premium Arabic typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -755,5 +760,12 @@
     <script src="js/data.js"></script>
     <script src="js/database.js"></script>
     <script src="js/app.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').catch(() => {});
+            });
+        }
+    </script>
 </body>
 </html>
