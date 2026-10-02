@@ -126,3 +126,13 @@ test('v5: similar chat app names are hidden, Turkish iTunes added, and a saved v
     const hidden = cat.games.filter(g => g.category === 'chat' && g.hidden).map(g => g.nameAr).sort();
     assert.deepEqual(hidden, ['اهلا', 'لايكي', 'ليت'].sort());
 });
+
+test('admin PIN tolerates spaces and quotes copied into the hosting variable', () => {
+    process.env.DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'sahabati-store-'));
+    process.env.ADMIN_PIN = '  "Pin@2026x" \n';
+    delete require.cache[require.resolve('../store')];
+    const store = require('../store').createStore();
+    assert.match(store.adminLogin('Pin@2026x'), /^[a-f0-9]{64}$/);
+    assert.match(store.adminLogin(' Pin@2026x '), /^[a-f0-9]{64}$/);
+    assert.equal(store.adminLogin('pin@2026x'), null, 'still case-sensitive');
+});

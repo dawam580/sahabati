@@ -43,6 +43,10 @@ function fileBackedStorage() {
     };
 }
 
+function cleanPin(value) {
+    return String(value || '').trim().replace(/^(['"])(.*)\1$/, '$2').trim();
+}
+
 function createStore() {
     const context = vm.createContext({
         console, Date, Math, JSON, Uint32Array, TextEncoder,
@@ -60,15 +64,18 @@ function createStore() {
     const getCatalog = () => vm.runInContext('APP_DATA', context);
 
     // ---------- admin auth ----------
-    let adminPin = process.env.ADMIN_PIN || '';
+    // نتجاهل المسافات وعلامات الاقتباس التي قد تُنسخ بالخطأ مع القيمة في لوحة الاستضافة
+    let adminPin = cleanPin(process.env.ADMIN_PIN);
     if (!adminPin) {
         adminPin = crypto.randomBytes(6).toString('base64url');
         console.warn('[sahabati] ADMIN_PIN غير مضبوط. كلمة سر مؤقتة للوحة الإدارة لهذا التشغيل فقط: ' + adminPin);
+    } else {
+        console.log('[sahabati] ADMIN_PIN مضبوط (' + adminPin.length + ' أحرف).');
     }
     const sessions = new Map();
 
     function adminLogin(pin) {
-        const a = Buffer.from(String(pin || ''));
+        const a = Buffer.from(cleanPin(pin));
         const b = Buffer.from(adminPin);
         if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
         const token = crypto.randomBytes(32).toString('hex');
