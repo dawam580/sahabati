@@ -181,7 +181,7 @@ const TR_ITUNES_CARD = {
 const DEFAULT_APP_DATA = {
     settings: DEFAULT_STORE_SETTINGS,
     // رقم إصدار الكتالوج: عند تغييره يُهمل أي كتالوج قديم محفوظ في المتصفح أو على الخادم
-    catalogVersion: 7,
+    catalogVersion: 8,
     categories: [
         { id: 'games', titleAr: 'شحن ألعاب الفيديو', shortAr: 'الألعاب', icon: 'fa-gamepad', badge: 'شحن فوري ⚡' },
         { id: 'chat', titleAr: 'تطبيقات الشات والصوتية', shortAr: 'الشات والصوتية', icon: 'fa-microphone-lines', badge: 'شحن بالـ ID 🎙️' },
@@ -463,8 +463,20 @@ function migrateCatalog(data) {
         data.games = (data.games || []).filter(g => !(g.category === 'chat' && /^chat_\d{3}$/.test(g.id) && !g.image));
         data.catalogVersion = 7;
     }
+    if (data.catalogVersion === 7) {
+        (data.games || []).concat(data.giftCards || []).forEach(item => {
+            if (MANUAL_PRODUCT_IDS.includes(item.id) && item.manual === undefined) item.manual = true;
+        });
+        data.catalogVersion = 8;
+    }
     return data;
 }
+
+// منتجات تُشحن يدوياً (يظهر عليها شارة «يدوي» للعميل). يمكن تغييرها من لوحة الإدارة.
+const MANUAL_PRODUCT_IDS = ['pubg', 'freefire', 'tiktok_coins', 'snapchat_plus_3m', 'snapchat_plus_6m', 'telegram_premium_3m'];
+DEFAULT_APP_DATA.games.concat(DEFAULT_APP_DATA.giftCards).forEach(item => {
+    if (MANUAL_PRODUCT_IDS.includes(item.id)) item.manual = true;
+});
 
 // LocalStorage Persistence Layer
 function loadAppData() {

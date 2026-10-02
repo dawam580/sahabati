@@ -339,6 +339,10 @@ function chatAppMark(game, index) {
     }
     return '<span class="tile-art chat-art" style="--h:' + hue + '">' + escapeHtml(letter) + '</span>';
 }
+// شارة صغيرة فوق أيقونة المنتج الذي يُشحن يدوياً
+function manualBadge(item) {
+    return item && item.manual ? '<span class="manual-badge" title="يتم الشحن يدوياً بعد تأكيد الدفع"><i class="fa-solid fa-hand"></i> يدوي</span>' : '';
+}
 function shortName(nameAr) {
     return String(nameAr || '').split('(')[0].trim();
 }
@@ -351,7 +355,7 @@ function renderHome() {
             const look = brandLook(game.id);
             const minPrice = Math.min.apply(null, (game.packages || []).map(p => Number(p.priceLYD) || 0).filter(Boolean));
             return '<button type="button" class="tile" onclick="selectGame(\'' + escapeAttr(game.id) + '\'); navigateTo(\'games\');">' +
-                '<span class="tile-art ' + look.cls + '">' + look.mark + '</span>' +
+                '<span class="tile-art ' + look.cls + '">' + look.mark + manualBadge(game) + '</span>' +
                 '<span class="tile-name">' + escapeHtml(shortName(game.nameAr)) + '</span>' +
                 (isFinite(minPrice) ? '<span class="tile-price">من ' + formatPrice(minPrice) + '</span>' : '') +
             '</button>';
@@ -361,7 +365,7 @@ function renderHome() {
     const cardTile = card => {
         const look = brandLook(card.brand);
         return '<button type="button" class="mini-card" onclick="openCardDetailsModal(\'' + escapeAttr(card.id) + '\')">' +
-            '<span class="mini-card-art ' + look.cls + '">' + look.mark +
+            '<span class="mini-card-art ' + look.cls + '">' + look.mark + manualBadge(card) +
                 (card.badge ? '<em>' + escapeHtml(card.badge) + '</em>' : '') +
             '</span>' +
             '<span class="mini-card-name">' + escapeHtml(shortName(card.nameAr)) + '</span>' +
@@ -381,7 +385,7 @@ function renderHome() {
 // Chat & voice apps: tiles that open the shared top-up page
 function chatAppTile(game, index) {
     return '<button type="button" class="tile chat-tile" onclick="openChatApp(\'' + escapeAttr(game.id) + '\')">' +
-        chatAppMark(game, index) +
+        chatAppMark(game, index).replace(/<\/span>$/, manualBadge(game) + '</span>') +
         '<span class="tile-name">' + escapeHtml(game.nameAr) + '</span>' +
     '</button>';
 }
@@ -526,7 +530,7 @@ function renderGameDetail(gameId) {
 
     const badge = document.getElementById('game-method-badge');
     if (badge) {
-        badge.textContent = { id: '🆔 الشحن بمعرّف الحساب (ID)', qr: '🔳 الشحن عبر رمز QR', login: '🔐 الشحن عبر تسجيل الدخول' }[deliveryMethodOf(game)];
+        badge.textContent = { id: '🆔 الشحن بمعرّف الحساب (ID)', qr: '🔳 الشحن عبر رمز QR', login: '🔐 الشحن عبر تسجيل الدخول' }[deliveryMethodOf(game)] + (game.manual ? ' · ✋ يدوي' : '');
     }
 
     const note = document.getElementById('delivery-note');
@@ -684,7 +688,7 @@ function renderGiftCards(filter) {
     container.innerHTML = cards.map(card => {
         const look = brandLook(card.brand);
         return '<div class="gc-tile">' +
-            '<button type="button" class="gc-art ' + look.cls + '" onclick="openCardDetailsModal(\'' + escapeAttr(card.id) + '\')" aria-label="تفاصيل ' + escapeAttr(card.nameAr) + '">' +
+            '<button type="button" class="gc-art ' + look.cls + '" onclick="openCardDetailsModal(\'' + escapeAttr(card.id) + '\')" aria-label="تفاصيل ' + escapeAttr(card.nameAr) + '">' + manualBadge(card) +
                 '<span class="gc-mark">' + look.mark + '</span>' +
                 (card.badge ? '<em>' + escapeHtml(card.badge) + '</em>' : '') +
                 '<small>' + escapeHtml(card.nominal || '') + '</small>' +
