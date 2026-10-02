@@ -384,7 +384,7 @@
             cartItems.forEach(item => {
                 for (let qty = 0; qty < item.quantity; qty++) {
                     // الألعاب وتطبيقات الشات تُشحن بالـ ID / QR / تسجيل الدخول: لا تُسحب لها أكواد من المخزن
-                    if (item.type === 'game') { claimedCodes.push({ title: item.titleAr, voucherCode: '', pin: '', isRealVaultCode: false }); continue; }
+                    if (item.type === 'game' || (item.delivery && item.delivery !== 'code')) { claimedCodes.push({ title: item.titleAr, voucherCode: '', pin: '', isRealVaultCode: false }); continue; }
                     const itemTitle = (item.titleAr || '').toLowerCase();
                     const availableCode = this.db.voucher_codes.find(c => {
                         if (c.status !== 'available') return false;

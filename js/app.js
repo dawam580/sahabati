@@ -530,15 +530,16 @@ function renderGameDetail(gameId) {
 
     const badge = document.getElementById('game-method-badge');
     if (badge) {
-        badge.textContent = { id: '🆔 الشحن بمعرّف الحساب (ID)', qr: '🔳 الشحن عبر رمز QR', login: '🔐 الشحن عبر تسجيل الدخول' }[deliveryMethodOf(game)] + (game.manual ? ' · ✋ يدوي' : '');
+        badge.textContent = ({ id: '🆔 الشحن بمعرّف الحساب (ID)', qr: '🔳 الشحن عبر رمز QR', login: '🔐 الشحن عبر تسجيل الدخول', manual: '✋ تسليم يدوي' }[deliveryMethodOf(game)] || '') + (game.manual && deliveryMethodOf(game) !== 'manual' ? ' · ✋ يدوي' : '');
     }
 
     const note = document.getElementById('delivery-note');
     if (note) {
         const method = deliveryMethodOf(game);
-        const icon = method === 'qr' ? 'fa-qrcode' : 'fa-right-to-bracket';
-        const title = method === 'qr' ? 'الشحن عبر رمز QR' : 'الشحن عبر تسجيل الدخول';
-        note.innerHTML = needsId ? '' : '<i class="fa-solid ' + icon + '"></i><div><strong>' + title + '</strong><p>' + escapeHtml(game.deliveryNoteAr || 'بعد إرسال الطلب نتواصل معك عبر واتساب لإتمام الشحن.') + '</p></div>';
+        const icon = method === 'qr' ? 'fa-qrcode' : (method === 'manual' ? 'fa-hand' : 'fa-right-to-bracket');
+        const title = method === 'qr' ? 'الشحن عبر رمز QR' : (method === 'manual' ? 'تسليم يدوي' : 'الشحن عبر تسجيل الدخول');
+        const defaultNote = method === 'manual' ? 'بعد تأكيد الدفع نسلّمك طلبك يدوياً ويظهر في «طلباتي».' : 'بعد إرسال الطلب نتواصل معك عبر واتساب لإتمام الشحن.';
+        note.innerHTML = needsId ? '' : '<i class="fa-solid ' + icon + '"></i><div><strong>' + title + '</strong><p>' + escapeHtml(method === 'manual' ? defaultNote : (game.deliveryNoteAr || defaultNote)) + '</p></div>';
         note.classList.toggle('hidden', needsId);
     }
 
@@ -570,6 +571,7 @@ function deliveryMeta(game, playerId) {
     const method = deliveryMethodOf(game);
     if (method === 'qr') return 'الشحن عبر رمز QR';
     if (method === 'login') return 'الشحن عبر تسجيل الدخول';
+    if (method === 'manual') return 'تسليم يدوي';
     return 'Player ID: ' + playerId;
 }
 
@@ -717,11 +719,28 @@ function filterGiftCards(category) {
     renderGiftCards(category);
 }
 
-function addGiftCardToCart(cardId) {
-    const card = APP_DATA.giftCards.find(c => c.id === cardId);
-    if (!card) return;
+// طريقة تسليم البطاقة/الاشتراك يحددها المدير: code (افتراضي) | id | manual
+function cardDeliveryMethod(card) {
+    return (card && card.deliveryMethod) || 'code';
+}
 
-    const existing = state.cart.find(i => i.type === 'giftcard' && i.cardId === card.id);
+function addGiftCardToCart(cardId, accountId) {
+    const card = APP_DATA.giftCards.find(c => c.id === cardId);
+    if (!card || !isAvailable(card)) return false;
+
+    // منتج يحتاج معرّف حساب العميل: نفتح نافذة التفاصيل لإدخاله
+    let meta = card.nominal || 'اشتراك وبطاقة رقمية';
+    if (cardDeliveryMethod(card) === 'id') {
+        const v = String(accountId || '').trim();
+        if (!v) { openCardDetailsModal(card.id); return false; }
+        const problem = typeof FraudGuard !== 'undefined' ? FraudGuard.accountIdProblem(v) : null;
+        if (problem) { showToast(problem, 'fa-id-card'); return false; }
+        meta = 'ID: ' + v;
+    } else if (cardDeliveryMethod(card) === 'manual') {
+        meta = 'تسليم يدوي';
+    }
+
+    const existing = state.cart.find(i => i.type === 'giftcard' && i.cardId === card.id && i.meta === meta);
     if (existing) {
         if (updateCartQuantity(existing.cartItemId, 1) !== false) showToast('تمت زيادة الكمية: ' + card.nameAr);
         return;
@@ -736,7 +755,7 @@ function addGiftCardToCart(cardId) {
         type: 'giftcard',
         cardId: card.id,
         titleAr: card.nameAr,
-        meta: card.nominal || 'اشتراك وبطاقة رقمية',
+        meta: meta,
         priceLYD: card.priceLYD,
         quantity: 1
     };
@@ -745,6 +764,7 @@ function addGiftCardToCart(cardId) {
     saveCart();
     updateCartUI();
     showToast('تمت إضافة ' + card.nameAr + ' إلى السلة 🎁');
+    return true;
 }
 
 function openCardDetailsModal(cardId) {
@@ -755,13 +775,22 @@ function openCardDetailsModal(cardId) {
     const content = document.getElementById('card-modal-body');
     if (!modal || !content) return;
 
+    const method = cardDeliveryMethod(card);
+    const deliveryHtml = method === 'id'
+        ? '<div class="mb-4 text-right"><label for="card-account-input" class="text-xs font-extrabold text-slate-800 block mb-1">' + escapeHtml(card.idLabelAr || 'معرّف أو بريد حسابك (لتفعيل الاشتراك عليه):') + '</label>' +
+            '<input type="text" id="card-account-input" autocomplete="off" maxlength="80" dir="ltr" placeholder="' + escapeAttr(card.idPlaceholder || 'example@email.com أو ID') + '" class="glass-input w-full rounded-xl py-2.5 px-3 text-sm font-bold text-slate-900">' +
+            '<p class="text-[11px] text-slate-500 font-bold mt-1">تأكد من كتابته بشكل صحيح، فالتفعيل يتم على هذا الحساب.</p></div>'
+        : (method === 'manual'
+            ? '<div class="mb-4 p-3 rounded-2xl bg-amber-50 border border-amber-200 text-xs font-bold text-amber-900"><i class="fa-solid fa-hand"></i> تسليم يدوي: بعد تأكيد الدفع نسلّمك الطلب ويظهر في «طلباتي».</div>'
+            : '');
+
     content.innerHTML = '<div class="text-center mb-4">' +
         '<div class="w-full h-28 rounded-2xl bg-gradient-to-br from-sky-600 to-indigo-800 p-4 text-white flex flex-col justify-between shadow-lg mb-3">' +
             '<span class="text-xs uppercase tracking-wider bg-white/20 self-start px-2 py-0.5 rounded">سحّابتي My Cloud</span>' +
-            '<span class="text-2xl font-black">' + (card.nominal || card.nameAr) + '</span>' +
-            '<span class="text-xs text-white/90 text-left font-bold">تسليم مباشر</span>' +
+            '<span class="text-2xl font-black">' + escapeHtml(card.nominal || card.nameAr) + '</span>' +
+            '<span class="text-xs text-white/90 text-left font-bold">' + (method === 'manual' ? 'تسليم يدوي' : 'تسليم مباشر') + '</span>' +
         '</div>' +
-        '<h3 class="text-xl font-black text-slate-900">' + card.nameAr + '</h3>' +
+        '<h3 class="text-xl font-black text-slate-900">' + escapeHtml(card.nameAr) + '</h3>' +
         '<p class="text-xl font-black text-emerald-700 mt-1">' + formatPrice(card.priceLYD) + '</p>' +
     '</div>' +
     '<div class="bg-emerald-50/70 p-4 rounded-2xl border border-emerald-200 mb-4 text-xs leading-relaxed text-slate-700">' +
@@ -769,10 +798,11 @@ function openCardDetailsModal(cardId) {
             '<i class="fa-solid fa-circle-question text-emerald-600"></i>' +
             '<span>طريقة الاستخدام والتسليم:</span>' +
         '</h4>' +
-        '<p>' + (card.instructionsAr || 'يتم تسليم كود التفعيل أو بيانات الحساب فور تأكيد الطلب عبر واتساب.') + '</p>' +
+        '<p>' + escapeHtml(card.instructionsAr || 'يتم تسليم كود التفعيل أو بيانات الحساب فور تأكيد الطلب عبر واتساب.') + '</p>' +
     '</div>' +
+    deliveryHtml +
     '<div class="flex gap-2">' +
-        '<button onclick="addGiftCardToCart(\'' + card.id + '\'); closeModal(\'card-detail-modal\');" class="flex-1 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-lg shadow-emerald-600/30">' +
+        '<button onclick="if (addGiftCardToCart(\'' + escapeAttr(card.id) + '\', (document.getElementById(\'card-account-input\') || {}).value) !== false) closeModal(\'card-detail-modal\');" class="flex-1 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-lg shadow-emerald-600/30">' +
             'إضافة إلى السلة' +
         '</button>' +
         '<button onclick="closeModal(\'card-detail-modal\')" class="px-5 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm">' +
@@ -1062,7 +1092,7 @@ function submitOrderToServer(input) {
     const payload = {
         items: input.cartItems.map(i => ({
             type: i.type, gameId: i.gameId, packageId: i.packageId, cardId: i.cardId, quantity: i.quantity,
-            playerId: i.type === 'game' && /^Player ID: /.test(i.meta || '') ? i.meta.replace('Player ID: ', '') : ''
+            playerId: /^(Player ID|ID): /.test(i.meta || '') ? i.meta.replace(/^(Player ID|ID): /, '') : ''
         })),
         phone: input.customerPhone,
         name: input.customerName,

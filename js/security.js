@@ -167,6 +167,15 @@
         return null;
     }
 
+    // معرّف حساب لاشتراك/بطاقة (بريد أو اسم مستخدم أو رقم): نص قصير بلا رموز خطرة
+    function accountIdProblem(id) {
+        const v = String(id || '').trim();
+        if (!v) return 'يرجى إدخال معرّف أو بريد حسابك أولاً';
+        if (v.length < 3 || v.length > 80) return 'المعرّف يجب أن يكون بين 3 و80 حرفاً';
+        if (/[<>"'`\\]/.test(v)) return 'المعرّف يحتوي على رموز غير مسموحة';
+        return null;
+    }
+
     // ---------- معرّف طلب غير قابل للتخمين ----------
     function secureOrderId() {
         let n;
@@ -195,6 +204,7 @@
         sanitizeCart: sanitizeCart,
         cartTotal: cartTotal,
         playerIdProblem: playerIdProblem,
+        accountIdProblem: accountIdProblem,
         secureOrderId: secureOrderId,
         cleanText: cleanText
     };
