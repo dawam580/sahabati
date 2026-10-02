@@ -103,7 +103,7 @@ function checkServerStorage(){
             box.className='adm-storage bad';
             box.innerHTML='<i class="fa-solid fa-triangle-exclamation"></i><div><strong>تحذير: الطلبات والأكواد تُحفظ في مكان مؤقت وتُمسح عند كل تحديث للموقع!</strong>'+
                 '<small>في Railway: اضغط + ← Volume ← اختر خدمة sahabati ← المسار /data ← ثم Deploy. سيستخدمه الموقع تلقائياً.</small>'+
-                '<small style="font-family:monospace;direction:ltr;text-align:left;margin-top:6px">dataDir: '+escapeHtml(info.dataDir||'-')+' · volume: '+escapeHtml(info.volumePath||'none')+'</small></div>';
+                '<small style="font-family:monospace;direction:ltr;text-align:left;margin-top:6px">dataDir: '+escapeHtml(info.dataDir||'-')+' · volume: '+escapeHtml(info.volumePath||'none')+' · mounts: '+escapeHtml((info.mounts||[]).join(', ')||'none')+'</small></div>';
         }
     }).catch(()=>{});
 }

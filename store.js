@@ -8,17 +8,47 @@ const path = require('path');
 const vm = require('vm');
 const crypto = require('crypto');
 
-// مكان حفظ الطلبات والأكواد: DATA_DIR إن ضُبط، وإلا مسار Volume الذي يضيفه Railway تلقائياً،
-// وإلا مجلد مؤقت داخل الحاوية (يُمسح عند كل نشر — يظهر تحذير في السجل ولوحة الإدارة)
+// قائمة الأقراص المركّبة فعلياً في الحاوية (من نظام التشغيل نفسه، لا تعتمد على متغيرات الاستضافة)
+const SYSTEM_MOUNTS = /^\/(proc|sys|dev|run|etc|usr|tmp|var\/run)(\/|$)/;
+function readMounts() {
+    try {
+        return fs.readFileSync('/proc/self/mounts', 'utf8').split('\n')
+            .map(line => line.split(' '))
+            .filter(parts => parts.length > 2)
+            .map(parts => ({ point: parts[1].replace(/\\040/g, ' '), type: parts[2] }));
+    } catch (e) { return []; }
+}
+// أعمق قرص يحتوي هذا المسار؛ إذا كان "/" فالمجلد داخل الحاوية المؤقتة
+function mountFor(dir, mounts) {
+    const target = path.resolve(dir);
+    let best = null;
+    for (const m of mounts) {
+        const rel = path.relative(m.point, target);
+        const inside = rel === '' || (!rel.startsWith('..') && !path.isAbsolute(rel));
+        if (inside && (!best || m.point.length > best.point.length)) best = m;
+    }
+    return best;
+}
+const MOUNTS = readMounts();
+// أقراص البيانات المحتملة (Volume): غير الجذر وغير مسارات النظام
+const DATA_MOUNTS = MOUNTS.filter(m => m.point !== '/' && !SYSTEM_MOUNTS.test(m.point) && !['proc', 'sysfs', 'tmpfs', 'devpts', 'mqueue', 'cgroup', 'cgroup2', 'devtmpfs'].includes(m.type));
+
+// مكان حفظ الطلبات والأكواد بالترتيب: DATA_DIR ← متغير Railway للقرص ← قرص مركّب على /data ← مجلد مؤقت
 const RAILWAY_VOLUME = process.env.RAILWAY_VOLUME_MOUNT_PATH || '';
-const DATA_DIR = process.env.DATA_DIR || RAILWAY_VOLUME || path.join(__dirname, '.data');
-const ON_RAILWAY = !!(process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_ENVIRONMENT_NAME || process.env.RAILWAY_PROJECT_ID);
+const ON_RAILWAY_ENV = !!(process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_ENVIRONMENT_NAME || process.env.RAILWAY_PROJECT_ID);
+// قرص على /data، أو على Railway: القرص الإضافي الوحيد المركّب في الحاوية مهما كان مساره
+const MOUNTED_DATA = DATA_MOUNTS.find(m => m.point === '/data') ? '/data'
+    : (ON_RAILWAY_ENV && DATA_MOUNTS.length === 1 ? DATA_MOUNTS[0].point : '');
+const DATA_DIR = process.env.DATA_DIR || RAILWAY_VOLUME || MOUNTED_DATA || path.join(__dirname, '.data');
+const ON_RAILWAY = ON_RAILWAY_ENV;
 
 function storagePersistent() {
     if (!ON_RAILWAY) return true; // خادم عادي (VPS/جهاز): المجلد دائم
-    if (!RAILWAY_VOLUME) return false;
-    const rel = path.relative(path.resolve(RAILWAY_VOLUME), path.resolve(DATA_DIR));
-    return rel === '' || (!rel.startsWith('..') && !path.isAbsolute(rel));
+    const inVolumeVar = RAILWAY_VOLUME && (() => { const rel = path.relative(path.resolve(RAILWAY_VOLUME), path.resolve(DATA_DIR)); return rel === '' || (!rel.startsWith('..') && !path.isAbsolute(rel)); })();
+    if (inVolumeVar) return true;
+    // بدون المتغير: نعتمد على أن المجلد يقع على قرص مركّب منفصل عن الحاوية
+    const m = mountFor(DATA_DIR, MOUNTS);
+    return !!(m && m.point !== '/' && DATA_MOUNTS.includes(m));
 }
 const FILES = {
     sahabati_database_v2: 'database.json',
@@ -332,6 +362,7 @@ function createStore() {
             persistent: storagePersistent(),
             onRailway: ON_RAILWAY,
             volumePath: RAILWAY_VOLUME || null,
+            mounts: DATA_MOUNTS.map(m => m.point).slice(0, 8),
             orders: orders.length,
             paid: orders.filter(o => o.status === 'paid').length,
             pending: orders.filter(o => o.status === 'pending_payment').length,
