@@ -118,3 +118,26 @@ test('SahabatiDB: cancelOrder updates order status to cancelled', async () => {
     assert.equal(stats.pending, 0);
     assert.equal(stats.paid, 0);
 });
+
+test('SahabatiDB: vault codes stay hidden until payment and return to stock on cancel', async () => {
+    const ctx = await createDatabaseContext();
+    const db = ctx.SahabatiDB;
+    const item = [{ titleAr: 'بطاقة آيتونز 10$', quantity: 1, priceLYD: 30 }];
+
+    const order = db.createOrder({ id: 'LYD-200001', items: item, totalFormatted: '30.00 د.ل' });
+    assert.equal(order.vouchers[0].voucherCode, '', 'real code must not be copied into an unpaid order');
+    assert.equal(order.accountDetails, null);
+    assert.equal(db.getAllCodes().find(c => c.id === order.vouchers[0].codeId).status, 'reserved');
+
+    const paid = db.confirmOrderPayment('LYD-200001');
+    assert.equal(paid.vouchers[0].voucherCode, 'XX78-9921-ITUNES-10USD-LY');
+    assert.equal(db.getAllCodes().find(c => c.id === paid.vouchers[0].codeId).status, 'sold');
+    assert.throws(() => db.cancelOrder('LYD-200001'));
+
+    const ctx2 = await createDatabaseContext();
+    const db2 = ctx2.SahabatiDB;
+    const o2 = db2.createOrder({ id: 'LYD-200002', items: item, totalFormatted: '30.00 د.ل' });
+    db2.cancelOrder('LYD-200002', 'لم يتم الدفع');
+    assert.equal(db2.getAllCodes().find(c => c.id === o2.vouchers[0].codeId).status, 'available');
+    assert.throws(() => db2.confirmOrderPayment('LYD-200002'));
+});

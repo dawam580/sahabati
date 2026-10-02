@@ -39,6 +39,21 @@ const BLOCKED_PATTERNS = [
     /temp_.*\.json$/
 ];
 
+const MAX_DB_BYTES = 2 * 1024 * 1024; // 2MB
+const WRITE_WINDOW_MS = 60 * 1000;
+const MAX_WRITES_PER_WINDOW = 30;
+const writeLog = new Map();
+
+function isRateLimited(req) {
+    const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket.remoteAddress || 'unknown';
+    const now = Date.now();
+    const recent = (writeLog.get(ip) || []).filter(t => now - t < WRITE_WINDOW_MS);
+    recent.push(now);
+    writeLog.set(ip, recent);
+    if (writeLog.size > 5000) writeLog.clear();
+    return recent.length > MAX_WRITES_PER_WINDOW;
+}
+
 function isPathBlocked(relativePath) {
     const normalized = relativePath.replace(/\\/g, '/').replace(/^\//, '');
     return BLOCKED_PATTERNS.some(rx => rx.test(normalized));
@@ -85,10 +100,29 @@ const server = http.createServer(async (req, res) => {
             }
             return;
         } else if (req.method === 'POST') {
+            // حماية من الإغراق: حد للحجم ولعدد مرات الكتابة لكل عنوان IP
+            if (isRateLimited(req)) {
+                res.writeHead(429, { ...securityHeaders, 'Content-Type': 'application/json; charset=utf-8', 'Retry-After': '60' });
+                res.end(JSON.stringify({ error: 'Too many requests' }));
+                return;
+            }
             let body = '';
-            for await (const chunk of req) body += chunk;
+            let tooLarge = false;
+            for await (const chunk of req) {
+                body += chunk;
+                if (body.length > MAX_DB_BYTES) { tooLarge = true; break; }
+            }
+            if (tooLarge) {
+                res.writeHead(413, { ...securityHeaders, 'Content-Type': 'application/json; charset=utf-8' });
+                res.end(JSON.stringify({ error: 'Payload too large' }));
+                req.destroy();
+                return;
+            }
             try {
-                JSON.parse(body); // validate json
+                const parsed = JSON.parse(body);
+                if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.orders) || !Array.isArray(parsed.users) || !Array.isArray(parsed.voucher_codes)) {
+                    throw new Error('missing collections');
+                }
                 await fs.promises.mkdir(dbDir, { recursive: true });
                 await fs.promises.writeFile(dbFile, body, 'utf8');
                 res.writeHead(200, { ...securityHeaders, 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
@@ -162,7 +196,7 @@ const server = http.createServer(async (req, res) => {
         const headers = {
             ...securityHeaders,
             'Content-Type': contentType,
-            'Cache-Control': isAdminPage ? 'no-store, no-cache, must-revalidate, private' : (ext === '.html' ? 'no-cache, must-revalidate' : 'public, max-age=31536000, immutable'),
+            'Cache-Control': isAdminPage ? 'no-store, no-cache, must-revalidate, private' : (['.html', '.js', '.css', '.json'].includes(ext) ? 'no-cache, must-revalidate' : 'public, max-age=86400'),
             'X-Content-Type-Options': 'nosniff',
             ...(isAdminPage ? { 'X-Robots-Tag': 'noindex, nofollow, noarchive', 'Cache-Control': 'no-store, no-cache, must-revalidate, private' } : {})
         };

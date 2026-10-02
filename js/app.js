@@ -20,6 +20,11 @@ let state = {
     isAdminAuth: (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('sahabati_admin_auth') === 'true' : false)
 };
 
+// Cart limits come from js/security.js; fall back to safe defaults if it failed to load
+function guardLimit(name, fallback) {
+    return (typeof FraudGuard !== 'undefined' && FraudGuard.LIMITS && FraudGuard.LIMITS[name]) || fallback;
+}
+
 function escapeHtml(str) {
     if (str === null || str === undefined) return '';
     return String(str)
@@ -67,6 +72,7 @@ function initApp() {
     updateWhatsAppLinks();
     updateCustomerAuthUI();
     renderCategories();
+    renderHome();
     renderGamesNav();
     renderGameDetail(state.selectedGame || 'pubg');
     renderGiftCards('all');
@@ -74,6 +80,8 @@ function initApp() {
     updateCartUI();
     renderPaymentInstructions();
     bindEvents();
+    sanitizeStoredCart();
+    initPromoCarousel();
     
     if (typeof SahabatiDB !== 'undefined' && SahabatiDB.subscribe) {
         SahabatiDB.subscribe(() => {
@@ -135,6 +143,12 @@ function navigateTo(tabId) {
         }
     });
 
+    document.querySelectorAll('.tab-bar-item').forEach(btn => {
+        btn.classList.toggle('is-active', btn.dataset.nav === tabId);
+    });
+    const buyBar = document.getElementById('game-buy-bar');
+    if (buyBar) buyBar.classList.toggle('hidden', !(tabId === 'games' && state.selectedPackage));
+
     // Hide all view pages
     document.querySelectorAll('.view-page').forEach(page => {
         page.classList.add('hidden');
@@ -144,7 +158,7 @@ function navigateTo(tabId) {
     const target = document.getElementById('page-' + tabId);
     if (target) {
         target.classList.remove('hidden');
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        window.scrollTo({ top: 0, behavior: 'auto' });
     }
 
     if (tabId === 'checkout') {
@@ -161,7 +175,7 @@ function showToast(message, icon) {
     if (!container) return;
     const toast = document.createElement('div');
     toast.className = 'toast-msg';
-    toast.innerHTML = '<i class="fa-solid ' + icon + ' text-emerald-400 text-lg"></i> <span>' + message + '</span>';
+    toast.innerHTML = '<i class="fa-solid ' + escapeAttr(icon) + ' text-emerald-400 text-lg"></i> <span>' + escapeHtml(message) + '</span>';
     container.appendChild(toast);
 
     setTimeout(() => {
@@ -172,38 +186,110 @@ function showToast(message, icon) {
     }, 2800);
 }
 
-// Render Categories Grid
+// Render Categories as round app-style chips
 function renderCategories() {
     const container = document.getElementById('categories-grid');
     if (!container) return;
 
     container.innerHTML = APP_DATA.categories.map(cat => {
-        let iconBg = 'bg-sky-500/10 text-sky-600';
-        if (cat.id === 'streaming') iconBg = 'bg-rose-500/10 text-rose-600';
-        else if (cat.id === 'social') iconBg = 'bg-amber-500/10 text-amber-600';
-        else if (cat.id === 'ai_cards') iconBg = 'bg-indigo-500/10 text-indigo-600';
-        else if (cat.id === 'telecom') iconBg = 'bg-emerald-500/10 text-emerald-600';
-
-        return '<div onclick="handleCategoryClick(\'' + cat.id + '\')" class="glass-card rounded-3xl p-4 sm:p-5 cursor-pointer relative overflow-hidden group flex flex-col justify-between border border-white/80 hover:border-sky-400 transition-all hover:shadow-xl">' +
-            '<div>' +
-                '<div class="flex items-center justify-between mb-3">' +
-                    '<span class="w-12 h-12 rounded-2xl ' + iconBg + ' flex items-center justify-center text-2xl shadow-sm group-hover:scale-110 transition">' +
-                        '<i class="fa-solid ' + cat.icon + '"></i>' +
-                    '</span>' +
-                    (cat.badge ? '<span class="bg-emerald-100 text-emerald-800 text-[10px] font-black px-2.5 py-0.5 rounded-full">' + cat.badge + '</span>' : '') +
-                '</div>' +
-                '<h3 class="text-base sm:text-lg font-black text-slate-900 group-hover:text-sky-600 transition">' + cat.titleAr + '</h3>' +
-                '<p class="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">' + cat.subtitleAr + '</p>' +
-            '</div>' +
-            '<div class="mt-4 flex items-center justify-between pt-3 border-t border-sky-100/60">' +
-                '<button class="px-4 py-1.5 rounded-full bg-sky-600 group-hover:bg-sky-700 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-md shadow-sky-600/20">' +
-                    '<span>عرض الباقات</span>' +
-                    '<i class="fa-solid fa-arrow-left text-[10px]"></i>' +
-                '</button>' +
-                '<span class="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-md">بالدينار 🇱🇾</span>' +
-            '</div>' +
-        '</div>';
+        const shortTitle = {
+            games: 'الألعاب', streaming: 'المشاهدة', social: 'سوشيال',
+            ai_cards: 'بطاقات', telecom: 'ليبيانا ومدار'
+        }[cat.id] || cat.titleAr;
+        return '<button type="button" role="listitem" onclick="handleCategoryClick(\'' + escapeAttr(cat.id) + '\')" class="cat-chip cat-' + escapeAttr(cat.id) + '">' +
+            '<span class="cat-icon"><i class="fa-solid ' + escapeAttr(cat.icon) + '"></i></span>' +
+            '<span class="cat-label">' + escapeHtml(shortTitle) + '</span>' +
+        '</button>';
     }).join('');
+}
+
+// Brand look for product tiles (ألوان العلامات التجارية)
+const BRAND_LOOK = {
+    pubg: { cls: 'b-pubg', mark: 'PUBG' },
+    freefire: { cls: 'b-freefire', mark: '<i class="fa-solid fa-fire"></i>' },
+    tiktok_coins: { cls: 'b-tiktok', mark: '<i class="fa-brands fa-tiktok"></i>' },
+    tiktok: { cls: 'b-tiktok', mark: '<i class="fa-brands fa-tiktok"></i>' },
+    roblox: { cls: 'b-roblox', mark: 'R$' },
+    efootball: { cls: 'b-efootball', mark: '<i class="fa-solid fa-futbol"></i>' },
+    clashofclans: { cls: 'b-clash', mark: '<i class="fa-solid fa-shield"></i>' },
+    netflix: { cls: 'b-netflix', mark: 'N' },
+    shahid: { cls: 'b-shahid', mark: 'شاهد' },
+    disney: { cls: 'b-disney', mark: 'D+' },
+    snapchat: { cls: 'b-snapchat', mark: '<i class="fa-brands fa-snapchat"></i>' },
+    telegram: { cls: 'b-telegram', mark: '<i class="fa-brands fa-telegram"></i>' },
+    chatgpt: { cls: 'b-chatgpt', mark: '<i class="fa-solid fa-robot"></i>' },
+    playstation: { cls: 'b-playstation', mark: '<i class="fa-brands fa-playstation"></i>' },
+    steam: { cls: 'b-steam', mark: '<i class="fa-brands fa-steam"></i>' },
+    apple: { cls: 'b-apple', mark: '<i class="fa-brands fa-apple"></i>' },
+    libyana: { cls: 'b-libyana', mark: 'ليبيانا' },
+    madar: { cls: 'b-madar', mark: 'مدار' }
+};
+function brandLook(key) {
+    return BRAND_LOOK[key] || { cls: 'b-default', mark: '<i class="fa-solid fa-gift"></i>' };
+}
+function shortName(nameAr) {
+    return String(nameAr || '').split('(')[0].trim();
+}
+
+// Home page product blocks
+function renderHome() {
+    const gamesGrid = document.getElementById('home-games-grid');
+    if (gamesGrid) {
+        gamesGrid.innerHTML = APP_DATA.games.map(game => {
+            const look = brandLook(game.id);
+            const minPrice = Math.min.apply(null, (game.packages || []).map(p => Number(p.priceLYD) || 0).filter(Boolean));
+            return '<button type="button" class="tile" onclick="selectGame(\'' + escapeAttr(game.id) + '\'); navigateTo(\'games\');">' +
+                '<span class="tile-art ' + look.cls + '">' + look.mark + '</span>' +
+                '<span class="tile-name">' + escapeHtml(shortName(game.nameAr)) + '</span>' +
+                (isFinite(minPrice) ? '<span class="tile-price">من ' + formatPrice(minPrice) + '</span>' : '') +
+            '</button>';
+        }).join('');
+    }
+
+    const cardTile = card => {
+        const look = brandLook(card.brand);
+        return '<button type="button" class="mini-card" onclick="openCardDetailsModal(\'' + escapeAttr(card.id) + '\')">' +
+            '<span class="mini-card-art ' + look.cls + '">' + look.mark +
+                (card.badge ? '<em>' + escapeHtml(card.badge) + '</em>' : '') +
+            '</span>' +
+            '<span class="mini-card-name">' + escapeHtml(shortName(card.nameAr)) + '</span>' +
+            '<span class="mini-card-price">' + formatPrice(card.priceLYD) + '</span>' +
+        '</button>';
+    };
+    const streamingRow = document.getElementById('home-streaming-row');
+    if (streamingRow) {
+        streamingRow.innerHTML = APP_DATA.giftCards.filter(c => c.category === 'streaming').map(cardTile).join('');
+    }
+    const cardsRow = document.getElementById('home-cards-row');
+    if (cardsRow) {
+        cardsRow.innerHTML = APP_DATA.giftCards.filter(c => c.category === 'social' || c.category === 'ai_cards').map(cardTile).join('');
+    }
+}
+
+// Swipeable promo banners with dots + gentle autoplay
+function initPromoCarousel() {
+    const track = document.getElementById('promo-track');
+    const dots = document.getElementById('promo-dots');
+    if (!track || !dots || !track.children.length) return;
+    const slides = Array.from(track.children);
+    dots.innerHTML = slides.map((_, i) => '<span class="' + (i === 0 ? 'on' : '') + '"></span>').join('');
+    const setActive = () => {
+        const w = track.clientWidth || 1;
+        const idx = Math.round(Math.abs(track.scrollLeft) / w);
+        Array.from(dots.children).forEach((d, i) => d.classList.toggle('on', i === idx));
+        return idx;
+    };
+    track.addEventListener('scroll', () => { window.requestAnimationFrame(setActive); }, { passive: true });
+    let paused = false;
+    track.addEventListener('touchstart', () => { paused = true; }, { passive: true });
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    setInterval(() => {
+        if (paused || document.hidden || state.currentTab !== 'home') return;
+        const next = (setActive() + 1) % slides.length;
+        // RTL: scrollLeft is negative in modern browsers
+        const dir = getComputedStyle(track).direction === 'rtl' ? -1 : 1;
+        track.scrollTo({ left: dir * next * track.clientWidth, behavior: 'smooth' });
+    }, 5000);
 }
 
 function handleCategoryClick(catId) {
@@ -279,67 +365,81 @@ function renderGameDetail(gameId) {
         idInput.value = state.verifiedPlayerId || '';
     }
 
+    const needsId = gameNeedsPlayerId(game.id);
+    const idCard = idInput ? idInput.closest('.p-5') : null;
+    if (idCard) idCard.classList.toggle('hidden', !needsId);
+
+    state.selectedPackage = null;
+    updateBuyBar();
+
     const packagesContainer = document.getElementById('packages-grid');
     if (packagesContainer) {
         packagesContainer.innerHTML = game.packages.map(pkg => {
-            return '<div class="glass-card rounded-3xl p-4 sm:p-5 flex flex-col justify-between border ' + (pkg.popular ? 'border-emerald-400 bg-emerald-50/50 shadow-emerald-200/50' : 'border-white/80') + ' relative hover:border-sky-300 transition-all hover:shadow-lg">' +
-                (pkg.popular ? '<span class="absolute -top-2.5 right-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-[10px] font-bold px-3 py-0.5 rounded-full shadow-sm">الأكثر طلباً 🔥</span>' : '') +
-                (pkg.bestValue ? '<span class="absolute -top-2.5 left-4 bg-gradient-to-r from-orange-500 to-amber-500 text-white text-[10px] font-bold px-3 py-0.5 rounded-full shadow-sm">أفضل قيمة ✨</span>' : '') +
-                '<div class="flex items-center gap-3 mb-4">' +
-                    '<div class="w-12 h-12 rounded-2xl bg-slate-900 text-amber-400 font-black flex items-center justify-center text-sm shadow-md border border-amber-400/40 flex-shrink-0">' +
-                        (pkg.icon || '💎') +
-                    '</div>' +
-                    '<div>' +
-                        '<h4 class="font-extrabold text-slate-900 text-sm sm:text-base leading-tight">' + pkg.nameAr + '</h4>' +
-                        '<p class="text-sm font-black text-emerald-700 mt-1">' + formatPrice(pkg.priceLYD) + '</p>' +
-                    '</div>' +
-                '</div>' +
-                '<div class="grid grid-cols-2 gap-2 mt-2">' +
-                    '<button onclick="buyNowGamePackage(\'' + game.id + '\', \'' + pkg.id + '\')" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black transition shadow-md shadow-emerald-600/20 flex items-center justify-center gap-1.5">' +
-                        '<i class="fa-solid fa-bolt"></i>' +
-                        '<span>شراء فوري</span>' +
-                    '</button>' +
-                    '<button onclick="addGamePackageToCart(\'' + game.id + '\', \'' + pkg.id + '\')" class="w-full py-2.5 rounded-xl bg-white hover:bg-sky-50 text-sky-700 border border-sky-200 text-xs font-bold transition flex items-center justify-center gap-1.5">' +
-                        '<i class="fa-solid fa-cart-plus"></i>' +
-                        '<span>للسلة</span>' +
-                    '</button>' +
-                '</div>' +
-            '</div>';
+            const tag = pkg.popular ? '<span class="pkg-tag hot">الأكثر طلباً</span>' : (pkg.bestValue ? '<span class="pkg-tag value">أفضل قيمة</span>' : '');
+            return '<button type="button" class="pkg-tile" data-pkg="' + escapeAttr(pkg.id) + '" onclick="selectPackage(\'' + escapeAttr(game.id) + '\', \'' + escapeAttr(pkg.id) + '\')">' +
+                tag +
+                '<span class="pkg-icon">' + escapeHtml(pkg.icon || '💎') + '</span>' +
+                '<span class="pkg-name">' + escapeHtml(pkg.nameAr) + '</span>' +
+                '<span class="pkg-price">' + formatPrice(pkg.priceLYD) + '</span>' +
+            '</button>';
         }).join('');
     }
 }
 
-// Verify Player ID simulation
+// PUBG is delivered as a redeem code; other games are charged directly to the player ID
+function gameNeedsPlayerId(gameId) {
+    return gameId !== 'pubg';
+}
+
+function selectPackage(gameId, pkgId) {
+    const game = APP_DATA.games.find(g => g.id === gameId);
+    const pkg = game && game.packages.find(p => p.id === pkgId);
+    if (!pkg) return;
+    state.selectedPackage = { gameId: gameId, pkgId: pkgId };
+    document.querySelectorAll('.pkg-tile').forEach(t => t.classList.toggle('is-selected', t.dataset.pkg === pkgId));
+    updateBuyBar();
+}
+
+function updateBuyBar() {
+    const bar = document.getElementById('game-buy-bar');
+    if (!bar) return;
+    const sel = state.selectedPackage;
+    const game = sel && APP_DATA.games.find(g => g.id === sel.gameId);
+    const pkg = game && game.packages.find(p => p.id === sel.pkgId);
+    bar.classList.toggle('hidden', !pkg || state.currentTab !== 'games');
+    if (!pkg) return;
+    const nameEl = document.getElementById('buy-bar-name');
+    const priceEl = document.getElementById('buy-bar-price');
+    if (nameEl) nameEl.textContent = shortName(game.nameAr) + ' · ' + pkg.nameAr;
+    if (priceEl) priceEl.textContent = formatPrice(pkg.priceLYD);
+}
+
+function addSelectedPackageToCart() {
+    const sel = state.selectedPackage;
+    if (!sel) { showToast('اختر باقة أولاً', 'fa-hand-pointer'); return false; }
+    return addGamePackageToCart(sel.gameId, sel.pkgId);
+}
+
+function buySelectedPackage() {
+    if (addSelectedPackageToCart()) navigateTo('checkout');
+}
+
+// Confirm Player ID (format check only - we never show a fake "verified" account name)
 function verifyPlayerId() {
     const input = document.getElementById('player-id-input');
     const statusBox = document.getElementById('player-id-status');
-    const idVal = input.value.trim();
-
-    if (!idVal || idVal.length < 3) {
-        showToast('يرجى إدخال معرّف صحيح لا يقل عن 3 خانات', 'fa-triangle-exclamation');
-        return;
+    if (!input || !statusBox) return false;
+    const idVal = input.value.replace(/\s/g, '');
+    input.value = idVal;
+    const problem = FraudGuard.playerIdProblem(idVal);
+    if (problem) {
+        state.verifiedPlayerId = '';
+        statusBox.innerHTML = '<div class="id-status bad"><i class="fa-solid fa-circle-xmark"></i><span>' + escapeHtml(problem) + '</span></div>';
+        return false;
     }
-
-    statusBox.innerHTML = '<div class="flex items-center gap-2 text-sky-700 font-bold text-xs bg-sky-100/70 p-2.5 rounded-xl border border-sky-200">' +
-        '<i class="fa-solid fa-spinner fa-spin"></i>' +
-        '<span>جاري التحقق من الحساب في خوادم اللعبة...</span>' +
-    '</div>';
-
-    setTimeout(() => {
-        const nicknames = ['⚡ Falcon_Sniper 👑', '🦅 SkyWarrior_Libya 🇱🇾', '🔥 Desert_Fox_Tripoli', '🎮 Sahabati_Legend', '✨ Royal_King_Benghazi'];
-        const randomNick = nicknames[Math.floor(Math.random() * nicknames.length)];
-        state.verifiedPlayerId = idVal;
-        state.verifiedPlayerName = randomNick;
-
-        statusBox.innerHTML = '<div class="flex items-center justify-between text-emerald-800 font-bold text-xs bg-emerald-100/80 p-2.5 rounded-xl border border-emerald-300">' +
-            '<div class="flex items-center gap-2">' +
-                '<i class="fa-solid fa-circle-check text-emerald-600 text-sm"></i>' +
-                '<span>تم التحقق: <strong class="text-slate-900">' + randomNick + '</strong> (ID: ' + idVal + ')</span>' +
-            '</div>' +
-            '<span class="bg-emerald-600 text-white text-[10px] px-2 py-0.5 rounded-md font-bold">جاهز للشحن</span>' +
-        '</div>';
-        showToast('تم ربط الحساب بنجاح: ' + randomNick);
-    }, 400);
+    state.verifiedPlayerId = idVal;
+    statusBox.innerHTML = '<div class="id-status ok"><i class="fa-solid fa-circle-check"></i><span>سيتم الشحن إلى المعرّف: <strong>' + escapeHtml(idVal) + '</strong></span></div>';
+    return true;
 }
 
 // Add Game Package to Cart
@@ -349,7 +449,26 @@ function addGamePackageToCart(gameId, pkgId) {
     const pkg = game.packages.find(p => p.id === pkgId);
     if (!pkg) return;
 
-    const playerId = state.verifiedPlayerId || document.getElementById('player-id-input')?.value || 'Player_LY';
+    let playerId = '';
+    if (gameNeedsPlayerId(game.id)) {
+        const typed = (document.getElementById('player-id-input')?.value || '').replace(/\s/g, '');
+        if ((!state.verifiedPlayerId || typed !== state.verifiedPlayerId) && !verifyPlayerId()) {
+            showToast(FraudGuard.playerIdProblem(typed) || 'يرجى تأكيد معرّف اللاعب', 'fa-id-card');
+            document.getElementById('player-id-input')?.focus();
+            return false;
+        }
+        playerId = state.verifiedPlayerId;
+    }
+
+    const meta = game.id === 'pubg' ? 'كود شدات ببجي' : ('Player ID: ' + playerId);
+    const existing = state.cart.find(i => i.type === 'game' && i.packageId === pkg.id && i.meta === meta);
+    if (existing) {
+        return updateCartQuantity(existing.cartItemId, 1) !== false;
+    }
+    if (state.cart.length >= guardLimit('maxCartLines', 10)) {
+        showToast('وصلت للحد الأقصى من المنتجات في السلة', 'fa-triangle-exclamation');
+        return false;
+    }
 
     const cartItem = {
         cartItemId: 'item_' + Date.now() + Math.random().toString(36).substr(2, 4),
@@ -357,7 +476,7 @@ function addGamePackageToCart(gameId, pkgId) {
         gameId: game.id,
         packageId: pkg.id,
         titleAr: game.nameAr.split('(')[0] + ' - ' + pkg.nameAr,
-        meta: game.id === 'pubg' ? 'كود شدات ببجي' : ('Player ID: ' + playerId),
+        meta: meta,
         priceLYD: pkg.priceLYD,
         quantity: 1
     };
@@ -366,11 +485,11 @@ function addGamePackageToCart(gameId, pkgId) {
     saveCart();
     updateCartUI();
     showToast('تمت إضافة ' + pkg.nameAr + ' إلى السلة 🛒');
+    return true;
 }
 
 function buyNowGamePackage(gameId, pkgId) {
-    addGamePackageToCart(gameId, pkgId);
-    navigateTo('checkout');
+    if (addGamePackageToCart(gameId, pkgId)) navigateTo('checkout');
 }
 
 // Render Gift Cards, Streaming Subscriptions & AI Cards
@@ -391,79 +510,22 @@ function renderGiftCards(filter) {
     }
 
     container.innerHTML = cards.map(card => {
-        let cardBgClass = 'from-sky-700 via-blue-800 to-indigo-900';
-        let brandIcon = '<i class="fa-solid fa-gift text-2xl"></i>';
-
-        if (card.brand === 'netflix') {
-            cardBgClass = 'from-zinc-950 via-neutral-900 to-rose-950';
-            brandIcon = '<span class="text-rose-500 font-black text-2xl tracking-tighter">NETFLIX 4K</span>';
-        } else if (card.brand === 'shahid') {
-            cardBgClass = 'from-emerald-950 via-teal-950 to-slate-950';
-            brandIcon = '<span class="text-emerald-400 font-black text-2xl tracking-tight">SHAHID VIP</span>';
-        } else if (card.brand === 'disney') {
-            cardBgClass = 'from-blue-950 via-indigo-950 to-slate-950';
-            brandIcon = '<span class="text-sky-300 font-black text-2xl">Disney+</span>';
-        } else if (card.brand === 'snapchat') {
-            cardBgClass = 'from-amber-400 via-yellow-500 to-amber-600 text-slate-900';
-            brandIcon = '<i class="fa-brands fa-snapchat text-4xl text-white drop-shadow"></i>';
-        } else if (card.brand === 'telegram') {
-            cardBgClass = 'from-sky-600 via-blue-700 to-sky-900';
-            brandIcon = '<i class="fa-brands fa-telegram text-4xl text-white"></i>';
-        } else if (card.brand === 'chatgpt') {
-            cardBgClass = 'from-teal-950 via-emerald-950 to-slate-950';
-            brandIcon = '<span class="text-teal-300 font-black text-2xl tracking-tight">ChatGPT 4o</span>';
-        } else if (card.brand === 'playstation') {
-            cardBgClass = 'from-blue-900 via-indigo-950 to-slate-950';
-            brandIcon = '<i class="fa-brands fa-playstation text-3xl text-white"></i>';
-        } else if (card.brand === 'steam') {
-            cardBgClass = 'from-slate-900 via-zinc-900 to-black';
-            brandIcon = '<i class="fa-brands fa-steam text-3xl text-sky-400"></i>';
-        } else if (card.brand === 'apple') {
-            cardBgClass = 'from-slate-900 via-slate-800 to-zinc-900';
-            brandIcon = '<i class="fa-brands fa-apple text-3xl text-white"></i>';
-        } else if (card.brand === 'tiktok') {
-            cardBgClass = 'from-zinc-900 via-neutral-950 to-black';
-            brandIcon = '<i class="fa-brands fa-tiktok text-3xl text-rose-400"></i>';
-        } else if (card.brand === 'madar') {
-            cardBgClass = 'from-blue-800 via-sky-800 to-cyan-900';
-            brandIcon = '<span class="text-sky-300 font-black text-xl">مدار الجديد 🇱🇾</span>';
-        } else if (card.brand === 'libyana') {
-            cardBgClass = 'from-amber-600 via-orange-700 to-amber-900';
-            brandIcon = '<span class="text-amber-200 font-black text-xl">ليبيانا 4G 🇱🇾</span>';
-        }
-
-        return '<div class="glass-card rounded-3xl p-4 sm:p-5 flex flex-col justify-between relative group border border-white/80 hover:border-sky-400 transition-all hover:shadow-xl">' +
-            (card.badge ? '<span class="absolute top-3.5 right-3.5 bg-emerald-600 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full shadow-sm z-10">' + card.badge + '</span>' : '') +
-            '<div>' +
-                '<div class="w-full h-32 rounded-2xl bg-gradient-to-br ' + cardBgClass + ' p-3.5 flex flex-col justify-between text-white shadow-md relative overflow-hidden mb-3 border border-white/20">' +
-                    '<div class="flex justify-between items-start">' +
-                        '<span class="text-[10px] font-extrabold uppercase tracking-wider bg-white/20 px-2 py-0.5 rounded-md backdrop-blur-sm">سحّابتي My Cloud</span>' +
-                        '<span class="text-[10px] text-white/90 font-bold">تسليم فوري</span>' +
-                    '</div>' +
-                    '<div class="text-center my-auto flex items-center justify-center">' +
-                        brandIcon +
-                    '</div>' +
-                    '<div class="flex justify-between items-center text-[10px] text-white/90 font-bold">' +
-                        '<span class="line-clamp-1">' + (card.nominal || card.nameAr) + '</span>' +
-                        '<span>🇱🇾 د.ل</span>' +
-                    '</div>' +
+        const look = brandLook(card.brand);
+        return '<div class="gc-tile">' +
+            '<button type="button" class="gc-art ' + look.cls + '" onclick="openCardDetailsModal(\'' + escapeAttr(card.id) + '\')" aria-label="تفاصيل ' + escapeAttr(card.nameAr) + '">' +
+                '<span class="gc-mark">' + look.mark + '</span>' +
+                (card.badge ? '<em>' + escapeHtml(card.badge) + '</em>' : '') +
+                '<small>' + escapeHtml(card.nominal || '') + '</small>' +
+            '</button>' +
+            '<div class="gc-body">' +
+                '<h4>' + escapeHtml(shortName(card.nameAr)) + '</h4>' +
+                '<div class="gc-foot">' +
+                    '<strong>' + formatPrice(card.priceLYD) + '</strong>' +
+                    '<button type="button" onclick="addGiftCardToCart(\'' + escapeAttr(card.id) + '\')" class="gc-add" aria-label="أضف للسلة"><i class="fa-solid fa-plus"></i></button>' +
                 '</div>' +
-                '<h4 class="font-extrabold text-slate-900 text-sm sm:text-base mb-1 leading-tight">' + card.nameAr + '</h4>' +
-                '<p class="text-xs text-slate-500 mb-2 line-clamp-2 leading-relaxed">' + (card.instructionsAr || 'يتم تسليم الحساب أو الكود فوراً عبر واتساب') + '</p>' +
-                '<div class="text-base sm:text-lg font-black text-emerald-700 mb-3">' + formatPrice(card.priceLYD) + '</div>' +
-            '</div>' +
-            '<div class="grid grid-cols-2 gap-2">' +
-                '<button onclick="addGiftCardToCart(\'' + card.id + '\')" class="py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-md shadow-emerald-600/20">' +
-                    '<i class="fa-solid fa-cart-plus"></i>' +
-                    '<span>إضافة للسلة</span>' +
-                '</button>' +
-                '<button onclick="openCardDetailsModal(\'' + card.id + '\')" class="py-2.5 rounded-xl bg-white hover:bg-sky-50 text-slate-700 border border-slate-200 text-xs font-bold transition flex items-center justify-center gap-1.5">' +
-                    '<i class="fa-solid fa-circle-info text-sky-600"></i>' +
-                    '<span>تفاصيل</span>' +
-                '</button>' +
             '</div>' +
         '</div>';
-    }).join('');
+    }).join('') || '<p class="empty-note">لا توجد منتجات في هذا القسم حالياً</p>';
 }
 
 function filterGiftCards(category) {
@@ -482,6 +544,16 @@ function filterGiftCards(category) {
 function addGiftCardToCart(cardId) {
     const card = APP_DATA.giftCards.find(c => c.id === cardId);
     if (!card) return;
+
+    const existing = state.cart.find(i => i.type === 'giftcard' && i.cardId === card.id);
+    if (existing) {
+        if (updateCartQuantity(existing.cartItemId, 1) !== false) showToast('تمت زيادة الكمية: ' + card.nameAr);
+        return;
+    }
+    if (state.cart.length >= guardLimit('maxCartLines', 10)) {
+        showToast('وصلت للحد الأقصى من المنتجات في السلة', 'fa-triangle-exclamation');
+        return;
+    }
 
     const cartItem = {
         cartItemId: 'item_' + Date.now() + Math.random().toString(36).substr(2, 4),
@@ -574,6 +646,10 @@ function removeFromCart(cartItemId) {
 function updateCartQuantity(cartItemId, delta) {
     const item = state.cart.find(i => i.cartItemId === cartItemId);
     if (item) {
+        if (delta > 0 && item.quantity >= guardLimit('maxQtyPerItem', 5)) {
+            showToast('الحد الأقصى ' + guardLimit('maxQtyPerItem', 5) + ' قطع من نفس المنتج في الطلب الواحد', 'fa-triangle-exclamation');
+            return false;
+        }
         item.quantity += delta;
         if (item.quantity <= 0) {
             removeFromCart(cartItemId);
@@ -581,8 +657,20 @@ function updateCartQuantity(cartItemId, delta) {
         }
         saveCart();
         updateCartUI();
-        renderCheckout();
+        if (state.currentTab === 'checkout') renderCheckout();
     }
+}
+
+// Re-price the stored cart from the official catalog (prevents edited prices in localStorage)
+function sanitizeStoredCart() {
+    if (typeof FraudGuard === 'undefined') return;
+    const result = FraudGuard.sanitizeCart(state.cart, APP_DATA);
+    if (result.changed) {
+        state.cart = result.cart;
+        saveCart();
+        updateCartUI();
+    }
+    return result.changed;
 }
 
 // Render Checkout Page
@@ -592,6 +680,8 @@ function renderCheckout() {
     const orderForm = document.getElementById('checkout-form-container');
 
     if (!itemsContainer) return;
+    if (!state.checkoutOpenedAt) state.checkoutOpenedAt = Date.now();
+    sanitizeStoredCart();
 
     if (state.cart.length === 0) {
         if (emptyState) emptyState.classList.remove('hidden');
@@ -614,8 +704,8 @@ function renderCheckout() {
                     '<i class="fa-solid ' + (item.type === 'game' ? 'fa-gamepad' : 'fa-tv') + '"></i>' +
                 '</div>' +
                 '<div>' +
-                    '<h4 class="font-extrabold text-slate-900 text-xs sm:text-sm">' + item.titleAr + '</h4>' +
-                    '<p class="text-[11px] text-slate-500">' + item.meta + '</p>' +
+                    '<h4 class="font-extrabold text-slate-900 text-xs sm:text-sm">' + escapeHtml(item.titleAr) + '</h4>' +
+                    '<p class="text-[11px] text-slate-500">' + escapeHtml(item.meta) + '</p>' +
                 '</div>' +
             '</div>' +
             '<div class="flex items-center gap-2.5">' +
@@ -777,145 +867,167 @@ function renderPaymentInstructions() {
     '</div>';
 }
 
-// Complete Payment Execution & WhatsApp Redirect
+// Complete Payment Execution & WhatsApp Redirect (with fraud guards)
+function checkoutFail(message, focusId) {
+    showToast(message, 'fa-triangle-exclamation');
+    const el = focusId && document.getElementById(focusId);
+    if (el) {
+        el.classList.add('border-rose-500', 'ring-2', 'ring-rose-400');
+        try { el.focus(); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) {}
+    }
+    return false;
+}
+
 function processPayment() {
     if (state.cart.length === 0) {
         showToast('سلة المشتريات فارغة!', 'fa-cart-shopping');
-        return;
+        return false;
+    }
+    const btn = document.getElementById('complete-payment-btn');
+    if (btn && btn.disabled) return false; // منع الضغط المزدوج
+
+    // 1) Honeypot + speed check (bots)
+    const honeypot = document.getElementById('checkout-website-field');
+    if (honeypot && honeypot.value) return false;
+    if (state.checkoutOpenedAt && Date.now() - state.checkoutOpenedAt < FraudGuard.LIMITS.minFormFillMs) {
+        return checkoutFail('يرجى مراجعة طلبك قبل الإرسال');
     }
 
+    // 2) Rate limit
+    const rateProblem = FraudGuard.rateLimitProblem();
+    if (rateProblem) return checkoutFail(rateProblem);
+
+    // 3) Re-price cart from the catalog and enforce limits
+    if (sanitizeStoredCart()) {
+        renderCheckout();
+        return checkoutFail('تم تحديث السلة حسب الأسعار الرسمية، يرجى المراجعة ثم التأكيد مجدداً');
+    }
+    const cartItems = state.cart.map(i => Object.assign({}, i));
+    const totalLYD = FraudGuard.cartTotal(cartItems);
+    const maxOrder = Number(APP_DATA.settings?.maxOrderLYD) || FraudGuard.LIMITS.maxOrderLYD;
+    if (totalLYD > maxOrder) {
+        return checkoutFail('الحد الأقصى للطلب الواحد ' + formatPrice(maxOrder) + '. للطلبات الأكبر تواصل معنا عبر واتساب');
+    }
+
+    // 4) Libyan phone number (required)
+    const phoneInput = document.getElementById('whatsapp-phone-input');
+    const customerPhone = FraudGuard.normalizeLibyanPhone(phoneInput ? phoneInput.value : '');
+    if (!customerPhone) {
+        return checkoutFail('أدخل رقم هاتف ليبي صحيح (مثال: 0912345678)', 'whatsapp-phone-input');
+    }
+    if (phoneInput) phoneInput.value = customerPhone;
+
+    // 5) Recharge card (13 digits, not reused, lockout after repeated failures)
     const method = state.paymentMethod;
     const voucherInput = document.getElementById('voucher-card-input');
-    const voucherVal = voucherInput ? voucherInput.value.trim() : '';
-    const cleanCardDigits = voucherVal.replace(/[^0-9]/g, '');
-
-    // Requirement: Strict 13 digits check for recharge cards
-    if (method === 'telecom_libyana' || method === 'telecom_madar') {
-        if (cleanCardDigits.length !== 13) {
-            showToast('⚠️ كارت غير صالح! يجب أن يتكون كود كارت التعبئة من 13 رقم بالضبط (أدخلت ' + cleanCardDigits.length + ' رقم)', 'fa-triangle-exclamation');
-            if (voucherInput) {
-                voucherInput.focus();
-                voucherInput.classList.add('border-rose-500', 'ring-2', 'ring-rose-400');
-                voucherInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-            handleVoucherCardInput(voucherInput);
-            return; // Block order submission until exactly 13 digits!
+    const cleanCardDigits = (voucherInput ? voucherInput.value : '').replace(/[^0-9]/g, '');
+    const needsCard = method === 'telecom_libyana' || method === 'telecom_madar';
+    if (needsCard || cleanCardDigits.length > 0) {
+        const lockMs = FraudGuard.voucherLockRemainingMs();
+        if (lockMs > 0) {
+            return checkoutFail('تم إيقاف إدخال الكروت مؤقتاً بسبب محاولات خاطئة متكررة. حاول بعد ' + Math.ceil(lockMs / 60000) + ' دقيقة');
         }
-    } else if (cleanCardDigits.length > 0 && cleanCardDigits.length !== 13) {
-        showToast('⚠️ كارت غير صالح! كود كارت التعبئة يجب أن يتكون من 13 رقم بالضبط', 'fa-triangle-exclamation');
-        if (voucherInput) {
-            voucherInput.focus();
-            voucherInput.classList.add('border-rose-500', 'ring-2', 'ring-rose-400');
+        const cardProblem = FraudGuard.voucherProblem(cleanCardDigits);
+        if (cardProblem) {
+            FraudGuard.recordVoucherFailure();
+            if (voucherInput) handleVoucherCardInput(voucherInput);
+            return checkoutFail('⚠️ ' + cardProblem, 'voucher-card-input');
         }
-        handleVoucherCardInput(voucherInput);
-        return;
     }
 
-    const customerPhone = document.getElementById('whatsapp-phone-input')?.value.trim() || 'غير محدد';
-    const customerNotes = document.getElementById('whatsapp-note-input')?.value.trim() || 'طلب عبر متجر سحّابتي';
+    const customerNotes = FraudGuard.cleanText(document.getElementById('whatsapp-note-input')?.value, 200) || 'طلب عبر متجر سحّابتي';
+    const customerName = FraudGuard.cleanText(document.getElementById('customer-name-input')?.value, 60);
 
-    const btn = document.getElementById('complete-payment-btn');
-    const originalText = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-lg"></i> <span>جاري تجهيز وتأكيد الفاتورة...</span>';
+    const originalText = btn ? btn.innerHTML : '';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-lg"></i> <span>جاري تسجيل الطلب...</span>';
+    }
 
-    setTimeout(() => {
-        const orderId = 'LYD-' + Math.floor(100000 + Math.random() * 900000);
+    try {
+        const orderId = FraudGuard.secureOrderId();
         const orderDate = new Date().toLocaleString('ar-LY', { dateStyle: 'medium', timeStyle: 'short' });
-        
-        let totalLYD = state.cart.reduce((sum, item) => sum + (item.priceLYD * item.quantity), 0);
         const totalAmountText = formatPrice(totalLYD);
+        const cardCode13 = cleanCardDigits.length === 13 ? cleanCardDigits : '';
 
         let newOrder;
         if (typeof SahabatiDB !== 'undefined' && SahabatiDB.createOrder) {
             newOrder = SahabatiDB.createOrder({
                 id: orderId,
                 date: orderDate,
-                items: [...state.cart],
-                paymentMethod: state.paymentMethod,
+                items: cartItems,
+                paymentMethod: method,
+                customerName: customerName || undefined,
                 customerPhone: customerPhone,
-                cardCode13: cleanCardDigits.length === 13 ? cleanCardDigits : '',
+                cardCode13: cardCode13,
                 customerNotes: customerNotes,
                 totalFormatted: totalAmountText
             });
         } else {
-            const generatedVouchers = state.cart.map(item => ({
-                title: item.titleAr,
-                voucherCode: 'SHB-' + Array.from({length: 4}, () => Math.random().toString(36).substr(2, 4).toUpperCase()).join('-'),
-                quantity: item.quantity,
-                price: formatPrice(item.priceLYD * item.quantity)
-            }));
             newOrder = {
-                id: orderId,
-                date: orderDate,
-                items: [...state.cart],
-                vouchers: generatedVouchers,
-                paymentMethod: state.paymentMethod,
-                customerPhone: customerPhone,
-                cardCode13: cleanCardDigits.length === 13 ? cleanCardDigits : '',
-                customerNotes: customerNotes,
-                totalFormatted: totalAmountText,
-                status: 'whatsapp_pending'
+                id: orderId, date: orderDate, items: cartItems, vouchers: [],
+                paymentMethod: method, customerPhone: customerPhone, cardCode13: cardCode13,
+                customerNotes: customerNotes, totalFormatted: totalAmountText, status: 'pending_payment'
             };
         }
 
-        // Prepare WhatsApp message with full details
-        const itemsListText = state.cart.map(item => '• ' + item.quantity + 'x ' + item.titleAr + ' (' + item.meta + ') - ' + formatPrice(item.priceLYD * item.quantity)).join('\n');
-        
+        const itemsListText = cartItems.map(item => '• ' + item.quantity + 'x ' + item.titleAr + ' (' + item.meta + ') - ' + formatPrice(item.priceLYD * item.quantity)).join('\n');
         let cardDetails = '';
-        if (cleanCardDigits.length === 13) {
-            const cardCompany = (state.paymentMethod === 'telecom_libyana') ? 'ليبيانا (Libyana)' : (state.paymentMethod === 'telecom_madar' ? 'مدار الجديد (Madar)' : 'كرت تعبئة');
-            cardDetails = 
-'🎟️ *كود كارت التعبئة (13 رقم):* `' + cleanCardDigits + '`\n' +
-'🏢 *الشركة:* ' + cardCompany + '\n';
+        if (cardCode13) {
+            const cardCompany = method === 'telecom_libyana' ? 'ليبيانا (Libyana)' : (method === 'telecom_madar' ? 'مدار الجديد (Madar)' : 'كرت تعبئة');
+            cardDetails = '🎟️ *كود كارت التعبئة (13 رقم):* `' + cardCode13 + '`\n' + '🏢 *الشركة:* ' + cardCompany + '\n';
         }
-
         const paymentMethodNames = {
             'one_pay': 'ون باي (OnePay) / دفع مصرفي',
             'telecom_libyana': 'شفرة / كرت تعبئة ليبيانا (13 رقم)',
             'telecom_madar': 'شفرة / كرت تعبئة مدار (13 رقم)',
             'bank_transfer': 'تحويل مصرفي ليبي'
         };
-
-        const waMessage = 
+        const waMessage =
 '🌟 *طلب جديد من منصة سحّابتي (Sahabati My Cloud)* 🌟\n' +
 '-----------------------------------\n' +
 '📋 *رقم الطلب:* #' + orderId + '\n' +
 '📅 *التاريخ:* ' + orderDate + '\n' +
+(customerName ? '👤 *الاسم:* ' + customerName + '\n' : '') +
 '📱 *رقم هاتف الزبون:* ' + customerPhone + '\n' +
-'💳 *وسيلة الدفع:* ' + (paymentMethodNames[state.paymentMethod] || state.paymentMethod) + '\n' +
-(cardDetails ? cardDetails : '') +
+'💳 *وسيلة الدفع:* ' + (paymentMethodNames[method] || method) + '\n' +
+cardDetails +
 '💰 *الإجمالي المطلوب للدفع:* ' + totalAmountText + '\n\n' +
-'🎮 *العناصر المطلوبة:*\n' +
-itemsListText + '\n\n' +
-'📝 *ملاحظات إضافية:*\n' +
-customerNotes + '\n' +
+'🎮 *العناصر المطلوبة:*\n' + itemsListText + '\n\n' +
+'📝 *ملاحظات إضافية:*\n' + customerNotes + '\n' +
 '-----------------------------------\n' +
 'يرجى تأكيد استلام الطلب وتزويدي بكود الشحن أو بيانات الحساب وشكراً! ✨';
 
-        // Direct WhatsApp Phone URL
-        const targetPhone = APP_DATA.settings?.whatsappNumber || '218920541749';
-        const cleanPhone = targetPhone.replace(/[^0-9]/g, '');
+        const cleanPhone = (APP_DATA.settings?.whatsappNumber || '218920541749').replace(/[^0-9]/g, '');
         const waUrl = 'https://api.whatsapp.com/send?phone=' + cleanPhone + '&text=' + encodeURIComponent(waMessage);
         newOrder.waUrl = waUrl;
-        
-        // Open WhatsApp in new tab
-        window.open(waUrl, '_blank');
+
+        // يُفتح بشكل متزامن مع الضغطة حتى لا يحجبه المتصفح
+        window.open(waUrl, '_blank', 'noopener');
 
         state.orders.unshift(newOrder);
         localStorage.setItem('sahabati_orders', JSON.stringify(state.orders));
 
-        // Clear Cart
+        FraudGuard.recordOrder();
+        if (cardCode13) { FraudGuard.markVoucherUsed(cardCode13); FraudGuard.clearVoucherFailures(); }
+
         state.cart = [];
+        state.checkoutOpenedAt = 0;
         saveCart();
         updateCartUI();
+        if (voucherInput) { voucherInput.value = ''; handleVoucherCardInput(voucherInput); }
 
-        btn.disabled = false;
-        btn.innerHTML = originalText;
-
-        // Show Success Receipt Modal
         showSuccessModal(newOrder);
-    }, 500);
+        return true;
+    } catch (err) {
+        showToast('تعذر تسجيل الطلب: ' + (err && err.message ? err.message : 'خطأ غير متوقع'), 'fa-triangle-exclamation');
+        return false;
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    }
 }
 
 function showSuccessModal(order) {
@@ -1298,7 +1410,6 @@ function renderOrders() {
         // Fallback: if user has no orders in DB yet, show legacy orders if phone matches
         if (userOrders.length === 0 && state.orders.length > 0) {
             userOrders = state.orders.filter(o => o.customerPhone === customer.phone || o.userId === customer.id);
-            if (userOrders.length === 0) userOrders = state.orders;
         }
     } else {
         userOrders = state.orders;
@@ -1617,14 +1728,14 @@ function handleAdminLogin(e) {
     const enteredPin = pinInput.value.trim();
     const correctPin = APP_DATA.settings?.adminPin || DEFAULT_STORE_SETTINGS.adminPin;
 
-    if (enteredPin === correctPin || enteredPin === '1234' || enteredPin === 'admin2026' || enteredPin === 'admin') {
+    if (enteredPin && enteredPin === correctPin) {
         state.isAdminAuth = true;
         sessionStorage.setItem('sahabati_admin_auth', 'true');
         closeModal('admin-auth-modal');
         navigateTo('admin');
         showToast('مرحباً بك في لوحة تحكم سحّابتي 👑');
     } else {
-        showToast('كلمة السر غير صحيحة، يرجى كتابة admin2026', 'fa-lock');
+        showToast('كلمة السر غير صحيحة', 'fa-lock');
         pinInput.value = '';
     }
 }

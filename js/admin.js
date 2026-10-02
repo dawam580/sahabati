@@ -364,10 +364,11 @@ function populateSettingsForm(){
 function saveStoreSettings(){
     if(!APP_DATA.settings) APP_DATA.settings=DEFAULT_STORE_SETTINGS;
     const wa=document.getElementById('setting-whatsapp-number')?.value.trim()||'218920541749';
-    const pin=document.getElementById('setting-admin-pin')?.value.trim()||'admin2026';
-    
+    const pin=document.getElementById('setting-admin-pin')?.value.trim()||'';
+    if(pin && pin.length<6){ showToast('كلمة سر الإدارة يجب أن تكون 6 أحرف على الأقل','fa-lock'); return; }
+
     APP_DATA.settings.whatsappNumber=wa.replace(/[^0-9]/g,'');
-    APP_DATA.settings.adminPin=pin;
+    if(pin) APP_DATA.settings.adminPin=pin;
     if(!APP_DATA.settings.paymentMethodsInfo){ APP_DATA.settings.paymentMethodsInfo=JSON.parse(JSON.stringify(DEFAULT_STORE_SETTINGS.paymentMethodsInfo)); }
     APP_DATA.settings.paymentMethodsInfo.one_pay.accountInfo=(document.getElementById('setting-onepay-info')?.value.trim()||'');
     const lb=(document.getElementById('setting-libyana-info')?.value.trim()||'');
@@ -538,7 +539,9 @@ function renderVaultCodesTable() {
                     '<span class="font-extrabold text-xs text-slate-800">' + escapeHtml(c.productName) + '</span>' +
                     (isAvailable ? 
                         '<span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800">متوفر للبيع 🟢</span>' : 
-                        '<span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-100 text-rose-800">تم بيعه 🔴 (' + (c.assignedOrderId || '') + ')</span>') +
+                        (c.status === 'reserved'
+                            ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-100 text-amber-800">محجوز بانتظار الدفع 🟡 (' + escapeHtml(c.assignedOrderId || '') + ')</span>'
+                            : '<span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-100 text-rose-800">تم بيعه 🔴 (' + escapeHtml(c.assignedOrderId || '') + ')</span>')) +
                 '</div>' +
                 '<div class="flex items-center gap-2">' +
                     '<code class="font-mono text-xs font-black text-indigo-950 bg-indigo-50/80 px-2.5 py-1 rounded-lg border border-indigo-200 tracking-wider">' + escapeHtml(displayCode) + '</code>' +
