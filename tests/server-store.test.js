@@ -70,15 +70,37 @@ test('admin database upload keeps orders that arrived meanwhile', () => {
     assert.equal(code.status, 'reserved', 'stale admin copy must not free a reserved code');
 });
 
-test('catalog: Netflix and Shahid are separate, only Libyana payment, no telecom/PSN/Steam cards, Claude added', () => {
+test('catalog: entertainment section, chat apps, Libyana only, no telecom/PSN/Steam cards, Claude added', () => {
     const store = freshStore();
     const cat = store.publicCatalog();
     const ids = cat.giftCards.map(c => c.id);
-    assert.equal(cat.giftCards.find(c => c.id === 'netflix_4k_1m').category, 'netflix');
-    assert.equal(cat.giftCards.find(c => c.id === 'shahid_vip_full').category, 'shahid');
+    for (const id of ['netflix_4k_1m', 'shahid_vip_full', 'disney_plus_1m', 'watchit_1m', 'crunchyroll_1m']) {
+        assert.equal(cat.giftCards.find(c => c.id === id).category, 'entertainment', id);
+    }
     assert.ok(ids.includes('claude_pro_1m') && ids.includes('chatgpt_plus_1m') && ids.includes('apple_itunes_10_us'));
-    assert.ok(!cat.giftCards.some(c => ['telecom'].includes(c.category) || ['playstation', 'steam', 'madar', 'libyana'].includes(c.brand)));
+    assert.ok(!ids.some(id => id.startsWith('card_tt_')), 'TikTok is sold from the games section by QR');
+    assert.ok(!cat.giftCards.some(c => c.category === 'telecom' || ['playstation', 'steam', 'madar', 'libyana'].includes(c.brand)));
     assert.deepEqual(Object.keys(cat.settings.paymentMethodsInfo), ['telecom_libyana']);
+    const chat = cat.games.filter(g => g.category === 'chat');
+    assert.ok(chat.length > 100 && chat.every(g => g.deliveryMethod === 'id'));
+    const method = id => cat.games.find(g => g.id === id).deliveryMethod;
+    assert.deepEqual(['pubg', 'freefire', 'tiktok_coins', 'roblox', 'clashofclans'].map(method), ['id', 'id', 'qr', 'login', 'login']);
     const r = store.createOrder(goodOrder({ paymentMethod: 'telecom_madar' }), 'z');
     assert.equal(r.order.paymentMethod, 'telecom_libyana');
+});
+
+test('delivery methods: PUBG and chat apps need an ID, TikTok by QR, Roblox by login; hidden items cannot be ordered', () => {
+    const store = freshStore();
+    const game = (gameId, packageId, playerId) => goodOrder({ items: [{ type: 'game', gameId, packageId, quantity: 1, playerId }] });
+    assert.equal(store.createOrder(game('pubg', 'pubg_60', ''), 'a1').status, 400);
+    assert.equal(store.createOrder(game('pubg', 'pubg_60', '5123456789'), 'a2').order.items[0].meta, 'Player ID: 5123456789');
+    assert.equal(store.createOrder(game('chat_001', 'chat_001_v10', ''), 'a3').status, 400);
+    assert.equal(store.createOrder(game('chat_001', 'chat_001_v10', '12345678'), 'a4').status, 201);
+    assert.equal(store.createOrder(game('tiktok_coins', 'tt_100', ''), 'a5').order.items[0].meta, 'الشحن عبر رمز QR');
+    assert.equal(store.createOrder(game('roblox', 'rb_80', ''), 'a6').order.items[0].meta, 'الشحن عبر تسجيل الدخول');
+
+    const cat = store.publicCatalog();
+    cat.giftCards.find(c => c.id === 'watchit_1m').hidden = true;
+    store.saveCatalog(cat);
+    assert.equal(store.createOrder(goodOrder({ items: [{ type: 'giftcard', cardId: 'watchit_1m', quantity: 1 }] }), 'a7').status, 400);
 });

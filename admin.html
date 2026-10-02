@@ -17,13 +17,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Readex+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- Tailwind CSS CDN -->
-    <link rel="stylesheet" href="css/tailwind.css?v=2.0">
+    <link rel="stylesheet" href="css/tailwind.css?v=2.4">
     
     <!-- Font Awesome -->
     <link rel="stylesheet" href="vendor/fontawesome/css/all.min.css">
     
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style.css?v=2.4">
+    <link rel="stylesheet" href="css/admin.css?v=2.4">
     
     <style>
         body {
@@ -141,7 +142,7 @@
             <div id="adm-view-products" class="space-y-5">
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                     <div class="glass-card rounded-2xl p-4 border border-indigo-200 bg-white/80 shadow-sm">
-                        <span class="text-xs text-indigo-700 font-bold block">إجمالي ألعاب وعملات الشحن</span>
+                        <span class="text-xs text-indigo-700 font-bold block">الألعاب وتطبيقات الشات</span>
                         <span id="admin-stat-games" class="text-2xl font-black text-indigo-900 mt-1 block">-</span>
                     </div>
                     <div class="glass-card rounded-2xl p-4 border border-sky-200 bg-white/80 shadow-sm">
@@ -149,7 +150,7 @@
                         <span id="admin-stat-cards" class="text-2xl font-black text-sky-900 mt-1 block">-</span>
                     </div>
                     <div class="glass-card rounded-2xl p-4 border border-emerald-200 bg-white/80 shadow-sm">
-                        <span class="text-xs text-emerald-700 font-bold block">إجمالي طلبات واتساب المسجلة</span>
+                        <span class="text-xs text-emerald-700 font-bold block">الطلبات (المدفوعة / الكل)</span>
                         <span id="admin-stat-orders" class="text-2xl font-black text-emerald-900 mt-1 block">-</span>
                     </div>
                 </div>
@@ -168,13 +169,13 @@
                             <div>
                                 <label class="text-xs font-bold text-slate-700 block mb-1">نوع الصنف:</label>
                                 <select id="admin-item-type" onchange="toggleAdminFormType(this.value)" class="glass-input w-full rounded-xl py-2.5 px-3 text-xs font-bold text-slate-800">
-                                    <option value="game_package">🎮 باقة شحن لعبة (ببجي، فري فاير...)</option>
+                                    <option value="game_package">🎮 باقة جديدة للعبة أو تطبيق شات موجود</option>
                                     <option value="gift_card">🎁 اشتراك أو بطاقة (نتفليكس، شاهد، ChatGPT، Claude، آبل...)</option>
-                                    <option value="new_game">🕹️ لعبة جديدة بالكامل</option>
+                                    <option value="new_game">🕹️ لعبة أو تطبيق شات جديد بالكامل</option>
                                 </select>
                             </div>
                             <div id="admin-game-select-group">
-                                <label class="text-xs font-bold text-slate-700 block mb-1">اختر اللعبة التابع لها:</label>
+                                <label class="text-xs font-bold text-slate-700 block mb-1">اختر اللعبة أو التطبيق:</label>
                                 <select id="admin-target-game" class="glass-input w-full rounded-xl py-2.5 px-3 text-xs font-bold text-slate-800"></select>
                             </div>
                             <div>
@@ -197,11 +198,27 @@
                             <div>
                                 <label class="text-xs font-bold text-slate-700 block mb-1">التصنيف:</label>
                                 <select id="admin-item-category" class="glass-input w-full rounded-xl py-2 px-3 text-xs font-bold text-slate-800">
-                                    <option value="netflix">🎬 نتفليكس</option>
-                                    <option value="shahid">📺 شاهد</option>
+                                    <option value="entertainment">🎬 الترفيه والمشاهدة</option>
                                     <option value="ai_cards">🤖 ChatGPT و Claude</option>
                                     <option value="gift_cards">🍎 آبل آيتونز</option>
                                     <option value="social">🔥 تيك توك وسناب</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div id="admin-new-game-group" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                            <div>
+                                <label class="text-xs font-bold text-slate-700 block mb-1">القسم:</label>
+                                <select id="admin-new-game-section" class="glass-input w-full rounded-xl py-2 px-3 text-xs font-bold text-slate-800">
+                                    <option value="games">🎮 الألعاب</option>
+                                    <option value="chat">🎙️ تطبيقات الشات والصوتية</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-slate-700 block mb-1">طريقة الشحن:</label>
+                                <select id="admin-delivery-method" class="glass-input w-full rounded-xl py-2 px-3 text-xs font-bold text-slate-800">
+                                    <option value="id">🆔 بمعرّف اللاعب / الحساب (ID)</option>
+                                    <option value="qr">🔳 عبر رمز QR</option>
+                                    <option value="login">🔐 عبر تسجيل الدخول (واتساب)</option>
                                 </select>
                             </div>
                         </div>
@@ -228,8 +245,22 @@
                 <div class="glass-panel bg-white/95 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4">
                     <h3 class="font-extrabold text-slate-900 text-base border-b border-slate-100 pb-3 flex items-center gap-2">
                         <i class="fa-solid fa-list text-sky-600"></i>
-                        <span>الأصناف والباقات المعروضة حالياً بالمتجر:</span>
+                        <span>إدارة المنتجات والأسعار</span>
                     </h3>
+                    <p class="text-[11px] text-slate-500 font-bold">عدّل السعر مباشرة في الخانة ثم اضغط حفظ. المنتج المخفي لا يظهر للزبائن ولا يمكن طلبه. عدد المبيعات محسوب من الطلبات المدفوعة.</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <input type="search" id="admin-product-search" oninput="renderAdminPanel()" placeholder="🔎 ابحث عن منتج أو تطبيق..." class="glass-input w-full rounded-xl py-2.5 px-3 text-xs font-bold text-slate-800 sm:col-span-2">
+                        <select id="admin-product-section" onchange="renderAdminPanel()" class="glass-input w-full rounded-xl py-2.5 px-3 text-xs font-bold text-slate-800">
+                            <option value="all">كل الأقسام</option>
+                            <option value="games">🎮 الألعاب</option>
+                            <option value="chat">🎙️ الشات والصوتية</option>
+                            <option value="entertainment">🎬 الترفيه</option>
+                            <option value="ai_cards">🤖 ChatGPT و Claude</option>
+                            <option value="gift_cards">🍎 آبل آيتونز</option>
+                            <option value="social">🔥 سوشيال</option>
+                            <option value="hidden">🙈 المخفية فقط</option>
+                        </select>
+                    </div>
                     <div id="admin-items-table-container" class="space-y-2"></div>
                 </div>
             </div>
@@ -627,10 +658,10 @@
 
     <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
 
-    <script src="js/assets.js?v=2.3"></script>
-    <script src="js/data.js?v=2.3"></script>
-    <script src="js/database.js?v=2.3"></script>
-    <script src="js/admin.js?v=2.3"></script>
+    <script src="js/assets.js?v=2.4"></script>
+    <script src="js/data.js?v=2.4"></script>
+    <script src="js/database.js?v=2.4"></script>
+    <script src="js/admin.js?v=2.4"></script>
 <script>
 window.addEventListener('DOMContentLoaded', function(){
   setTimeout(function(){

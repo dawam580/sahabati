@@ -18,12 +18,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Readex+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <!-- Tailwind CSS CDN -->
-    <link rel="stylesheet" href="css/tailwind.css?v=2.3">
+    <link rel="stylesheet" href="css/tailwind.css?v=2.4">
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="vendor/fontawesome/css/all.min.css">
     <!-- Custom Styles -->
-    <link rel="stylesheet" href="css/style.css?v=2.3">
-    <link rel="stylesheet" href="css/mobile-app.css?v=2.3">
+    <link rel="stylesheet" href="css/style.css?v=2.4">
+    <link rel="stylesheet" href="css/mobile-app.css?v=2.4">
 </head>
 <body class="antialiased selection:bg-emerald-500 selection:text-white" dir="rtl">
     <!-- خلفية سماء متحركة (زخرفية فقط) -->
@@ -79,17 +79,17 @@
                     <i class="fa-solid fa-gamepad nav-icon text-amber-500"></i>
                     <span>شحن الألعاب</span>
                 </button>
-                <button onclick="navigateTo('giftcards'); filterGiftCards('netflix');" data-tab="netflix" class="nav-item-btn text-slate-700 hover:text-rose-600 bg-white/80 flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-2xl text-xs sm:text-sm font-bold transition flex-shrink-0 border border-sky-100">
-                    <i class="fa-solid fa-film nav-icon text-rose-500"></i>
-                    <span>نتفليكس</span>
+                <button onclick="navigateTo('chat');" data-tab="chat" class="nav-item-btn text-slate-700 hover:text-rose-600 bg-white/80 flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-2xl text-xs sm:text-sm font-bold transition flex-shrink-0 border border-sky-100">
+                    <i class="fa-solid fa-microphone-lines nav-icon text-fuchsia-500"></i>
+                    <span>الشات والصوتية</span>
                 </button>
-                <button onclick="navigateTo('giftcards'); filterGiftCards('shahid');" data-tab="shahid" class="nav-item-btn text-slate-700 hover:text-rose-600 bg-white/80 flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-2xl text-xs sm:text-sm font-bold transition flex-shrink-0 border border-sky-100">
-                    <i class="fa-solid fa-tv nav-icon text-emerald-500"></i>
-                    <span>شاهد</span>
+                <button onclick="navigateTo('giftcards'); filterGiftCards('entertainment');" data-tab="entertainment" class="nav-item-btn text-slate-700 hover:text-rose-600 bg-white/80 flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-2xl text-xs sm:text-sm font-bold transition flex-shrink-0 border border-sky-100">
+                    <i class="fa-solid fa-film nav-icon text-rose-500"></i>
+                    <span>الترفيه</span>
                 </button>
                 <button onclick="navigateTo('giftcards'); filterGiftCards('social');" data-tab="social" class="nav-item-btn text-slate-700 hover:text-amber-600 bg-white/80 flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-2xl text-xs sm:text-sm font-bold transition flex-shrink-0 border border-sky-100">
                     <i class="fa-brands fa-tiktok nav-icon text-rose-400"></i>
-                    <span>تيك توك وسناب</span>
+                    <span>سوشيال</span>
                 </button>
                 <button onclick="navigateTo('giftcards'); filterGiftCards('ai_cards');" data-tab="ai_cards" class="nav-item-btn text-slate-700 hover:text-indigo-600 bg-white/80 flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-2xl text-xs sm:text-sm font-bold transition flex-shrink-0 border border-sky-100">
                     <i class="fa-solid fa-robot nav-icon text-indigo-500"></i>
@@ -183,11 +183,20 @@
                 <div id="home-games-grid" class="tile-grid"></div>
             </div>
 
+            <!-- Chat & voice apps -->
+            <div class="home-block">
+                <div class="block-head">
+                    <h2><i class="fa-solid fa-microphone-lines"></i> تطبيقات الشات والصوتية</h2>
+                    <button type="button" onclick="navigateTo('chat')">عرض الكل</button>
+                </div>
+                <div id="home-chat-grid" class="tile-grid chat-mini"></div>
+            </div>
+
             <!-- Streaming carousel -->
             <div class="home-block">
                 <div class="block-head">
-                    <h2><i class="fa-solid fa-tv"></i> نتفليكس وشاهد</h2>
-                    <button type="button" onclick="navigateTo('giftcards'); filterGiftCards('all');">عرض الكل</button>
+                    <h2><i class="fa-solid fa-film"></i> الترفيه والمشاهدة</h2>
+                    <button type="button" onclick="navigateTo('giftcards'); filterGiftCards('entertainment');">عرض الكل</button>
                 </div>
                 <div id="home-streaming-row" class="h-scroll"></div>
             </div>
@@ -216,7 +225,7 @@
                 <i class="fa-solid fa-user-shield"></i>
                 <div>
                     <strong>تسوّق بأمان</strong>
-                    <p>لن نطلب منك كلمة سر حسابك في اللعبة أبداً. تواصل فقط عبر رقمنا الرسمي، ولا تشارك كود الكرت مع أي شخص يدّعي أنه من سحّابتي.</p>
+                    <p>تواصل فقط عبر رقمنا الرسمي. لا نطلب بيانات الدخول إلا لشحن روبلوكس وكلاش أوف كلانس، وذلك داخل محادثة واتساب الرسمية فقط ولا تُحفظ في الموقع. لا تشارك كود الكرت مع أي شخص يدّعي أنه من سحّابتي.</p>
                 </div>
             </div>
 
@@ -225,8 +234,12 @@
         <!-- ================= PAGE 2: GAMES TOP-UP ================= -->
         <section id="page-games" class="view-page hidden space-y-5">
 
+            <button type="button" id="chat-back-btn" onclick="navigateTo('chat')" class="hidden back-pill">
+                <i class="fa-solid fa-arrow-right"></i> كل تطبيقات الشات والصوتية
+            </button>
+
             <!-- Games Switcher Bar with Original Logos -->
-            <div class="glass-panel rounded-2xl p-2.5 flex items-center gap-2 overflow-x-auto no-scrollbar shadow-sm">
+            <div id="games-selector-panel" class="glass-panel rounded-2xl p-2.5 flex items-center gap-2 overflow-x-auto no-scrollbar shadow-sm">
                 <div id="games-selector" class="flex items-center gap-2">
                     <!-- Populated by JS -->
                 </div>
@@ -236,7 +249,7 @@
             <div class="glass-panel rounded-3xl overflow-hidden shadow-xl border border-white/80">
                 <div class="relative p-6 sm:p-8 bg-gradient-to-r from-slate-950 via-sky-950 to-slate-900 text-white flex items-center justify-between flex-wrap gap-4">
                     <div>
-                        <span class="bg-emerald-500 text-white text-[10px] sm:text-xs font-black px-3 py-1 rounded-full mb-2 inline-block">
+                        <span id="game-method-badge" class="bg-emerald-500 text-white text-[10px] sm:text-xs font-black px-3 py-1 rounded-full mb-2 inline-block">
                             🇱🇾 شحن فوري بالمعرّف - دينار ليبي
                         </span>
                         <h2 id="game-title-text" class="text-2xl sm:text-3xl font-black text-white">ببجي موبايل (PUBG Mobile UC)</h2>
@@ -265,6 +278,8 @@
                 </div>
             </div>
 
+            <div id="delivery-note" class="delivery-note hidden" role="note"></div>
+
             <!-- Recharge Packages Grid -->
             <div class="space-y-3">
                 <div class="flex items-center justify-between">
@@ -291,6 +306,19 @@
             <button type="button" onclick="buySelectedPackage()" class="buy-bar-buy"><i class="fa-solid fa-bolt"></i> اشترِ الآن</button>
         </div>
 
+        <!-- ================= PAGE: CHAT & VOICE APPS ================= -->
+        <section id="page-chat" class="view-page hidden space-y-4">
+            <div class="chat-head">
+                <h2 class="section-title"><i class="fa-solid fa-microphone-lines text-fuchsia-300"></i> تطبيقات الشات والصوتية</h2>
+                <p class="chat-sub">اختر التطبيق ثم أدخل معرّف حسابك (ID) والمبلغ.</p>
+                <div class="chat-search">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="search" id="chat-search-input" placeholder="ابحث عن تطبيقك..." autocomplete="off" maxlength="40" oninput="renderChatApps(this.value)">
+                </div>
+            </div>
+            <div id="chat-apps-grid" class="tile-grid chat-grid"></div>
+        </section>
+
         <!-- ================= PAGE 3: GIFT CARDS, STREAMING & AI ================= -->
         <section id="page-giftcards" class="view-page hidden space-y-5">
 
@@ -299,11 +327,8 @@
                 <button onclick="filterGiftCards('all')" data-category="all" class="giftcard-cat-btn bg-sky-600 text-white px-4 py-2 rounded-xl text-xs font-bold flex-shrink-0 transition">
                     الكل
                 </button>
-                <button onclick="filterGiftCards('netflix')" data-category="netflix" class="giftcard-cat-btn bg-white/80 text-slate-700 px-4 py-2 rounded-xl text-xs font-bold flex-shrink-0 transition">
-                    🎬 نتفليكس
-                </button>
-                <button onclick="filterGiftCards('shahid')" data-category="shahid" class="giftcard-cat-btn bg-white/80 text-slate-700 px-4 py-2 rounded-xl text-xs font-bold flex-shrink-0 transition">
-                    📺 شاهد VIP
+                <button onclick="filterGiftCards('entertainment')" data-category="entertainment" class="giftcard-cat-btn bg-white/80 text-slate-700 px-4 py-2 rounded-xl text-xs font-bold flex-shrink-0 transition">
+                    🎬 الترفيه والمشاهدة
                 </button>
                 <button onclick="filterGiftCards('ai_cards')" data-category="ai_cards" class="giftcard-cat-btn bg-white/80 text-slate-700 px-4 py-2 rounded-xl text-xs font-bold flex-shrink-0 transition">
                     🤖 ChatGPT و Claude
@@ -312,7 +337,7 @@
                     🍎 آبل آيتونز
                 </button>
                 <button onclick="filterGiftCards('social')" data-category="social" class="giftcard-cat-btn bg-white/80 text-slate-700 px-4 py-2 rounded-xl text-xs font-bold flex-shrink-0 transition">
-                    🔥 تيك توك وسناب شات بلس
+                    🔥 سوشيال
                 </button>
             </div>
 
@@ -538,12 +563,11 @@
         <button type="button" onclick="navigateTo('games')" data-nav="games" class="tab-bar-item">
             <i class="fa-solid fa-gamepad"></i><span>الألعاب</span>
         </button>
+        <button type="button" onclick="navigateTo('chat')" data-nav="chat" class="tab-bar-item">
+            <i class="fa-solid fa-microphone-lines"></i><span>الشات</span>
+        </button>
         <button type="button" onclick="navigateTo('giftcards'); filterGiftCards('all');" data-nav="giftcards" class="tab-bar-item">
             <i class="fa-solid fa-gift"></i><span>البطاقات</span>
-        </button>
-        <button type="button" onclick="navigateTo('checkout')" data-nav="checkout" class="tab-bar-item">
-            <i class="fa-solid fa-bag-shopping"></i><span>السلة</span>
-            <span class="cart-count-badge app-badge hidden">0</span>
         </button>
         <button type="button" onclick="navigateTo('orders')" data-nav="orders" class="tab-bar-item">
             <i class="fa-solid fa-receipt"></i><span>طلباتي</span>
@@ -679,12 +703,12 @@
     <div id="toast-container"></div>
 
     <!-- Scripts -->
-    <script src="js/assets.js?v=2.3"></script>
-    <script src="js/data.js?v=2.3"></script>
-    <script src="js/database.js?v=2.3"></script>
-    <script src="js/security.js?v=2.3"></script>
-    <script src="js/brand-icons.js?v=2.3"></script>
-    <script src="js/app.js?v=2.3"></script>
+    <script src="js/assets.js?v=2.4"></script>
+    <script src="js/data.js?v=2.4"></script>
+    <script src="js/database.js?v=2.4"></script>
+    <script src="js/security.js?v=2.4"></script>
+    <script src="js/brand-icons.js?v=2.4"></script>
+    <script src="js/app.js?v=2.4"></script>
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {

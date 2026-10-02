@@ -125,14 +125,15 @@
     // لذلك نعيد تسعير كل عنصر من الكتالوج الرسمي ونحذف أي عنصر غير معروف.
     function catalogPrice(item, data) {
         if (!item || !data) return null;
+        // المنتجات التي أخفاها المدير لا تُباع
         if (item.type === 'game') {
             const game = (data.games || []).find(g => g.id === item.gameId);
-            const pkg = game && (game.packages || []).find(p => p.id === item.packageId);
-            return pkg ? Number(pkg.priceLYD) : null;
+            const pkg = game && !game.hidden && (game.packages || []).find(p => p.id === item.packageId);
+            return pkg && !pkg.hidden ? Number(pkg.priceLYD) : null;
         }
         if (item.type === 'giftcard') {
             const card = (data.giftCards || []).find(c => c.id === item.cardId);
-            return card ? Number(card.priceLYD) : null;
+            return card && !card.hidden ? Number(card.priceLYD) : null;
         }
         return null;
     }
