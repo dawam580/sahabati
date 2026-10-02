@@ -591,3 +591,19 @@ body { background: transparent !important; }
 .chat-art { font-size: 22px; letter-spacing: 1px; }
 .chat-art.has-img { background: #fff; padding: 0; overflow: hidden; }
 .chat-art.has-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* «يدوي» badge on manually charged products */
+.tile-art, .mini-card-art, .gc-art { position: relative; }
+.manual-badge {
+    position: absolute; top: 6px; left: 6px; z-index: 2;
+    display: inline-flex; align-items: center; gap: 3px;
+    background: rgba(15, 23, 42, .78); color: #fde68a;
+    border: 1px solid rgba(253, 230, 138, .45);
+    font-size: 10px; font-weight: 800; line-height: 1;
+    padding: 3px 7px; border-radius: 999px;
+    letter-spacing: 0; font-style: normal;
+    backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+}
+.manual-badge i { font-size: 9px; }
+/* cards already carry a badge at the top: put «يدوي» in the free bottom corner */
+.gc-art .manual-badge, .mini-card-art .manual-badge { top: auto; left: auto; bottom: 6px; right: 6px; }

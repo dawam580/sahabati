@@ -248,7 +248,9 @@ function adminPriceInput(kind, a, b, price){
         '<button type="button" class="adm-btn save" title="حفظ السعر" onclick="adminSavePrice(\''+kind+'\',\''+escapeAttr(a)+'\',\''+escapeAttr(b||'')+'\')"><i class="fa-solid fa-floppy-disk"></i></button>';
 }
 function adminRowActions(kind, a, b, hidden){
-    return (kind!=='pkg' ? '<button type="button" class="adm-btn" title="تغيير الصورة" onclick="adminSetImage(\''+kind+'\',\''+escapeAttr(a)+'\')"><i class="fa-solid fa-image"></i></button>' : '')+
+    const item = kind!=='pkg' ? adminFind(kind, a) : null;
+    return (kind!=='pkg' ? '<button type="button" class="adm-btn '+(item&&item.manual?'on':'')+'" title="'+(item&&item.manual?'إزالة شارة «يدوي»':'إظهار شارة «يدوي» للعميل')+'" onclick="adminToggleManual(\''+kind+'\',\''+escapeAttr(a)+'\')"><i class="fa-solid fa-hand"></i></button>' : '')+
+        (kind!=='pkg' ? '<button type="button" class="adm-btn" title="تغيير الصورة" onclick="adminSetImage(\''+kind+'\',\''+escapeAttr(a)+'\')"><i class="fa-solid fa-image"></i></button>' : '')+
         '<button type="button" class="adm-btn" title="تعديل الاسم" onclick="adminRename(\''+kind+'\',\''+escapeAttr(a)+'\',\''+escapeAttr(b||'')+'\')"><i class="fa-solid fa-pen"></i></button>'+
         '<button type="button" class="adm-btn '+(hidden?'off':'')+'" title="'+(hidden?'إظهار للزبائن':'إخفاء عن الزبائن')+'" onclick="adminToggleHidden(\''+kind+'\',\''+escapeAttr(a)+'\',\''+escapeAttr(b||'')+'\')"><i class="fa-solid '+(hidden?'fa-eye-slash':'fa-eye')+'"></i></button>'+
         '<button type="button" class="adm-btn danger" title="حذف" onclick="adminDelete(\''+kind+'\',\''+escapeAttr(a)+'\',\''+escapeAttr(b||'')+'\')"><i class="fa-solid fa-trash"></i></button>';
@@ -290,6 +292,7 @@ function renderAdminPanel(){
                     '<span class="adm-chip">'+escapeHtml(ADMIN_SECTION_NAMES[adminGameSection(g)]||'')+'</span>'+
                     '<span class="adm-chip">'+escapeHtml(ADMIN_METHOD_NAMES[g.deliveryMethod||'id'])+'</span>'+
                     (g.hidden?'<span class="adm-chip warn">مخفي</span>':'')+
+                    (g.manual?'<span class="adm-chip">✋ يدوي</span>':'')+
                     '<span class="adm-chip ok">مبيع: '+sold+'</span></summary>'+
                 '<div class="adm-game-actions">'+
                     '<label class="adm-mini">طريقة الشحن: <select onchange="adminSetMethod(\''+escapeAttr(g.id)+'\',this.value)">'+
@@ -354,6 +357,12 @@ function adminDelete(kind, a, b){
     else if(kind==='game') APP_DATA.games=APP_DATA.games.filter(g=>g.id!==a);
     else { const g=adminFind('game',a); g.packages=g.packages.filter(p=>p.id!==b); }
     saveAppData(APP_DATA); renderAdminPanel(); showToast('تم الحذف','fa-trash');
+}
+function adminToggleManual(kind, id){
+    const item=adminFind(kind,id); if(!item) return;
+    item.manual=!item.manual;
+    saveAppData(APP_DATA); renderAdminPanel();
+    showToast(item.manual?'تظهر شارة «يدوي» على '+item.nameAr:'أُزيلت شارة «يدوي» عن '+item.nameAr,'fa-hand');
 }
 function adminSetImage(kind, id){
     const item=adminFind(kind,id); if(!item) return;

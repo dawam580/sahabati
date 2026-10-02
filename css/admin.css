@@ -33,3 +33,4 @@
 .adm-storage small { display: block; font-weight: 700; margin-top: 2px; line-height: 1.6; }
 .adm-storage.ok { background: #ecfdf5; color: #065f46; border: 1px solid #6ee7b7; }
 .adm-storage.bad { background: #fef2f2; color: #991b1b; border: 2px solid #f87171; }
+.adm-btn.on { background: #fef3c7; color: #92400e; }

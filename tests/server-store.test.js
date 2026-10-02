@@ -124,7 +124,7 @@ test('v5: similar chat app names are hidden, Turkish iTunes added, and a saved v
     process.env.ADMIN_PIN = 'secret-pin-1';
     delete require.cache[require.resolve('../store')];
     const cat = require('../store').createStore().publicCatalog();
-    assert.equal(cat.catalogVersion, 7);
+    assert.equal(cat.catalogVersion, 8);
     assert.equal(cat.giftCards.find(c => c.id === 'watchit_1m').priceLYD, 33, 'admin price kept');
     assert.ok(cat.giftCards.some(c => c.id === 'apple_itunes_tr_100' && c.category === 'gift_cards'));
     const names = cat.games.filter(g => g.category === 'chat').map(g => g.nameAr);
@@ -167,7 +167,7 @@ test('v6: chat app icons and corrected names, applied to a saved v5 catalog with
     delete require.cache[require.resolve('../store')];
     const cat = require('../store').createStore().publicCatalog();
     const byId = id => cat.games.find(g => g.id === id);
-    assert.equal(cat.catalogVersion, 7);
+    assert.equal(cat.catalogVersion, 8);
     assert.equal(byId('chat_039').nameAr, 'ديتو لايف');
     assert.equal(byId('chat_002').image, 'images/chat/chat_002.webp');
     assert.equal(byId('chat_001').image, 'https://example.com/admin-choice.png', 'admin image kept');
@@ -255,4 +255,16 @@ test('order status reports orders the server no longer has', () => {
     const res = store.orderStatus({ phone: '0912345678', ids: [r.order.id, 'LYD-00000000'] }, 'ip-m');
     assert.equal(res.orders.length, 1);
     assert.deepEqual([...res.missing], ['LYD-00000000']);
+});
+
+test('v8: manual-delivery badge on PUBG, Free Fire, TikTok, Snapchat and Telegram; admin choice kept', () => {
+    const store = freshStore();
+    const cat = store.publicCatalog();
+    const all = cat.games.concat(cat.giftCards);
+    const manual = all.filter(i => i.manual).map(i => i.id).sort();
+    assert.deepEqual(manual, ['freefire', 'pubg', 'snapchat_plus_3m', 'snapchat_plus_6m', 'telegram_premium_3m', 'tiktok_coins'].sort());
+    // admin turned the badge off for PUBG and saved; it must stay off
+    cat.games.find(g => g.id === 'pubg').manual = false;
+    store.saveCatalog(cat);
+    assert.equal(store.publicCatalog().games.find(g => g.id === 'pubg').manual, false);
 });
