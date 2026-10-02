@@ -291,7 +291,9 @@ const BRAND_LOOK = {
     madar: { cls: 'b-madar', mark: 'مدار' }
 };
 function brandLook(key) {
-    return BRAND_LOOK[key] || { cls: 'b-default', mark: '<i class="fa-solid fa-gift"></i>' };
+    const look = BRAND_LOOK[key] || { cls: 'b-default', mark: '<i class="fa-solid fa-gift"></i>' };
+    const svg = typeof brandSvg === 'function' ? brandSvg(key) : '';
+    return svg ? { cls: look.cls, mark: svg } : look;
 }
 function shortName(nameAr) {
     return String(nameAr || '').split('(')[0].trim();
@@ -337,6 +339,10 @@ function initPromoCarousel() {
     const track = document.getElementById('promo-track');
     const dots = document.getElementById('promo-dots');
     if (!track || !dots || !track.children.length) return;
+    document.querySelectorAll('.promo-art[data-brand]').forEach(el => {
+        const svg = typeof brandSvg === 'function' ? brandSvg(el.dataset.brand, 'promo-svg') : '';
+        if (svg) el.innerHTML = svg;
+    });
     const slides = Array.from(track.children);
     dots.innerHTML = slides.map((_, i) => '<span class="' + (i === 0 ? 'on' : '') + '"></span>').join('');
     const setActive = () => {

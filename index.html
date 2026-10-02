@@ -18,14 +18,20 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Readex+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <!-- Tailwind CSS CDN -->
-    <link rel="stylesheet" href="css/tailwind.css?v=2.1">
+    <link rel="stylesheet" href="css/tailwind.css?v=2.2">
     <!-- Font Awesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="vendor/fontawesome/css/all.min.css">
     <!-- Custom Styles -->
-    <link rel="stylesheet" href="css/style.css?v=2.1">
-    <link rel="stylesheet" href="css/mobile-app.css?v=2.1">
+    <link rel="stylesheet" href="css/style.css?v=2.2">
+    <link rel="stylesheet" href="css/mobile-app.css?v=2.2">
 </head>
 <body class="antialiased selection:bg-emerald-500 selection:text-white" dir="rtl">
+    <!-- خلفية سماء متحركة (زخرفية فقط) -->
+    <div class="sky-bg" aria-hidden="true">
+        <span class="sky-glow g1"></span><span class="sky-glow g2"></span><span class="sky-glow g3"></span>
+        <span class="sky-stars"></span>
+        <span class="sky-cloud c1"></span><span class="sky-cloud c2"></span><span class="sky-cloud c3"></span>
+    </div>
 
     <!-- App Header (هيدر بأسلوب التطبيقات) -->
     <header class="app-header">
@@ -112,6 +118,12 @@
                             <button type="button" onclick="navigateTo('games')" class="promo-cta">اشحن الآن <i class="fa-solid fa-arrow-left"></i></button>
                         </div>
                     </div>
+                    <div class="promo-slide promo-img" onclick="navigateTo('games')">
+                        <img src="header_hero.jpg" alt="عالم سحّابتي: ببجي، كلاش، روبلوكس، تيك توك وآيتونز" loading="lazy">
+                        <div class="promo-overlay">
+                            <span class="promo-cta">☁️ اكتشف عالم سحّابتي <i class="fa-solid fa-arrow-left"></i></span>
+                        </div>
+                    </div>
                     <div class="promo-slide promo-netflix" onclick="navigateTo('giftcards'); filterGiftCards('streaming');">
                         <div class="promo-content">
                             <span class="promo-chip">📺 شاشات وهواتف</span>
@@ -119,7 +131,7 @@
                             <p>اشتراك شهري بضمان كامل المدة</p>
                             <span class="promo-cta">تصفّح الاشتراكات <i class="fa-solid fa-arrow-left"></i></span>
                         </div>
-                        <span class="promo-art">N</span>
+                        <span class="promo-art" data-brand="netflix">N</span>
                     </div>
                     <div class="promo-slide promo-pubg" onclick="navigateTo('games'); selectGame('pubg');">
                         <div class="promo-content">
@@ -128,7 +140,7 @@
                             <p>أكواد أصلية تبدأ من 10 د.ل</p>
                             <span class="promo-cta">اشحن شداتك <i class="fa-solid fa-arrow-left"></i></span>
                         </div>
-                        <span class="promo-art">UC</span>
+                        <span class="promo-art" data-brand="pubg">UC</span>
                     </div>
                     <div class="promo-slide promo-tiktok" onclick="navigateTo('games'); selectGame('tiktok_coins');">
                         <div class="promo-content">
@@ -137,7 +149,7 @@
                             <p>ادعم صنّاع المحتوى بأفضل سعر</p>
                             <span class="promo-cta">اشحن العملات <i class="fa-solid fa-arrow-left"></i></span>
                         </div>
-                        <span class="promo-art"><i class="fa-brands fa-tiktok"></i></span>
+                        <span class="promo-art" data-brand="tiktok"><i class="fa-brands fa-tiktok"></i></span>
                     </div>
                 </div>
                 <div class="promo-dots" id="promo-dots"></div>
@@ -674,11 +686,12 @@
     <div id="toast-container"></div>
 
     <!-- Scripts -->
-    <script src="js/assets.js?v=2.1"></script>
-    <script src="js/data.js?v=2.1"></script>
-    <script src="js/database.js?v=2.1"></script>
-    <script src="js/security.js?v=2.1"></script>
-    <script src="js/app.js?v=2.1"></script>
+    <script src="js/assets.js?v=2.2"></script>
+    <script src="js/data.js?v=2.2"></script>
+    <script src="js/database.js?v=2.2"></script>
+    <script src="js/security.js?v=2.2"></script>
+    <script src="js/brand-icons.js?v=2.2"></script>
+    <script src="js/app.js?v=2.2"></script>
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {

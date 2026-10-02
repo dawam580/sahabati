@@ -3,7 +3,7 @@
 // Enables Offline Caching & Google Play PWA / TWA Compatibility
 // ==========================================
 
-const CACHE_NAME = 'sahabati-v2.1';
+const CACHE_NAME = 'sahabati-v2.2';
 const PRECACHE_URLS = [
   './',
   './index.html',
@@ -15,7 +15,9 @@ const PRECACHE_URLS = [
   './js/assets.js',
   './js/security.js',
   './css/style.css',
-  './css/mobile-app.css'
+  './css/mobile-app.css',
+  './js/brand-icons.js',
+  './vendor/fontawesome/css/all.min.css'
 ];
 
 self.addEventListener('install', (event) => {
