@@ -19,51 +19,51 @@ const DEFAULT_STORE_SETTINGS = {
         name: 'دينار ليبي'
     },
     paymentMethodsInfo: {
-        one_pay: {
-            title: 'ون باي (OnePay) / دفع مصرفي فوري',
-            accountInfo: 'خدمة ون باي - موبي كاش - سداد - تداول',
-            instructions: 'ادفع عبر تطبيق ون باي أو أي محفظة مصرفية بالدينار الليبي وأرسل إشعار الدفع عبر واتساب 0920541749 للتأكيد والتسليم الفوري.'
-        },
         telecom_libyana: {
-            title: 'شفرة ورصيد ليبيانا (Libyana)',
-            accountInfo: 'رقم تحويل رصيد ليبيانا: 0920000000',
-            instructions: 'حوّل الرصيد مباشرة أو أرسل كود كرت تعبئة ليبيانا في محادثة واتساب لتأكيد الشحن فوراً.'
-        },
-        telecom_madar: {
-            title: 'شفرة ورصيد مدار الجديد (Madar)',
-            accountInfo: 'رقم تحويل رصيد مدار: 0910000000',
-            instructions: 'حوّل الرصيد مباشرة أو أرسل كود كرت تعبئة مدار الجديد في محادثة واتساب لتأكيد الشحن فوراً.'
-        },
-        bank_transfer: {
-            title: 'تحويل مصرفي ليبي مباشر',
-            accountInfo: 'اسم الحساب: منصة سحّابتي | رقم الحساب: 0123456789012',
-            instructions: 'قم بالتحويل المصرفي وأرسل إشعار الخصم في محادثة واتساب 0920541749.'
+            title: 'الدفع عبر كرت ليبيانا (Libyana)',
+            accountInfo: 'كرت تعبئة ليبيانا بقيمة الطلب',
+            instructions: 'اشترِ كرت تعبئة ليبيانا بقيمة طلبك، وأدخل الكود المكوّن من 13 رقماً في الخانة بالأسفل. نتحقق من الكرت ثم نسلّمك طلبك.'
         }
     }
 };
 
 const DEFAULT_APP_DATA = {
     settings: DEFAULT_STORE_SETTINGS,
+    // رقم إصدار الكتالوج: عند تغييره يُهمل أي كتالوج قديم محفوظ في المتصفح أو على الخادم
+    catalogVersion: 3,
     categories: [
         {
             id: 'games',
             titleAr: 'شحن ألعاب الفيديو',
+            shortAr: 'الألعاب',
             titleEn: 'Game Top-ups',
             subtitleAr: 'ببجي موبايل، فري فاير، روبلوكس، كوينز بيس، كلاش أوف كلانس',
             icon: 'fa-gamepad',
             badge: 'شحن فوري بالمعرّف ⚡'
         },
         {
-            id: 'streaming',
-            titleAr: 'اشتراكات المشاهدة الترفيهية',
-            titleEn: 'Streaming & Movies',
-            subtitleAr: 'نتفليكس 4K UHD، شاهد VIP حساب كامل (شاشات وهواتف)، ديزني بلس',
+            id: 'netflix',
+            titleAr: 'اشتراكات نتفليكس',
+            shortAr: 'نتفليكس',
+            titleEn: 'Netflix',
+            subtitleAr: 'نتفليكس 4K UHD ملف خاص بك',
+            icon: 'fa-film',
+            brand: 'netflix',
+            badge: '4K UHD 🔥'
+        },
+        {
+            id: 'shahid',
+            titleAr: 'اشتراكات شاهد VIP',
+            shortAr: 'شاهد',
+            titleEn: 'Shahid VIP',
+            subtitleAr: 'شاهد VIP حساب كامل (شاشات وهواتف)',
             icon: 'fa-tv',
-            badge: 'شاشات & هواتف 📺'
+            badge: 'حساب كامل 📺'
         },
         {
             id: 'social',
             titleAr: 'سوشيال ميديا وعملات',
+            shortAr: 'سوشيال',
             titleEn: 'Social Coins & Plus',
             subtitleAr: 'عملات تيك توك TikTok، سناب شات بلس Snapchat+، تليجرام بريميوم',
             icon: 'fa-coins',
@@ -71,19 +71,22 @@ const DEFAULT_APP_DATA = {
         },
         {
             id: 'ai_cards',
-            titleAr: 'الذكاء الاصطناعي والبطاقات',
-            titleEn: 'AI & Gift Cards',
-            subtitleAr: 'اشتراك ChatGPT Plus، بطاقات بلايستيشن، ستيم، آبل آيتونز',
+            titleAr: 'اشتراكات ChatGPT و Claude',
+            shortAr: 'ChatGPT و Claude',
+            titleEn: 'AI Subscriptions',
+            subtitleAr: 'اشتراك ChatGPT Plus واشتراك Claude Pro',
             icon: 'fa-robot',
-            badge: 'ChatGPT & Cards 🤖'
+            badge: 'ذكاء اصطناعي 🤖'
         },
         {
-            id: 'telecom',
-            titleAr: 'كروت مدار وليبيانا',
-            titleEn: 'Telecom Cards',
-            subtitleAr: 'كروت تعبئة ودفع مباشر بشفرات ليبيانا ومدار الجديد',
-            icon: 'fa-sim-card',
-            badge: 'ليبيانا & مدار 🇱🇾'
+            id: 'gift_cards',
+            titleAr: 'بطاقات آبل آيتونز',
+            shortAr: 'آبل آيتونز',
+            titleEn: 'Apple Gift Cards',
+            subtitleAr: 'بطاقات متجر آبل (App Store & iTunes)',
+            icon: 'fa-apple',
+            brand: 'apple',
+            badge: 'آبل 🍎'
         }
     ],
     games: [
@@ -204,7 +207,7 @@ const DEFAULT_APP_DATA = {
         {
             id: 'netflix_4k_1m',
             brand: 'netflix',
-            category: 'streaming',
+            category: 'netflix',
             nameAr: 'اشتراك نتفليكس (Netflix 4K) - شهر واحد',
             nominal: '1 Month - Profile User 4K',
             priceLYD: 45.00,
@@ -217,7 +220,7 @@ const DEFAULT_APP_DATA = {
         {
             id: 'shahid_vip_full',
             brand: 'shahid',
-            category: 'streaming',
+            category: 'shahid',
             nameAr: 'اشتراك شاهد VIP (Shahid VIP) - حساب كامل',
             nominal: 'Full Account - جميع الأجهزة',
             priceLYD: 40.00,
@@ -301,7 +304,7 @@ const DEFAULT_APP_DATA = {
             instructionsAr: 'شحن مباشر على اسم المستخدم (@Username) الخاص بك على تيك توك فور تأكيد الطلب.'
         },
 
-        // ================= 3. AI & DIGITAL GIFT CARDS =================
+        // ================= 3. AI SUBSCRIPTIONS & APPLE GIFT CARDS =================
         {
             id: 'chatgpt_plus_1m',
             brand: 'chatgpt',
@@ -313,76 +316,24 @@ const DEFAULT_APP_DATA = {
             instructionsAr: 'تفعيل اشتراك شات جي بي تي بلس (ChatGPT Plus) مع وصول غير محدود لنماذج GPT-4o وتوليد الصور والتحليل المتقدم.'
         },
         {
-            id: 'playstation_10_us',
-            brand: 'playstation',
+            id: 'claude_pro_1m',
+            brand: 'claude',
             category: 'ai_cards',
-            nameAr: 'بطاقة بلايستيشن 10 دولار أمريكي (PSN $10 US)',
-            nominal: '$10 USD PlayStation Card',
-            priceLYD: 68.00,
-            badge: 'ستور أمريكي 🎮',
-            instructionsAr: 'كود بطاقة بلايستيشن ستور أمريكي 10$ رقمي أصلي مع تسليم فوري.'
-        },
-        {
-            id: 'steam_10_usd',
-            brand: 'steam',
-            category: 'ai_cards',
-            nameAr: 'بطاقة ستيم 10 دولار (Steam $10 USD Global)',
-            nominal: '$10 Steam Wallet',
-            priceLYD: 68.00,
-            badge: 'ستيم ألعاب 🕹️',
-            instructionsAr: 'كود تعبئة محفظة ستيم العالمي أصلي للشراء من متجر ستيم.'
+            nameAr: 'اشتراك Claude Pro كلود - شهر كامل',
+            nominal: 'Claude Pro - 1 Month',
+            priceLYD: 120.00,
+            badge: 'Claude Pro ✨',
+            instructionsAr: 'تفعيل اشتراك كلود برو (Claude Pro) لمدة شهر كامل: استخدام أكبر بكثير من الخطة المجانية، ومشاريع، وتحليل الملفات والصور.'
         },
         {
             id: 'apple_itunes_10_us',
             brand: 'apple',
-            category: 'ai_cards',
+            category: 'gift_cards',
             nameAr: 'بطاقة آبل آيتونز 10 دولار (Apple iTunes $10 US)',
             nominal: '$10 Apple Gift Card',
             priceLYD: 68.00,
             badge: 'آبل أمريكي 🍎',
             instructionsAr: 'كود بطاقة متجر آبل لشحن رصيد الآيفون والآيباد وشراء التطبيقات والاشتراكات.'
-        },
-
-        // ================= 4. TELECOM VOUCHERS (LIBYANA & MADAR) =================
-        {
-            id: 'card_libyana_10',
-            brand: 'libyana',
-            category: 'telecom',
-            nameAr: 'كرت تعبئة ليبيانا 10 دينار',
-            nominal: '10 LYD Voucher',
-            priceLYD: 10.00,
-            badge: 'ليبيانا 🇱🇾',
-            instructionsAr: 'كود تعبئة رصيد كرت ليبيانا 10 د.ل فوري صالح للاستخدام فوراً.'
-        },
-        {
-            id: 'card_libyana_20',
-            brand: 'libyana',
-            category: 'telecom',
-            nameAr: 'كرت تعبئة ليبيانا 20 دينار',
-            nominal: '20 LYD Voucher',
-            priceLYD: 20.00,
-            badge: 'ليبيانا 🇱🇾',
-            instructionsAr: 'كود تعبئة رصيد كرت ليبيانا 20 د.ل فوري صالح للاستخدام فوراً.'
-        },
-        {
-            id: 'card_madar_10',
-            brand: 'madar',
-            category: 'telecom',
-            nameAr: 'كرت تعبئة مدار 10 دينار',
-            nominal: '10 LYD Voucher',
-            priceLYD: 10.00,
-            badge: 'مدار 🇱🇾',
-            instructionsAr: 'كود تعبئة رصيد كرت مدار الجديد 10 د.ل فوري صالح للاستخدام فوراً.'
-        },
-        {
-            id: 'card_madar_20',
-            brand: 'madar',
-            category: 'telecom',
-            nameAr: 'كرت تعبئة مدار 20 دينار',
-            nominal: '20 LYD Voucher',
-            priceLYD: 20.00,
-            badge: 'مدار 🇱🇾',
-            instructionsAr: 'كود تعبئة رصيد كرت مدار الجديد 20 د.ل فوري صالح للاستخدام فوراً.'
         }
     ]
 };
@@ -393,8 +344,11 @@ function loadAppData() {
         const stored = localStorage.getItem('sahabati_catalog_data');
         if (stored) {
             const parsed = JSON.parse(stored);
-            if (parsed && parsed.games && parsed.giftCards) {
+            if (parsed && parsed.games && parsed.giftCards && parsed.catalogVersion === DEFAULT_APP_DATA.catalogVersion) {
                 parsed.settings = { ...DEFAULT_STORE_SETTINGS, ...(parsed.settings || {}) };
+                parsed.settings.paymentMethodsInfo = DEFAULT_STORE_SETTINGS.paymentMethodsInfo && parsed.settings.paymentMethodsInfo && parsed.settings.paymentMethodsInfo.telecom_libyana
+                    ? { telecom_libyana: parsed.settings.paymentMethodsInfo.telecom_libyana }
+                    : DEFAULT_STORE_SETTINGS.paymentMethodsInfo;
                 return parsed;
             }
         }

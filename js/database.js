@@ -65,7 +65,7 @@
                 {
                     id: 'vc_itunes_10_01',
                     brand: 'apple',
-                    category: 'ai_cards',
+                    category: 'gift_cards',
                     productName: 'بطاقة آيتونز 10$ (iTunes 10 USD)',
                     code: 'XX78-9921-ITUNES-10USD-LY',
                     pin: '9842',
@@ -79,7 +79,7 @@
                 {
                     id: 'vc_itunes_25_01',
                     brand: 'apple',
-                    category: 'ai_cards',
+                    category: 'gift_cards',
                     productName: 'بطاقة آيتونز 25$ (iTunes 25 USD)',
                     code: 'XX44-1189-ITUNES-25USD-SHB',
                     pin: '1092',
@@ -590,7 +590,7 @@
                 items: orderData.items || [],
                 vouchers: allocatedCodes,
                 accountDetails: accountDetails,
-                paymentMethod: orderData.paymentMethod || 'one_pay',
+                paymentMethod: orderData.paymentMethod || 'telecom_libyana',
                 cardCode13: orderData.cardCode13 || '',
                 customerNotes: orderData.customerNotes || '',
                 totalFormatted: orderData.totalFormatted || '0.00 د.ل',

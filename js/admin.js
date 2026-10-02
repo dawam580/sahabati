@@ -270,14 +270,16 @@ function handleAdminAddItem(e){
         const gameId=document.getElementById('admin-target-game').value;
         const game=APP_DATA.games.find(g=>g.id===gameId);
         if(game){ const newId=gameId+'_pkg_'+Date.now(); game.packages.push({ id:newId, nameAr:name, priceLYD:price, popular:!!badge, icon:'💎', image:image }); }
-    } else if(type==='streaming' || type==='social' || type==='telecom' || type==='gift_card'){
+    } else if(type==='gift_card'){
         const newId='card_'+Date.now(); let finalBrand=category;
         if(name.includes('نتفليكس')||name.toLowerCase().includes('netflix')) finalBrand='netflix';
         else if(name.includes('شاهد')||name.toLowerCase().includes('shahid')) finalBrand='shahid';
         else if(name.includes('سناب')||name.toLowerCase().includes('snap')) finalBrand='snapchat';
         else if(name.includes('تيك توك')||name.toLowerCase().includes('tiktok')) finalBrand='tiktok';
-        else if(name.includes('مدار')) finalBrand='madar';
-        else if(name.includes('ليبيانا')) finalBrand='libyana';
+        else if(name.toLowerCase().includes('chatgpt')||name.includes('شات جي بي تي')) finalBrand='chatgpt';
+        else if(name.toLowerCase().includes('claude')||name.includes('كلود')) finalBrand='claude';
+        else if(name.includes('آبل')||name.includes('ايتونز')||name.includes('آيتونز')||name.toLowerCase().includes('apple')||name.toLowerCase().includes('itunes')) finalBrand='apple';
+        else if(name.includes('تيليجرام')||name.toLowerCase().includes('telegram')) finalBrand='telegram';
         APP_DATA.giftCards.push({ id:newId, brand:finalBrand, nameAr:name, nominal:name, priceLYD:price, category:category, badge:badge||'جديد ✨', image:image, instructionsAr: instructions||'يتم تسليم الكود وتفعيله فوراً بعد تأكيد الطلب بالدينار الليبي.' });
     } else if(type==='new_game'){
         const newGameId='game_'+Date.now();
@@ -413,14 +415,10 @@ function populateSettingsForm(){
     const s=APP_DATA.settings;
     const wa=document.getElementById('setting-whatsapp-number');
     const pin=document.getElementById('setting-admin-pin');
-    const onePay=document.getElementById('setting-onepay-info');
     const libyana=document.getElementById('setting-libyana-info');
-    const bank=document.getElementById('setting-bank-info');
     if(wa) wa.value=s.whatsappNumber||'218920541749';
     if(pin){ pin.value=''; if(getAdminToken()){ pin.disabled=true; pin.placeholder='تُغيَّر من متغير ADMIN_PIN على الخادم'; } }
-    if(onePay) onePay.value=s.paymentMethodsInfo?.one_pay?.accountInfo||'';
     if(libyana) libyana.value=s.paymentMethodsInfo?.telecom_libyana?.accountInfo||'';
-    if(bank) bank.value=s.paymentMethodsInfo?.bank_transfer?.accountInfo||'';
     const setV=(id,v)=>{ const el=document.getElementById(id); if(el) el.value=v||''; };
     setV('setting-owner-name',s.ownerName);
     setV('setting-telegram-url',s.telegramUrl);
@@ -438,8 +436,7 @@ function saveStoreSettings(){
 
     APP_DATA.settings.whatsappNumber=wa.replace(/[^0-9]/g,'');
     if(pin) APP_DATA.settings.adminPin=pin;
-    if(!APP_DATA.settings.paymentMethodsInfo){ APP_DATA.settings.paymentMethodsInfo=JSON.parse(JSON.stringify(DEFAULT_STORE_SETTINGS.paymentMethodsInfo)); }
-    APP_DATA.settings.paymentMethodsInfo.one_pay.accountInfo=(document.getElementById('setting-onepay-info')?.value.trim()||'');
+    if(!APP_DATA.settings.paymentMethodsInfo || !APP_DATA.settings.paymentMethodsInfo.telecom_libyana){ APP_DATA.settings.paymentMethodsInfo=JSON.parse(JSON.stringify(DEFAULT_STORE_SETTINGS.paymentMethodsInfo)); }
     const lb=(document.getElementById('setting-libyana-info')?.value.trim()||'');
     if(lb) APP_DATA.settings.paymentMethodsInfo.telecom_libyana.accountInfo=lb;
     const getV=(id)=>document.getElementById(id)?.value.trim()||'';
@@ -450,7 +447,6 @@ function saveStoreSettings(){
     APP_DATA.settings.tiktokUrl=getV('setting-tiktok-url');
     APP_DATA.settings.logoImage=getV('setting-logo-image')||'logo.jpg';
     APP_DATA.settings.heroImage=getV('setting-hero-image')||'services-current.jpeg';
-    APP_DATA.settings.paymentMethodsInfo.bank_transfer.accountInfo=(document.getElementById('setting-bank-info')?.value.trim()||'');
     saveAppData(APP_DATA);
     showToast('تم حفظ إعدادات المتجر ورقم الواتساب بنجاح! 💾');
 }
@@ -545,7 +541,7 @@ function handleVaultAddCodes(e) {
     try {
         const addedCount = SahabatiDB.addBatchCodes({
             brand: brand,
-            category: brand === 'apple' ? 'ai_cards' : (brand === 'pubg' || brand === 'freefire' ? 'games' : 'streaming'),
+            category: brand === 'apple' ? 'gift_cards' : (brand === 'pubg' || brand === 'freefire' ? 'games' : (brand === 'netflix' || brand === 'shahid' ? brand : 'ai_cards')),
             productName: productName,
             notes: notes
         }, rawText);

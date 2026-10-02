@@ -166,13 +166,10 @@ function createStore() {
         const maxOrder = Number(catalog.settings && catalog.settings.maxOrderLYD) || guard.LIMITS.maxOrderLYD;
         if (total > maxOrder) return { status: 400, error: 'الحد الأقصى للطلب الواحد ' + maxOrder.toFixed(2) + ' د.ل' };
 
-        const methods = ['one_pay', 'telecom_libyana', 'telecom_madar', 'bank_transfer'];
-        const method = methods.includes(body.paymentMethod) ? body.paymentMethod : 'one_pay';
+        const method = 'telecom_libyana'; // الدفع عبر ليبيانا فقط
         const card = String(body.cardCode13 || '').replace(/[^0-9]/g, '');
-        if (method === 'telecom_libyana' || method === 'telecom_madar' || card) {
-            const problem = guard.voucherProblem(card);
-            if (problem) return { status: 400, error: problem };
-        }
+        const problem = guard.voucherProblem(card);
+        if (problem) return { status: 400, error: problem };
 
         const order = db.createOrder({
             id: guard.secureOrderId(),

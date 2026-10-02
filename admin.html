@@ -169,9 +169,7 @@
                                 <label class="text-xs font-bold text-slate-700 block mb-1">نوع الصنف:</label>
                                 <select id="admin-item-type" onchange="toggleAdminFormType(this.value)" class="glass-input w-full rounded-xl py-2.5 px-3 text-xs font-bold text-slate-800">
                                     <option value="game_package">🎮 باقة شحن لعبة (ببجي، فري فاير...)</option>
-                                    <option value="streaming">🎬 اشتراك بث (نتفليكس، شاهد...)</option>
-                                    <option value="social">🔥 سوشيال ميديا (تيك توك، سناب بلس...)</option>
-                                    <option value="telecom">📱 كرت اتصالات (ليبيانا...)</option>
+                                    <option value="gift_card">🎁 اشتراك أو بطاقة (نتفليكس، شاهد، ChatGPT، Claude، آبل...)</option>
                                     <option value="new_game">🕹️ لعبة جديدة بالكامل</option>
                                 </select>
                             </div>
@@ -199,10 +197,11 @@
                             <div>
                                 <label class="text-xs font-bold text-slate-700 block mb-1">التصنيف:</label>
                                 <select id="admin-item-category" class="glass-input w-full rounded-xl py-2 px-3 text-xs font-bold text-slate-800">
-                                    <option value="streaming">🎬 اشتراكات البث</option>
+                                    <option value="netflix">🎬 نتفليكس</option>
+                                    <option value="shahid">📺 شاهد</option>
+                                    <option value="ai_cards">🤖 ChatGPT و Claude</option>
+                                    <option value="gift_cards">🍎 آبل آيتونز</option>
                                     <option value="social">🔥 تيك توك وسناب</option>
-                                    <option value="telecom">📱 كروت ليبيانا</option>
-                                    <option value="gaming">🎮 ألعاب وبطاقات</option>
                                 </select>
                             </div>
                         </div>
@@ -435,19 +434,11 @@
                     </div>
                     <h4 class="font-extrabold text-slate-900 text-sm pt-3 border-t border-slate-100 flex items-center gap-2">
                         <i class="fa-solid fa-building-columns text-emerald-600"></i>
-                        <span>بيانات وسائل الدفع (تظهر للزبائن عند الدفع):</span>
+                        <span>بيانات الدفع عبر ليبيانا (تظهر للزبائن عند الدفع):</span>
                     </h4>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label class="text-xs font-bold text-slate-700 block mb-1">بيانات ون باي (OnePay):</label>
-                            <input type="text" id="setting-onepay-info" placeholder="خدمة ون باي" class="glass-input w-full rounded-xl py-2 px-3 text-xs font-medium text-slate-800">
-                        </div>
-                        <div>
-                            <label class="text-xs font-bold text-slate-700 block mb-1">تحويل مصرفي ليبي:</label>
-                            <input type="text" id="setting-bank-info" placeholder="اسم الحساب - رقم الحساب" class="glass-input w-full rounded-xl py-2 px-3 text-xs font-medium text-slate-800">
-                        </div>
-                        <div>
-                            <label class="text-xs font-bold text-slate-700 block mb-1">رقم تحويل رصيد ليبيانا (Libyana):</label>
+                            <label class="text-xs font-bold text-slate-700 block mb-1">نص يظهر تحت عنوان الدفع عبر ليبيانا:</label>
                             <input type="text" id="setting-libyana-info" class="glass-input w-full rounded-xl py-2 px-3 text-xs font-medium text-slate-800">
                         </div>
                         <div class="sm:col-span-2 pt-3 border-t border-slate-100">
@@ -636,10 +627,10 @@
 
     <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
 
-    <script src="js/assets.js?v=2.2"></script>
-    <script src="js/data.js?v=2.2"></script>
-    <script src="js/database.js?v=2.2"></script>
-    <script src="js/admin.js?v=2.2"></script>
+    <script src="js/assets.js?v=2.3"></script>
+    <script src="js/data.js?v=2.3"></script>
+    <script src="js/database.js?v=2.3"></script>
+    <script src="js/admin.js?v=2.3"></script>
 <script>
 window.addEventListener('DOMContentLoaded', function(){
   setTimeout(function(){
