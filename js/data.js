@@ -162,7 +162,8 @@ function buildChatApps() {
             idPlaceholder: 'مثال: 12345678',
             packages: CHAT_APP_PACKAGES.map(p => ({ id: id + '_' + p.suffix, nameAr: p.nameAr, priceLYD: p.priceLYD, icon: p.icon, popular: !!p.popular, bestValue: !!p.bestValue }))
         };
-    });
+    // نعرض فقط التطبيقات التي لها أيقونة (قرار المالك). القائمة الكاملة تبقى أعلاه حتى لا تتغير المعرّفات.
+    }).filter(app => app.image);
 }
 
 // بطاقة آيتونز تركي (تُضاف أيضاً للكتالوجات المحفوظة عبر الترحيل أدناه)
@@ -180,7 +181,7 @@ const TR_ITUNES_CARD = {
 const DEFAULT_APP_DATA = {
     settings: DEFAULT_STORE_SETTINGS,
     // رقم إصدار الكتالوج: عند تغييره يُهمل أي كتالوج قديم محفوظ في المتصفح أو على الخادم
-    catalogVersion: 6,
+    catalogVersion: 7,
     categories: [
         { id: 'games', titleAr: 'شحن ألعاب الفيديو', shortAr: 'الألعاب', icon: 'fa-gamepad', badge: 'شحن فوري ⚡' },
         { id: 'chat', titleAr: 'تطبيقات الشات والصوتية', shortAr: 'الشات والصوتية', icon: 'fa-microphone-lines', badge: 'شحن بالـ ID 🎙️' },
@@ -455,6 +456,12 @@ function migrateCatalog(data) {
             if (!g.image && CHAT_APP_IMAGES.includes(g.id)) g.image = 'images/chat/' + g.id + '.webp';
         });
         data.catalogVersion = 6;
+    }
+    if (data.catalogVersion === 6) {
+        // حذف تطبيقات الشات الافتراضية التي ليس لها صورة. التطبيقات التي أضافها المدير بنفسه
+        // (معرّف غير chat_###) أو وضع لها صورة تبقى كما هي.
+        data.games = (data.games || []).filter(g => !(g.category === 'chat' && /^chat_\d{3}$/.test(g.id) && !g.image));
+        data.catalogVersion = 7;
     }
     return data;
 }

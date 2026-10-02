@@ -82,7 +82,8 @@ test('catalog: entertainment section, chat apps, Libyana only, no telecom/PSN/St
     assert.ok(!cat.giftCards.some(c => c.category === 'telecom' || ['playstation', 'steam', 'madar', 'libyana'].includes(c.brand)));
     assert.deepEqual(Object.keys(cat.settings.paymentMethodsInfo), ['telecom_libyana']);
     const chat = cat.games.filter(g => g.category === 'chat');
-    assert.ok(chat.length > 100 && chat.every(g => g.deliveryMethod === 'id'));
+    assert.equal(chat.length, 23, 'only chat apps with an icon are listed');
+    assert.ok(chat.every(g => g.deliveryMethod === 'id' && g.image));
     const method = id => cat.games.find(g => g.id === id).deliveryMethod;
     assert.deepEqual(['pubg', 'freefire', 'tiktok_coins', 'roblox', 'clashofclans'].map(method), ['id', 'id', 'qr', 'login', 'login']);
     const r = store.createOrder(goodOrder({ paymentMethod: 'telecom_madar' }), 'z');
@@ -120,11 +121,11 @@ test('v5: similar chat app names are hidden, Turkish iTunes added, and a saved v
     process.env.ADMIN_PIN = 'secret-pin-1';
     delete require.cache[require.resolve('../store')];
     const cat = require('../store').createStore().publicCatalog();
-    assert.equal(cat.catalogVersion, 6);
+    assert.equal(cat.catalogVersion, 7);
     assert.equal(cat.giftCards.find(c => c.id === 'watchit_1m').priceLYD, 33, 'admin price kept');
     assert.ok(cat.giftCards.some(c => c.id === 'apple_itunes_tr_100' && c.category === 'gift_cards'));
-    const hidden = cat.games.filter(g => g.category === 'chat' && g.hidden).map(g => g.nameAr).sort();
-    assert.deepEqual(hidden, ['اهلا', 'لايكي', 'ليت', 'دي دي'].sort());
+    const names = cat.games.filter(g => g.category === 'chat').map(g => g.nameAr);
+    assert.ok(!['اهلا', 'لايكي', 'ليت', 'دي دي'].some(n => names.includes(n)), 'duplicates are gone');
 });
 
 test('admin PIN tolerates spaces and quotes copied into the hosting variable', () => {
@@ -163,13 +164,37 @@ test('v6: chat app icons and corrected names, applied to a saved v5 catalog with
     delete require.cache[require.resolve('../store')];
     const cat = require('../store').createStore().publicCatalog();
     const byId = id => cat.games.find(g => g.id === id);
-    assert.equal(cat.catalogVersion, 6);
+    assert.equal(cat.catalogVersion, 7);
     assert.equal(byId('chat_039').nameAr, 'ديتو لايف');
     assert.equal(byId('chat_002').image, 'images/chat/chat_002.webp');
     assert.equal(byId('chat_001').image, 'https://example.com/admin-choice.png', 'admin image kept');
     assert.equal(byId('pubg').packages[0].priceLYD, 11, 'admin price kept');
-    assert.equal(byId('chat_038').hidden, true);
+    assert.equal(byId('chat_038'), undefined, 'apps without an icon are removed');
     for (const g of cat.games.filter(g => g.image && g.image.startsWith('images/'))) {
         assert.ok(fs.existsSync(path.join(__dirname, '..', g.image)), g.image + ' exists');
     }
+});
+
+test('v7: a saved v6 catalog drops default chat apps without an icon but keeps admin-added apps and admin images', () => {
+    process.env.DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'sahabati-store-'));
+    const vm = require('node:vm');
+    const ctx = vm.createContext({ localStorage: { getItem: () => null, setItem() {} }, console });
+    vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'js', 'data.js'), 'utf8') + ';this.D=JSON.parse(JSON.stringify(DEFAULT_APP_DATA));this.B=buildChatApps;', ctx);
+    const v6 = ctx.D;
+    v6.catalogVersion = 6;
+    // a v6 catalog still listed every chat app
+    v6.games = v6.games.filter(g => g.category !== 'chat');
+    const all = ctx.B();
+    const full = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'js', 'data.js'), 'utf8').match(/const CHAT_APP_NAMES = \[([\s\S]*?)\];/)[1].replace(/'/g, '"').replace(/,\s*$/, '').replace(/^/, '[') + ']');
+    full.forEach((name, i) => v6.games.push({ id: 'chat_' + String(i + 1).padStart(3, '0'), category: 'chat', nameAr: name, packages: [] }));
+    v6.games.find(g => g.id === 'chat_050').image = 'https://example.com/x.png';
+    v6.games.push({ id: 'game_123', category: 'chat', nameAr: 'تطبيق أضافه المدير', packages: [] });
+    fs.writeFileSync(path.join(process.env.DATA_DIR, 'catalog.json'), JSON.stringify(v6));
+    delete require.cache[require.resolve('../store')];
+    const cat = require('../store').createStore().publicCatalog();
+    const ids = cat.games.filter(g => g.category === 'chat').map(g => g.id);
+    assert.ok(all.length === 23);
+    assert.ok(ids.includes('chat_050') && ids.includes('game_123'));
+    assert.ok(!ids.includes('chat_010'));
+    assert.equal(ids.length, 2, 'v6 chat entries had no image except chat_050');
 });
