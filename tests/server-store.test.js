@@ -120,11 +120,11 @@ test('v5: similar chat app names are hidden, Turkish iTunes added, and a saved v
     process.env.ADMIN_PIN = 'secret-pin-1';
     delete require.cache[require.resolve('../store')];
     const cat = require('../store').createStore().publicCatalog();
-    assert.equal(cat.catalogVersion, 5);
+    assert.equal(cat.catalogVersion, 6);
     assert.equal(cat.giftCards.find(c => c.id === 'watchit_1m').priceLYD, 33, 'admin price kept');
     assert.ok(cat.giftCards.some(c => c.id === 'apple_itunes_tr_100' && c.category === 'gift_cards'));
     const hidden = cat.games.filter(g => g.category === 'chat' && g.hidden).map(g => g.nameAr).sort();
-    assert.deepEqual(hidden, ['اهلا', 'لايكي', 'ليت'].sort());
+    assert.deepEqual(hidden, ['اهلا', 'لايكي', 'ليت', 'دي دي'].sort());
 });
 
 test('admin PIN tolerates spaces and quotes copied into the hosting variable', () => {
@@ -145,4 +145,31 @@ test('admin PIN typed with an Arabic phone keyboard (Arabic-Indic digits) is acc
     assert.match(store.adminLogin('٥٥٥٠٠٠١@'), /^[a-f0-9]{64}$/);
     assert.match(store.adminLogin('۵۵۵۰۰۰۱@'), /^[a-f0-9]{64}$/);
     assert.equal(store.adminLogin('٥٥٥٠٠٠٢@'), null);
+});
+
+test('v6: chat app icons and corrected names, applied to a saved v5 catalog without touching admin edits', () => {
+    process.env.DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'sahabati-store-'));
+    const vm = require('node:vm');
+    const ctx = vm.createContext({ localStorage: { getItem: () => null, setItem() {} }, console });
+    vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'js', 'data.js'), 'utf8') + ';this.D=JSON.parse(JSON.stringify(DEFAULT_APP_DATA));', ctx);
+    const v5 = ctx.D;
+    v5.catalogVersion = 5;
+    v5.games.forEach(g => { if (g.category === 'chat') delete g.image; });
+    const g39 = v5.games.find(g => g.id === 'chat_039'); g39.nameAr = 'تو لايف';
+    const g1 = v5.games.find(g => g.id === 'chat_001'); g1.image = 'https://example.com/admin-choice.png';
+    v5.games.find(g => g.id === 'pubg').packages[0].priceLYD = 11;
+    fs.writeFileSync(path.join(process.env.DATA_DIR, 'catalog.json'), JSON.stringify(v5));
+    process.env.ADMIN_PIN = 'secret-pin-1';
+    delete require.cache[require.resolve('../store')];
+    const cat = require('../store').createStore().publicCatalog();
+    const byId = id => cat.games.find(g => g.id === id);
+    assert.equal(cat.catalogVersion, 6);
+    assert.equal(byId('chat_039').nameAr, 'ديتو لايف');
+    assert.equal(byId('chat_002').image, 'images/chat/chat_002.webp');
+    assert.equal(byId('chat_001').image, 'https://example.com/admin-choice.png', 'admin image kept');
+    assert.equal(byId('pubg').packages[0].priceLYD, 11, 'admin price kept');
+    assert.equal(byId('chat_038').hidden, true);
+    for (const g of cat.games.filter(g => g.image && g.image.startsWith('images/'))) {
+        assert.ok(fs.existsSync(path.join(__dirname, '..', g.image)), g.image + ' exists');
+    }
 });
