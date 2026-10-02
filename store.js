@@ -79,7 +79,26 @@ function createStore() {
     } else {
         console.log('[sahabati] ADMIN_PIN مضبوط (' + adminPin.length + ' أحرف).');
     }
-    const sessions = new Map();
+    // جلسات المدير موقّعة بمفتاح محفوظ في DATA_DIR: تبقى صالحة بعد إعادة تشغيل الخادم أو النشر،
+    // وتبطل تلقائياً عند تغيير ADMIN_PIN لأن كلمة السر جزء من مفتاح التوقيع.
+    const secretFile = path.join(DATA_DIR, 'admin-secret.key');
+    let serverSecret = '';
+    try { serverSecret = fs.readFileSync(secretFile, 'utf8').trim(); } catch (e) {}
+    if (!/^[a-f0-9]{64}$/.test(serverSecret)) {
+        serverSecret = crypto.randomBytes(32).toString('hex');
+        try { writeAtomic(secretFile, serverSecret); } catch (e) { console.warn('[sahabati] تعذر حفظ مفتاح الجلسات، ستنتهي الجلسات عند إعادة التشغيل'); }
+    }
+    const signingKey = crypto.createHash('sha256').update(serverSecret + '|' + adminPin).digest();
+    const revoked = new Set();
+    function signToken(exp) {
+        const payload = String(exp);
+        const sig = crypto.createHmac('sha256', signingKey).update(payload).digest('hex');
+        return payload + '.' + sig;
+    }
+    function tokenFrom(req) {
+        const m = /^Bearer (\d{10,16}\.[a-f0-9]{64})$/.exec(req.headers['authorization'] || '');
+        return m ? m[1] : '';
+    }
 
     function adminLogin(pin) {
         const a = Buffer.from(cleanPin(pin));
@@ -89,22 +108,21 @@ function createStore() {
             console.warn('[sahabati] محاولة دخول للوحة فاشلة: طول ما كُتب ' + a.length + ' والمطلوب ' + b.length + (a.length === b.length ? ' (الطول متطابق والأحرف مختلفة)' : ''));
             return null;
         }
-        const token = crypto.randomBytes(32).toString('hex');
-        sessions.set(token, Date.now() + ADMIN_SESSION_MS);
-        return token;
+        return signToken(Date.now() + ADMIN_SESSION_MS);
     }
 
     function isAdmin(req) {
-        const m = /^Bearer ([a-f0-9]{64})$/.exec(req.headers['authorization'] || '');
-        if (!m) return false;
-        const exp = sessions.get(m[1]);
-        if (!exp || exp < Date.now()) { sessions.delete(m[1]); return false; }
-        return true;
+        const token = tokenFrom(req);
+        if (!token || revoked.has(token)) return false;
+        const [payload, sig] = token.split('.');
+        const expected = crypto.createHmac('sha256', signingKey).update(payload).digest('hex');
+        if (!crypto.timingSafeEqual(Buffer.from(sig, 'hex'), Buffer.from(expected, 'hex'))) return false;
+        return Number(payload) > Date.now();
     }
 
     function adminLogout(req) {
-        const m = /^Bearer ([a-f0-9]{64})$/.exec(req.headers['authorization'] || '');
-        if (m) sessions.delete(m[1]);
+        const token = tokenFrom(req);
+        if (token) revoked.add(token);
     }
 
     // ---------- catalog ----------
@@ -248,6 +266,18 @@ function createStore() {
         return db.db;
     }
 
+    // تأكيد الدفع وإلغاء الطلب يتمّان على الخادم مباشرة (لا يعتمدان على رفع قاعدة البيانات كاملة)
+    function adminConfirmOrder(body) {
+        const id = String(body && body.id || '');
+        const clean = v => String(v || '').trim().slice(0, 500);
+        const order = db.confirmOrderPayment(id, { username: clean(body.username), password: clean(body.password), pin: clean(body.pin), notes: clean(body.notes) });
+        return order;
+    }
+    function adminCancelOrder(body) {
+        return db.cancelOrder(String(body && body.id || ''), String(body && body.reason || 'ملغي من قبل الإدارة').slice(0, 200));
+    }
+
+    const FINAL = s => s === 'paid' || s === 'cancelled';
     // اللوحة ترسل قاعدة البيانات كاملة؛ الطلبات الجديدة التي وصلت للخادم أثناء ذلك لا تُفقد
     function mergeAdminDatabase(incoming) {
         if (!incoming || !Array.isArray(incoming.orders) || !Array.isArray(incoming.users) || !Array.isArray(incoming.voucher_codes)) {
@@ -258,12 +288,19 @@ function createStore() {
         const codeIds = new Set(incoming.voucher_codes.map(c => c && c.id));
         // أكواد حجزها الخادم لطلبات جديدة لا تعرفها اللوحة بعد
         const reservedElsewhere = db.db.voucher_codes.filter(c => !codeIds.has(c.id) && c.status !== 'available');
+        // نسخة قديمة من اللوحة لا يمكنها إرجاع طلب مؤكد أو ملغي إلى "قيد الدفع"
+        const incomingOrders = incoming.orders.map(o => {
+            const current = db.db.orders.find(x => x.id === (o && o.id));
+            return current && FINAL(current.status) && !FINAL(o.status) ? current : o;
+        });
+        const keptFinalIds = new Set(incomingOrders.filter((o, i) => o !== incoming.orders[i]).map(o => o.id));
         const merged = Object.assign({}, incoming, {
-            orders: serverOnly.concat(incoming.orders),
+            orders: serverOnly.concat(incomingOrders),
             voucher_codes: incoming.voucher_codes.map(c => {
                 const current = db.db.voucher_codes.find(x => x.id === c.id);
                 const heldByNewOrder = current && current.status !== 'available' && serverOnly.some(o => o.id === current.assignedOrderId);
-                return heldByNewOrder ? current : c;
+                const soldToKeptOrder = current && current.status === 'sold' && keptFinalIds.has(current.assignedOrderId);
+                return heldByNewOrder || soldToKeptOrder ? current : c;
             }).concat(reservedElsewhere)
         });
         db.db = merged;
@@ -274,7 +311,7 @@ function createStore() {
         adminLogin, adminLogout, isAdmin,
         publicCatalog, saveCatalog,
         createOrder, orderStatus,
-        adminDatabase, mergeAdminDatabase,
+        adminDatabase, mergeAdminDatabase, adminConfirmOrder, adminCancelOrder,
         _db: db
     };
 }

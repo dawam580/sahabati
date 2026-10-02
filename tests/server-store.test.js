@@ -57,7 +57,7 @@ test('admin login is checked on the server and the catalog never exposes the PIN
     const store = freshStore();
     assert.equal(store.adminLogin('wrong'), null);
     const token = store.adminLogin('secret-pin-1');
-    assert.match(token, /^[a-f0-9]{64}$/);
+    assert.match(token, /^\d{10,16}\.[a-f0-9]{64}$/);
     assert.equal(store.isAdmin({ headers: { authorization: 'Bearer ' + token } }), true);
     assert.equal(store.isAdmin({ headers: {} }), false);
     assert.equal(JSON.stringify(store.publicCatalog()).includes('adminPin'), false);
@@ -136,8 +136,8 @@ test('admin PIN tolerates spaces and quotes copied into the hosting variable', (
     process.env.ADMIN_PIN = '  "Pin@2026x" \n';
     delete require.cache[require.resolve('../store')];
     const store = require('../store').createStore();
-    assert.match(store.adminLogin('Pin@2026x'), /^[a-f0-9]{64}$/);
-    assert.match(store.adminLogin(' Pin@2026x '), /^[a-f0-9]{64}$/);
+    assert.match(store.adminLogin('Pin@2026x'), /^\d{10,16}\.[a-f0-9]{64}$/);
+    assert.match(store.adminLogin(' Pin@2026x '), /^\d{10,16}\.[a-f0-9]{64}$/);
     assert.equal(store.adminLogin('pin@2026x'), null, 'still case-sensitive');
 });
 
@@ -146,8 +146,8 @@ test('admin PIN typed with an Arabic phone keyboard (Arabic-Indic digits) is acc
     process.env.ADMIN_PIN = '5550001@';
     delete require.cache[require.resolve('../store')];
     const store = require('../store').createStore();
-    assert.match(store.adminLogin('٥٥٥٠٠٠١@'), /^[a-f0-9]{64}$/);
-    assert.match(store.adminLogin('۵۵۵۰۰۰۱@'), /^[a-f0-9]{64}$/);
+    assert.match(store.adminLogin('٥٥٥٠٠٠١@'), /^\d{10,16}\.[a-f0-9]{64}$/);
+    assert.match(store.adminLogin('۵۵۵۰۰۰۱@'), /^\d{10,16}\.[a-f0-9]{64}$/);
     assert.equal(store.adminLogin('٥٥٥٠٠٠٢@'), null);
 });
 
@@ -200,4 +200,30 @@ test('v7: a saved v6 catalog drops default chat apps without an icon but keeps a
     assert.ok(ids.includes('chat_050') && ids.includes('game_123'));
     assert.ok(!ids.includes('chat_010'));
     assert.equal(ids.length, 2, 'v6 chat entries had no image except chat_050');
+});
+
+test('admin sessions survive a server restart and end when ADMIN_PIN changes', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sahabati-store-'));
+    const boot = pin => { process.env.DATA_DIR = dir; process.env.ADMIN_PIN = pin; delete require.cache[require.resolve('../store')]; return require('../store').createStore(); };
+    const token = boot('pin-one-1').adminLogin('pin-one-1');
+    const req = { headers: { authorization: 'Bearer ' + token } };
+    assert.equal(boot('pin-one-1').isAdmin(req), true, 'same secret + same PIN after restart');
+    assert.equal(boot('pin-two-2').isAdmin(req), false, 'changing the PIN signs everyone out');
+    assert.equal(boot('pin-one-1').isAdmin({ headers: { authorization: 'Bearer ' + token.replace(/.$/, c => c === '0' ? '1' : '0') } }), false, 'tampered token rejected');
+});
+
+test('admin confirms on the server; a stale full-database upload cannot turn a paid order back to pending', () => {
+    const store = freshStore();
+    const r = store.createOrder(goodOrder(), 'ip-1');
+    const staleSnapshot = JSON.parse(JSON.stringify(store.adminDatabase()));
+    const paid = store.adminConfirmOrder({ id: r.order.id });
+    assert.equal(paid.status, 'paid');
+    assert.ok(/^US-\d$/.test(paid.vouchers[0].voucherCode));
+    store.mergeAdminDatabase(staleSnapshot); // the panel still had the order as pending
+    const view = store.orderStatus({ phone: '0912345678', ids: [r.order.id] }, 'ip-1').orders[0];
+    assert.equal(view.status, 'paid');
+    assert.equal(view.vouchers[0].voucherCode, paid.vouchers[0].voucherCode);
+    const code = store.adminDatabase().voucher_codes.find(c => c.assignedOrderId === r.order.id);
+    assert.equal(code.status, 'sold');
+    assert.throws(() => store.adminCancelOrder({ id: r.order.id }), /مدفوع/);
 });
