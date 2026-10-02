@@ -147,8 +147,11 @@ function createStore() {
                 const game = catalog.games.find(g => g.id === item.gameId);
                 const pkg = game.packages.find(p => p.id === item.packageId);
                 item.titleAr = game.nameAr.split('(')[0].trim() + ' - ' + pkg.nameAr;
-                if (game.id === 'pubg') {
-                    item.meta = 'كود شدات ببجي';
+                const method = game.deliveryMethod || 'id';
+                if (method === 'qr') {
+                    item.meta = 'الشحن عبر رمز QR';
+                } else if (method === 'login') {
+                    item.meta = 'الشحن عبر تسجيل الدخول';
                 } else {
                     const idProblem = guard.playerIdProblem(item.playerId);
                     if (idProblem) return { status: 400, error: idProblem };

@@ -27,74 +27,155 @@ const DEFAULT_STORE_SETTINGS = {
     }
 };
 
+// ================= تطبيقات الشات والصوتية (الشحن بالـ ID) =================
+// المعرّف ثابت حسب الترتيب: أضف التطبيقات الجديدة في آخر القائمة فقط.
+const CHAT_APP_NAMES = [
+    'اب لايف',
+    'از لايف',
+    'ايمو شات',
+    'اب فون',
+    'الو شات',
+    'ام سي يو بارتي',
+    'اور تالك',
+    'اولاميت',
+    'اولو لايف',
+    'اهلا',
+    'اهلا شات',
+    'ايفن شات',
+    'بات لايف',
+    'بارتي ستار',
+    'باور لايف',
+    'بومو شات',
+    'بومو لايف',
+    'بولالا',
+    'بولي شات',
+    'بست لايف',
+    'بيلا شات',
+    'بينيمو شات',
+    'تادا شات',
+    'تاكا تالك',
+    'تامي شات',
+    'تايا شات',
+    'توب توب',
+    'توب فويس',
+    'توميل',
+    'تي لايف',
+    'جاكو شات',
+    'جانجو شات',
+    'جيو لايف',
+    'جيمي لايف',
+    'حكي شات',
+    'دانا شات',
+    'دولو لايف',
+    'دي دي',
+    'تو لايف',
+    'ديكا لايف',
+    'دي مو شات',
+    'روح',
+    'روستار',
+    'روكا لايف',
+    'زار شات',
+    'زافا لايف',
+    'زينا لايف',
+    'سايا',
+    'لايكي',
+    'ستار ميكر',
+    'سعادة لايف',
+    'سلام',
+    'صحرا شات',
+    'سوبر لايف',
+    'سوبر ميت',
+    'سوغو شات',
+    'سول ستار',
+    'سول شات',
+    'سوها',
+    'سويو',
+    'سيلا',
+    'شاتا',
+    'شاتي',
+    'شاميت',
+    'شباب',
+    'صدفة شات',
+    'صوفيا شات',
+    'طيب شات',
+    'عرب ستار',
+    'عمار شات',
+    'عيوني شات',
+    'غلا ستار',
+    'غاميت لايف',
+    'فانسي لايف',
+    'فن اب',
+    'فور بارتي',
+    'فور شات',
+    'فور فن',
+    'فوفو شات',
+    'فون',
+    'في في بارتي',
+    'فيل شات',
+    'كارني لايف',
+    'كراك شات',
+    'كراش لايف',
+    'كواي',
+    'كوكو',
+    'كيتي لايف',
+    'كيو لايف',
+    'لودو لايف',
+    'لاسكي',
+    'لكا شات',
+    'لكي شات',
+    'لما شات',
+    'لمي شات',
+    'ليام',
+    'لايت شات',
+    'لايكي لايف',
+    'لوكي',
+    'ليت شات',
+    'ليت',
+    'ماي شات',
+    'ليغو لايف'
+];
+// باقات افتراضية بالقيمة: يحصل العميل على رصيد يعادل المبلغ. يمكن تعديلها لكل تطبيق من لوحة الإدارة.
+const CHAT_APP_PACKAGES = [
+    { suffix: 'v10', nameAr: 'شحن بقيمة 10 د.ل', priceLYD: 10.00, icon: '🪙' },
+    { suffix: 'v20', nameAr: 'شحن بقيمة 20 د.ل', priceLYD: 20.00, icon: '🪙' },
+    { suffix: 'v50', nameAr: 'شحن بقيمة 50 د.ل', priceLYD: 50.00, icon: '💎', popular: true },
+    { suffix: 'v100', nameAr: 'شحن بقيمة 100 د.ل', priceLYD: 100.00, icon: '👑', bestValue: true }
+];
+function buildChatApps() {
+    return CHAT_APP_NAMES.map((name, i) => {
+        const id = 'chat_' + String(i + 1).padStart(3, '0');
+        return {
+            id: id,
+            category: 'chat',
+            deliveryMethod: 'id',
+            nameAr: name,
+            nameEn: name,
+            idLabelAr: 'معرّف حسابك (ID) في ' + name + ':',
+            idPlaceholder: 'مثال: 12345678',
+            packages: CHAT_APP_PACKAGES.map(p => ({ id: id + '_' + p.suffix, nameAr: p.nameAr, priceLYD: p.priceLYD, icon: p.icon, popular: !!p.popular, bestValue: !!p.bestValue }))
+        };
+    });
+}
+
 const DEFAULT_APP_DATA = {
     settings: DEFAULT_STORE_SETTINGS,
     // رقم إصدار الكتالوج: عند تغييره يُهمل أي كتالوج قديم محفوظ في المتصفح أو على الخادم
-    catalogVersion: 3,
+    catalogVersion: 4,
     categories: [
-        {
-            id: 'games',
-            titleAr: 'شحن ألعاب الفيديو',
-            shortAr: 'الألعاب',
-            titleEn: 'Game Top-ups',
-            subtitleAr: 'ببجي موبايل، فري فاير، روبلوكس، كوينز بيس، كلاش أوف كلانس',
-            icon: 'fa-gamepad',
-            badge: 'شحن فوري بالمعرّف ⚡'
-        },
-        {
-            id: 'netflix',
-            titleAr: 'اشتراكات نتفليكس',
-            shortAr: 'نتفليكس',
-            titleEn: 'Netflix',
-            subtitleAr: 'نتفليكس 4K UHD ملف خاص بك',
-            icon: 'fa-film',
-            brand: 'netflix',
-            badge: '4K UHD 🔥'
-        },
-        {
-            id: 'shahid',
-            titleAr: 'اشتراكات شاهد VIP',
-            shortAr: 'شاهد',
-            titleEn: 'Shahid VIP',
-            subtitleAr: 'شاهد VIP حساب كامل (شاشات وهواتف)',
-            icon: 'fa-tv',
-            badge: 'حساب كامل 📺'
-        },
-        {
-            id: 'social',
-            titleAr: 'سوشيال ميديا وعملات',
-            shortAr: 'سوشيال',
-            titleEn: 'Social Coins & Plus',
-            subtitleAr: 'عملات تيك توك TikTok، سناب شات بلس Snapchat+، تليجرام بريميوم',
-            icon: 'fa-coins',
-            badge: 'تيك توك & سناب 🔥'
-        },
-        {
-            id: 'ai_cards',
-            titleAr: 'اشتراكات ChatGPT و Claude',
-            shortAr: 'ChatGPT و Claude',
-            titleEn: 'AI Subscriptions',
-            subtitleAr: 'اشتراك ChatGPT Plus واشتراك Claude Pro',
-            icon: 'fa-robot',
-            badge: 'ذكاء اصطناعي 🤖'
-        },
-        {
-            id: 'gift_cards',
-            titleAr: 'بطاقات آبل آيتونز',
-            shortAr: 'آبل آيتونز',
-            titleEn: 'Apple Gift Cards',
-            subtitleAr: 'بطاقات متجر آبل (App Store & iTunes)',
-            icon: 'fa-apple',
-            brand: 'apple',
-            badge: 'آبل 🍎'
-        }
+        { id: 'games', titleAr: 'شحن ألعاب الفيديو', shortAr: 'الألعاب', icon: 'fa-gamepad', badge: 'شحن فوري ⚡' },
+        { id: 'chat', titleAr: 'تطبيقات الشات والصوتية', shortAr: 'الشات والصوتية', icon: 'fa-microphone-lines', badge: 'شحن بالـ ID 🎙️' },
+        { id: 'entertainment', titleAr: 'الترفيه والمشاهدة', shortAr: 'الترفيه', icon: 'fa-film', brand: 'netflix', badge: 'نتفليكس · شاهد · ديزني 🎬' },
+        { id: 'social', titleAr: 'سوشيال ميديا', shortAr: 'سوشيال', icon: 'fa-coins', badge: 'سناب · تيليجرام 🔥' },
+        { id: 'ai_cards', titleAr: 'اشتراكات ChatGPT و Claude', shortAr: 'ChatGPT و Claude', icon: 'fa-robot', badge: 'ذكاء اصطناعي 🤖' },
+        { id: 'gift_cards', titleAr: 'بطاقات آبل آيتونز', shortAr: 'آبل آيتونز', icon: 'fa-apple', brand: 'apple', badge: 'آبل 🍎' }
     ],
     games: [
         {
             id: 'pubg',
+            deliveryMethod: 'id', // id | qr | login
             nameAr: 'ببجي موبايل (PUBG Mobile UC)',
             nameEn: 'PUBG Mobile',
-            badge: 'أكواد وشدات فورية 🔥',
+            badge: 'شحن بالـ ID ⚡',
             icon: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/pubg.png',
             logoSvg: '<span class="text-amber-400 font-black text-xs tracking-wider">PUBG</span>',
             idLabelAr: 'أدخل معرّف اللاعب (Player ID):',
@@ -116,6 +197,7 @@ const DEFAULT_APP_DATA = {
         },
         {
             id: 'freefire',
+            deliveryMethod: 'id',
             nameAr: 'فري فاير (Free Fire Diamonds)',
             nameEn: 'Free Fire',
             badge: 'شحن فوري ⚡',
@@ -134,13 +216,13 @@ const DEFAULT_APP_DATA = {
         },
         {
             id: 'tiktok_coins',
+            deliveryMethod: 'qr',
             nameAr: 'عملات تيك توك (TikTok Coins)',
             nameEn: 'TikTok Coins',
             badge: 'شحن يوزر مباشر 🎵',
             icon: 'https://upload.wikimedia.org/wikipedia/en/a/a9/TikTok_logo.svg',
             logoSvg: '<i class="fa-brands fa-tiktok text-rose-400 text-lg"></i>',
-            idLabelAr: 'اسم مستخدم تيك توك (@Username):',
-            idPlaceholder: 'مثال: @username',
+            deliveryNoteAr: 'الشحن عبر رمز QR: بعد إرسال الطلب، افتح تيك توك ← الملف الشخصي ← القائمة ← الرصيد، وأرسل لنا صورة رمز QR عبر واتساب لنشحن العملات مباشرة.',
             packages: [
                 { id: 'tt_100', nameAr: '100 عملة تيك توك', priceLYD: 10.00, icon: '🪙' },
                 { id: 'tt_200', nameAr: '200 عملة تيك توك', priceLYD: 20.00, icon: '🪙' },
@@ -155,13 +237,13 @@ const DEFAULT_APP_DATA = {
         },
         {
             id: 'roblox',
+            deliveryMethod: 'login',
             nameAr: 'روبلوكس (Roblox Robux)',
             nameEn: 'Roblox Robux',
             badge: 'شحن فوري باليوزر 🧱',
             icon: '07_roblox_promotion_banner.png',
             logoSvg: '<span class="text-sky-400 font-black text-xs">ROBLOX</span>',
-            idLabelAr: 'اسم مستخدم روبلوكس (Username):',
-            idPlaceholder: 'مثال: RobloxPlayer123',
+            deliveryNoteAr: 'الشحن عبر تسجيل الدخول: بعد إرسال الطلب يتواصل معك فريقنا عبر واتساب الرسمي لتسجيل الدخول إلى حسابك وشحن الروبوكس. لا تُحفظ بيانات حسابك في الموقع.',
             packages: [
                 { id: 'rb_80', nameAr: '80 Robux رصيد روبلوكس', priceLYD: 10.00, icon: 'R$' },
                 { id: 'rb_400', nameAr: '400 Robux رصيد روبلوكس', priceLYD: 35.00, popular: true, icon: 'R$' },
@@ -171,6 +253,7 @@ const DEFAULT_APP_DATA = {
         },
         {
             id: 'efootball',
+            deliveryMethod: 'id',
             nameAr: 'إي فوتبول بيس (eFootball™ Coins)',
             nameEn: 'eFootball PES',
             badge: 'كوينز بيس ⚽',
@@ -187,13 +270,13 @@ const DEFAULT_APP_DATA = {
         },
         {
             id: 'clashofclans',
+            deliveryMethod: 'login',
             nameAr: 'كلاش أوف كلانس (Clash of Clans)',
             nameEn: 'Clash of Clans',
             badge: 'جواهر وباس ⚔️',
             icon: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/clash-of-clans.png',
             logoSvg: '<span class="text-amber-300 font-black text-xs">CLASH</span>',
-            idLabelAr: 'رمز تاغ اللاعب (#PlayerTag):',
-            idPlaceholder: 'مثال: #9ABC123XYZ',
+            deliveryNoteAr: 'الشحن عبر تسجيل الدخول: بعد إرسال الطلب يتواصل معك فريقنا عبر واتساب الرسمي لتسجيل الدخول إلى حسابك (Supercell ID) وشحن الجواهر. لا تُحفظ بيانات حسابك في الموقع.',
             packages: [
                 { id: 'coc_goldpass', nameAr: 'تذكرة الجولد باس (Gold Pass)', priceLYD: 35.00, popular: true, icon: '🎫' },
                 { id: 'coc_500', nameAr: '500 جوهرة كلاش (Gems)', priceLYD: 30.00, icon: '💎' },
@@ -207,7 +290,7 @@ const DEFAULT_APP_DATA = {
         {
             id: 'netflix_4k_1m',
             brand: 'netflix',
-            category: 'netflix',
+            category: 'entertainment',
             nameAr: 'اشتراك نتفليكس (Netflix 4K) - شهر واحد',
             nominal: '1 Month - Profile User 4K',
             priceLYD: 45.00,
@@ -220,7 +303,7 @@ const DEFAULT_APP_DATA = {
         {
             id: 'shahid_vip_full',
             brand: 'shahid',
-            category: 'shahid',
+            category: 'entertainment',
             nameAr: 'اشتراك شاهد VIP (Shahid VIP) - حساب كامل',
             nominal: 'Full Account - جميع الأجهزة',
             priceLYD: 40.00,
@@ -232,15 +315,35 @@ const DEFAULT_APP_DATA = {
         {
             id: 'disney_plus_1m',
             brand: 'disney',
-            category: 'streaming',
+            category: 'entertainment',
             nameAr: 'اشتراك ديزني بلس (Disney+) - شهر كامل',
             nominal: '1 Month Subscription',
             priceLYD: 35.00,
             badge: 'أفلام ومسلسلات 4K ✨',
             instructionsAr: 'اشتراك ديزني بلس الرسمي لمدة شهر كامل مع دعم جميع الأجهزة ودقة 4K.'
         },
+        {
+            id: 'watchit_1m',
+            brand: 'watchit',
+            category: 'entertainment',
+            nameAr: 'اشتراك واتش إت (WATCH IT) - شهر كامل',
+            nominal: '1 Month Subscription',
+            priceLYD: 30.00,
+            badge: 'مسلسلات وأفلام عربية 🎬',
+            instructionsAr: 'اشتراك واتش إت لمدة شهر كامل لمشاهدة المسلسلات والأفلام العربية الحصرية على جميع الأجهزة.'
+        },
+        {
+            id: 'crunchyroll_1m',
+            brand: 'crunchyroll',
+            category: 'entertainment',
+            nameAr: 'اشتراك كرانشي رول (Crunchyroll) - شهر كامل',
+            nominal: '1 Month Premium',
+            priceLYD: 30.00,
+            badge: 'أنمي بدون إعلانات 🍥',
+            instructionsAr: 'اشتراك كرانشي رول بريميوم لمدة شهر كامل لمشاهدة الأنمي بدون إعلانات وبأعلى جودة.'
+        },
 
-        // ================= 2. SOCIAL MEDIA & COINS =================
+        // ================= 2. SOCIAL MEDIA =================
         {
             id: 'snapchat_plus_3m',
             brand: 'snapchat',
@@ -272,36 +375,6 @@ const DEFAULT_APP_DATA = {
             priceLYD: 65.00,
             badge: 'تفعيل باليوزر ⚡',
             instructionsAr: 'تفعيل رسمي لاشتراك تيليجرام بريميوم عبر اسم المستخدم (@username) الخاص بك مباشرة.'
-        },
-        {
-            id: 'card_tt_335',
-            brand: 'tiktok',
-            category: 'social',
-            nameAr: '335 عملة تيك توك (TikTok Coins)',
-            nominal: '335 Coins',
-            priceLYD: 35.00,
-            badge: 'الأكثر طلباً 🔥',
-            instructionsAr: 'شحن مباشر على اسم المستخدم (@Username) الخاص بك على تيك توك فور تأكيد الطلب.'
-        },
-        {
-            id: 'card_tt_960',
-            brand: 'tiktok',
-            category: 'social',
-            nameAr: '960 عملة تيك توك (TikTok Coins)',
-            nominal: '960 Coins',
-            priceLYD: 100.00,
-            badge: '100 د.ل ✨',
-            instructionsAr: 'شحن مباشر على اسم المستخدم (@Username) الخاص بك على تيك توك فور تأكيد الطلب.'
-        },
-        {
-            id: 'card_tt_3500',
-            brand: 'tiktok',
-            category: 'social',
-            nameAr: '3,500 عملة تيك توك (TikTok Coins)',
-            nominal: '3500 Coins',
-            priceLYD: 365.00,
-            badge: 'أفضل توفير 🚀',
-            instructionsAr: 'شحن مباشر على اسم المستخدم (@Username) الخاص بك على تيك توك فور تأكيد الطلب.'
         },
 
         // ================= 3. AI SUBSCRIPTIONS & APPLE GIFT CARDS =================
@@ -337,6 +410,8 @@ const DEFAULT_APP_DATA = {
         }
     ]
 };
+
+DEFAULT_APP_DATA.games = DEFAULT_APP_DATA.games.concat(buildChatApps());
 
 // LocalStorage Persistence Layer
 function loadAppData() {

@@ -191,65 +191,149 @@ function switchAdminTab(tabName){
     if(tabName==='notices'){ try{renderNoticesAdmin();}catch(e){} }
 }
 
+// ---------- Product manager (إدارة المنتجات والأسعار) ----------
+const ADMIN_SECTION_NAMES={ games:'الألعاب', chat:'الشات والصوتية', entertainment:'الترفيه', ai_cards:'ChatGPT و Claude', gift_cards:'آبل آيتونز', social:'سوشيال' };
+const ADMIN_METHOD_NAMES={ id:'🆔 بالمعرّف', qr:'🔳 QR', login:'🔐 تسجيل دخول' };
+function adminGameSection(g){ return g.category||'games'; }
+
+// عدد القطع المباعة لكل منتج من الطلبات المدفوعة
+function adminSalesIndex(){
+    const idx={};
+    let orders=[];
+    try{ orders=(typeof SahabatiDB!=='undefined' && SahabatiDB.getAllOrders) ? SahabatiDB.getAllOrders() : []; }catch(e){}
+    orders.filter(o=>o.status==='paid'||o.paymentConfirmed).forEach(o=>{
+        (o.items||[]).forEach(i=>{
+            const key=i.type==='game' ? ('p:'+i.packageId) : ('c:'+i.cardId);
+            idx[key]=(idx[key]||0)+(Number(i.quantity)||1);
+            if(i.type==='game'){ idx['g:'+i.gameId]=(idx['g:'+i.gameId]||0)+(Number(i.quantity)||1); }
+        });
+    });
+    return { idx, total: orders.length, paid: orders.filter(o=>o.status==='paid'||o.paymentConfirmed).length };
+}
+
+function adminPriceInput(kind, a, b, price){
+    const id='price-'+kind+'-'+a+(b?'-'+b:'');
+    return '<input type="number" min="0.5" step="0.5" id="'+escapeAttr(id)+'" value="'+escapeAttr(Number(price).toFixed(2))+'" class="adm-price">'+
+        '<button type="button" class="adm-btn save" title="حفظ السعر" onclick="adminSavePrice(\''+kind+'\',\''+escapeAttr(a)+'\',\''+escapeAttr(b||'')+'\')"><i class="fa-solid fa-floppy-disk"></i></button>';
+}
+function adminRowActions(kind, a, b, hidden){
+    return '<button type="button" class="adm-btn" title="تعديل الاسم" onclick="adminRename(\''+kind+'\',\''+escapeAttr(a)+'\',\''+escapeAttr(b||'')+'\')"><i class="fa-solid fa-pen"></i></button>'+
+        '<button type="button" class="adm-btn '+(hidden?'off':'')+'" title="'+(hidden?'إظهار للزبائن':'إخفاء عن الزبائن')+'" onclick="adminToggleHidden(\''+kind+'\',\''+escapeAttr(a)+'\',\''+escapeAttr(b||'')+'\')"><i class="fa-solid '+(hidden?'fa-eye-slash':'fa-eye')+'"></i></button>'+
+        '<button type="button" class="adm-btn danger" title="حذف" onclick="adminDelete(\''+kind+'\',\''+escapeAttr(a)+'\',\''+escapeAttr(b||'')+'\')"><i class="fa-solid fa-trash"></i></button>';
+}
+
 function renderAdminPanel(){
+    const sales=adminSalesIndex();
     const totalPackages=APP_DATA.games.reduce((s,g)=>s+g.packages.length,0);
     const sg=document.getElementById('admin-stat-games');
     const sc=document.getElementById('admin-stat-cards');
     const so=document.getElementById('admin-stat-orders');
-    if(sg) sg.textContent=APP_DATA.games.length+' ألعاب وعملات ('+totalPackages+' باقة)';
+    if(sg) sg.textContent=APP_DATA.games.length+' ('+totalPackages+' باقة)';
     if(sc) sc.textContent=APP_DATA.giftCards.length+' بطاقات واشتراكات';
-    const orders=(typeof loadJSON === 'function' ? loadJSON('sahabati_orders', []) : []);
-    if(so) so.textContent=orders.length+' طلب';
+    if(so) so.textContent=sales.paid+' / '+sales.total;
 
     const gameSelect=document.getElementById('admin-target-game');
-    if(gameSelect){ gameSelect.innerHTML=APP_DATA.games.map(g=>'<option value="'+escapeAttr(g.id)+'">'+escapeHtml(g.nameAr)+'</option>').join(''); }
+    if(gameSelect){ gameSelect.innerHTML=APP_DATA.games.map(g=>'<option value="'+escapeAttr(g.id)+'">'+escapeHtml(g.nameAr)+' — '+escapeHtml(ADMIN_SECTION_NAMES[adminGameSection(g)]||'')+'</option>').join(''); }
 
-    const tableContainer=document.getElementById('admin-items-table-container');
-    if(tableContainer){
-        let html='<div class="space-y-4">'+
-            '<div class="border rounded-2xl p-4 bg-white/70">'+
-                '<h4 class="font-bold text-xs text-sky-900 mb-3 flex items-center gap-2"><i class="fa-solid fa-gamepad text-sky-600"></i><span>باقات شحن الألعاب الحالية ('+totalPackages+' باقة):</span></h4>'+
-                '<div class="space-y-2">'+
-                    APP_DATA.games.map(game=>{
-                        return '<div class="p-3 rounded-xl bg-slate-50 border border-slate-200">'+
-                            '<div class="font-extrabold text-xs text-slate-800 mb-2">'+escapeHtml(game.nameAr)+'</div>'+
-                            '<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">'+
-                                game.packages.map(pkg=>{
-                                    return '<div class="p-2 rounded-lg bg-white border border-slate-200 flex items-center justify-between text-xs">'+
-                                        '<div><span class="font-bold text-slate-800 block">'+escapeHtml(pkg.nameAr)+'</span><span class="font-black text-emerald-600">'+escapeHtml(formatPrice(pkg.priceLYD))+'</span></div>'+
-                                        '<div class="flex gap-1">'+
-                                            '<button onclick="editPackagePrice(\''+escapeAttr(game.id)+'\',\''+escapeAttr(pkg.id)+'\')" class="px-2 py-1 rounded bg-sky-50 text-sky-700 hover:bg-sky-100 font-bold text-[10px]"><i class="fa-solid fa-pen"></i></button>'+
-                                            '<button onclick="deletePackage(\''+escapeAttr(game.id)+'\',\''+escapeAttr(pkg.id)+'\')" class="px-2 py-1 rounded bg-rose-50 text-rose-700 hover:bg-rose-100 font-bold text-[10px]"><i class="fa-solid fa-trash"></i></button>'+
-                                        '</div>'+
-                                    '</div>';
-                                }).join('')+
-                            '</div>'+
-                        '</div>';
-                    }).join('')+
+    const box=document.getElementById('admin-items-table-container');
+    if(!box) return;
+    const q=(document.getElementById('admin-product-search')?.value||'').trim().toLowerCase();
+    const section=document.getElementById('admin-product-section')?.value||'all';
+    const match=(name)=>!q || String(name||'').toLowerCase().includes(q);
+    const sectionOk=(sec, hidden)=> section==='all' || (section==='hidden' ? hidden : sec===section);
+
+    const games=APP_DATA.games.filter(g=>{
+        const anyHidden=g.hidden || g.packages.some(p=>p.hidden);
+        return sectionOk(adminGameSection(g), anyHidden) && (match(g.nameAr) || g.packages.some(p=>match(p.nameAr)));
+    });
+    const cards=APP_DATA.giftCards.filter(c=>sectionOk(c.category, !!c.hidden) && match(c.nameAr));
+
+    let html='';
+    if(games.length){
+        html+='<div class="adm-group-title"><i class="fa-solid fa-gamepad"></i> الألعاب وتطبيقات الشات ('+games.length+')</div>';
+        html+=games.slice(0,150).map(g=>{
+            const sold=sales.idx['g:'+g.id]||0;
+            return '<details class="adm-game'+(g.hidden?' is-hidden':'')+'"'+(q?' open':'')+'>'+
+                '<summary><span class="adm-name">'+escapeHtml(g.nameAr)+'</span>'+
+                    '<span class="adm-chip">'+escapeHtml(ADMIN_SECTION_NAMES[adminGameSection(g)]||'')+'</span>'+
+                    '<span class="adm-chip">'+escapeHtml(ADMIN_METHOD_NAMES[g.deliveryMethod||'id'])+'</span>'+
+                    (g.hidden?'<span class="adm-chip warn">مخفي</span>':'')+
+                    '<span class="adm-chip ok">مبيع: '+sold+'</span></summary>'+
+                '<div class="adm-game-actions">'+
+                    '<label class="adm-mini">طريقة الشحن: <select onchange="adminSetMethod(\''+escapeAttr(g.id)+'\',this.value)">'+
+                        ['id','qr','login'].map(m=>'<option value="'+m+'"'+((g.deliveryMethod||'id')===m?' selected':'')+'>'+ADMIN_METHOD_NAMES[m]+'</option>').join('')+
+                    '</select></label>'+
+                    adminRowActions('game', g.id, '', !!g.hidden)+
                 '</div>'+
-            '</div>'+
-            '<div class="border rounded-2xl p-4 bg-white/70">'+
-                '<h4 class="font-bold text-xs text-indigo-900 mb-3 flex items-center gap-2"><i class="fa-solid fa-gift text-indigo-600"></i><span>بطاقات الهدايا واشتراكات البث الحالية ('+APP_DATA.giftCards.length+' عنصر):</span></h4>'+
-                '<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">'+
-                    APP_DATA.giftCards.map(card=>{
-                        return '<div class="p-2.5 rounded-xl bg-white border border-slate-200 flex items-center justify-between text-xs">'+
-                            '<div><span class="font-bold text-slate-800 block line-clamp-1">'+escapeHtml(card.nameAr)+'</span><span class="font-black text-emerald-600">'+escapeHtml(formatPrice(card.priceLYD))+'</span></div>'+
-                            '<div class="flex gap-1 flex-shrink-0">'+
-                                '<button onclick="editGiftCardPrice(\''+escapeAttr(card.id)+'\')" class="px-2 py-1 rounded bg-sky-50 text-sky-700 hover:bg-sky-100 font-bold text-[10px]"><i class="fa-solid fa-pen"></i></button>'+
-                                '<button onclick="deleteGiftCard(\''+escapeAttr(card.id)+'\')" class="px-2 py-1 rounded bg-rose-50 text-rose-700 hover:bg-rose-100 font-bold text-[10px]"><i class="fa-solid fa-trash"></i></button>'+
-                            '</div>'+
-                        '</div>';
-                    }).join('')+
+                '<div class="adm-rows">'+
+                    g.packages.map(p=>'<div class="adm-row'+(p.hidden?' is-hidden':'')+'">'+
+                        '<div class="adm-row-name"><span>'+escapeHtml(p.nameAr)+'</span><small>مبيع: '+(sales.idx['p:'+p.id]||0)+(p.hidden?' · مخفي':'')+'</small></div>'+
+                        '<div class="adm-row-tools">'+adminPriceInput('pkg', g.id, p.id, p.priceLYD)+adminRowActions('pkg', g.id, p.id, !!p.hidden)+'</div>'+
+                    '</div>').join('')+
                 '</div>'+
-            '</div>'+
-        '</div>';
-        tableContainer.innerHTML=html;
+            '</details>';
+        }).join('');
+        if(games.length>150) html+='<p class="adm-note">يُعرض أول 150 نتيجة، استخدم البحث للوصول إلى البقية.</p>';
     }
+    if(cards.length){
+        html+='<div class="adm-group-title"><i class="fa-solid fa-gift"></i> الاشتراكات والبطاقات ('+cards.length+')</div><div class="adm-rows">';
+        html+=cards.map(c=>'<div class="adm-row'+(c.hidden?' is-hidden':'')+'">'+
+            '<div class="adm-row-name"><span>'+escapeHtml(c.nameAr)+'</span><small>'+escapeHtml(ADMIN_SECTION_NAMES[c.category]||c.category||'')+' · مبيع: '+(sales.idx['c:'+c.id]||0)+(c.hidden?' · مخفي':'')+'</small></div>'+
+            '<div class="adm-row-tools">'+adminPriceInput('card', c.id, '', c.priceLYD)+adminRowActions('card', c.id, '', !!c.hidden)+'</div>'+
+        '</div>').join('')+'</div>';
+    }
+    box.innerHTML=html||'<p class="adm-note">لا توجد منتجات مطابقة للبحث.</p>';
+}
+
+function adminFind(kind, a, b){
+    if(kind==='card') return APP_DATA.giftCards.find(c=>c.id===a);
+    const game=APP_DATA.games.find(g=>g.id===a);
+    if(kind==='game') return game;
+    return game && game.packages.find(p=>p.id===b);
+}
+function adminSavePrice(kind, a, b){
+    const item=adminFind(kind,a,b); if(!item) return;
+    const input=document.getElementById('price-'+kind+'-'+a+(b?'-'+b:''));
+    const v=parseFloat(input && input.value);
+    if(!isFinite(v) || v<=0){ showToast('أدخل سعراً صحيحاً أكبر من صفر','fa-triangle-exclamation'); return; }
+    item.priceLYD=Math.round(v*100)/100;
+    saveAppData(APP_DATA); renderAdminPanel();
+    showToast('تم حفظ السعر: '+formatPrice(item.priceLYD));
+}
+function adminRename(kind, a, b){
+    const item=adminFind(kind,a,b); if(!item) return;
+    const name=prompt('الاسم الجديد:', item.nameAr);
+    if(name===null) return;
+    const clean=String(name).replace(/[<>]/g,'').trim();
+    if(clean.length<2){ showToast('الاسم قصير جداً','fa-triangle-exclamation'); return; }
+    item.nameAr=clean;
+    saveAppData(APP_DATA); renderAdminPanel(); showToast('تم تعديل الاسم');
+}
+function adminToggleHidden(kind, a, b){
+    const item=adminFind(kind,a,b); if(!item) return;
+    item.hidden=!item.hidden;
+    saveAppData(APP_DATA); renderAdminPanel();
+    showToast(item.hidden?'تم إخفاء المنتج عن الزبائن':'المنتج ظاهر للزبائن الآن', item.hidden?'fa-eye-slash':'fa-eye');
+}
+function adminDelete(kind, a, b){
+    const item=adminFind(kind,a,b); if(!item) return;
+    if(!confirm('حذف «'+item.nameAr+'» نهائياً؟ يمكنك بدلاً من ذلك إخفاؤه مؤقتاً.')) return;
+    if(kind==='card') APP_DATA.giftCards=APP_DATA.giftCards.filter(c=>c.id!==a);
+    else if(kind==='game') APP_DATA.games=APP_DATA.games.filter(g=>g.id!==a);
+    else { const g=adminFind('game',a); g.packages=g.packages.filter(p=>p.id!==b); }
+    saveAppData(APP_DATA); renderAdminPanel(); showToast('تم الحذف','fa-trash');
+}
+function adminSetMethod(gameId, method){
+    const g=adminFind('game',gameId); if(!g || !ADMIN_METHOD_NAMES[method]) return;
+    g.deliveryMethod=method;
+    saveAppData(APP_DATA); renderAdminPanel(); showToast('تم تغيير طريقة الشحن: '+ADMIN_METHOD_NAMES[method]);
 }
 
 function toggleAdminFormType(type){
     const g=document.getElementById('admin-game-select-group');
     if(g) g.classList.toggle('hidden', type!=='game_package');
+    const ng=document.getElementById('admin-new-game-group');
+    if(ng) ng.classList.toggle('hidden', type!=='new_game');
 }
 
 function handleAdminAddItem(e){
@@ -283,7 +367,12 @@ function handleAdminAddItem(e){
         APP_DATA.giftCards.push({ id:newId, brand:finalBrand, nameAr:name, nominal:name, priceLYD:price, category:category, badge:badge||'جديد ✨', image:image, instructionsAr: instructions||'يتم تسليم الكود وتفعيله فوراً بعد تأكيد الطلب بالدينار الليبي.' });
     } else if(type==='new_game'){
         const newGameId='game_'+Date.now();
-        APP_DATA.games.push({ id:newGameId, nameAr:name, nameEn:name, badge:badge||'جديد 🔥', image:image, packages:[{ id:newGameId+'_1', nameAr:'باقة 1', priceLYD:price, popular:true, icon:'💎' }] });
+        const section=document.getElementById('admin-new-game-section')?.value==='chat' ? 'chat' : 'games';
+        const method=document.getElementById('admin-delivery-method')?.value || 'id';
+        APP_DATA.games.push({ id:newGameId, category:section, deliveryMethod:method, nameAr:name, nameEn:name, badge:badge||'جديد 🔥', image:image,
+            idLabelAr: method==='id' ? ('معرّف حسابك (ID) في '+name+':') : undefined,
+            deliveryNoteAr: method==='qr' ? 'بعد إرسال الطلب أرسل لنا صورة رمز QR عبر واتساب لنشحن مباشرة.' : (method==='login' ? 'بعد إرسال الطلب يتواصل معك فريقنا عبر واتساب الرسمي لإتمام الشحن بتسجيل الدخول. لا تُحفظ بيانات حسابك في الموقع.' : undefined),
+            packages:[{ id:newGameId+'_1', nameAr: section==='chat' ? ('شحن بقيمة '+price+' د.ل') : 'باقة 1', priceLYD:price, popular:true, icon:'💎' }] });
     }
     saveAppData(APP_DATA);
     renderAdminPanel();

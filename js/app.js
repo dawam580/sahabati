@@ -73,6 +73,8 @@ function initApp() {
     updateCustomerAuthUI();
     renderCategories();
     renderHome();
+    renderHomeChat();
+    renderChatApps('');
     renderGamesNav();
     renderGameDetail(state.selectedGame || 'pubg');
     renderGiftCards('all');
@@ -105,8 +107,8 @@ function initApp() {
     
     // Check initial tab hash if any
     const hash = window.location.hash.replace('#', '');
-    const cardFilters = (APP_DATA.categories || []).map(c => c.id).filter(id => id !== 'games');
-    if (['home', 'games', 'giftcards', 'checkout', 'orders'].concat(cardFilters).includes(hash)) {
+    const cardFilters = (APP_DATA.categories || []).map(c => c.id).filter(id => id !== 'games' && id !== 'chat');
+    if (['home', 'games', 'chat', 'giftcards', 'checkout', 'orders'].concat(cardFilters).includes(hash)) {
         if (cardFilters.includes(hash)) {
             navigateTo('giftcards');
             filterGiftCards(hash);
@@ -140,6 +142,8 @@ function connectToServer() {
         updateWhatsAppLinks();
         renderCategories();
         renderHome();
+        renderHomeChat();
+        renderChatApps(document.getElementById('chat-search-input')?.value || '');
         renderGamesNav();
         renderGameDetail(state.selectedGame || 'pubg');
         renderGiftCards('all');
@@ -228,6 +232,9 @@ function navigateTo(tabId) {
         window.scrollTo({ top: 0, behavior: 'auto' });
     }
 
+    if (tabId === 'chat') {
+        renderChatApps(document.getElementById('chat-search-input')?.value || '');
+    }
     if (tabId === 'checkout') {
         renderCheckout();
     } else if (tabId === 'orders') {
@@ -285,6 +292,8 @@ const BRAND_LOOK = {
     telegram: { cls: 'b-telegram', mark: '<i class="fa-brands fa-telegram"></i>' },
     chatgpt: { cls: 'b-chatgpt', mark: '<i class="fa-solid fa-robot"></i>' },
     claude: { cls: 'b-claude', mark: 'Claude' },
+    watchit: { cls: 'b-watchit', mark: 'WATCH IT' },
+    crunchyroll: { cls: 'b-crunchyroll', mark: 'CR' },
     apple: { cls: 'b-apple', mark: '<i class="fa-brands fa-apple"></i>' },
     libyana: { cls: 'b-libyana', mark: 'ليبيانا' }
 };
@@ -292,6 +301,18 @@ function brandLook(key) {
     const look = BRAND_LOOK[key] || { cls: 'b-default', mark: '<i class="fa-solid fa-gift"></i>' };
     const svg = typeof brandSvg === 'function' ? brandSvg(key) : '';
     return svg ? { cls: look.cls, mark: svg } : look;
+}
+function gameCategory(game) {
+    return (game && game.category) || 'games';
+}
+function isAvailable(item) {
+    return !!item && !item.hidden;
+}
+// Chat apps have no brand logo: a colored tile with the app's first letter
+function chatAppMark(game, index) {
+    const hue = (index * 47) % 360;
+    const letter = String(game.nameAr || '?').trim().split(/\s+/).slice(0, 2).map(w => w.charAt(0)).join('');
+    return '<span class="tile-art chat-art" style="--h:' + hue + '">' + escapeHtml(letter) + '</span>';
 }
 function shortName(nameAr) {
     return String(nameAr || '').split('(')[0].trim();
@@ -301,7 +322,7 @@ function shortName(nameAr) {
 function renderHome() {
     const gamesGrid = document.getElementById('home-games-grid');
     if (gamesGrid) {
-        gamesGrid.innerHTML = APP_DATA.games.map(game => {
+        gamesGrid.innerHTML = APP_DATA.games.filter(g => gameCategory(g) === 'games' && isAvailable(g)).map(game => {
             const look = brandLook(game.id);
             const minPrice = Math.min.apply(null, (game.packages || []).map(p => Number(p.priceLYD) || 0).filter(Boolean));
             return '<button type="button" class="tile" onclick="selectGame(\'' + escapeAttr(game.id) + '\'); navigateTo(\'games\');">' +
@@ -324,12 +345,43 @@ function renderHome() {
     };
     const streamingRow = document.getElementById('home-streaming-row');
     if (streamingRow) {
-        streamingRow.innerHTML = APP_DATA.giftCards.filter(c => ['netflix', 'shahid', 'streaming'].includes(c.category)).map(cardTile).join('');
+        streamingRow.innerHTML = APP_DATA.giftCards.filter(c => c.category === 'entertainment' && isAvailable(c)).map(cardTile).join('');
     }
     const cardsRow = document.getElementById('home-cards-row');
     if (cardsRow) {
-        cardsRow.innerHTML = APP_DATA.giftCards.filter(c => ['ai_cards', 'gift_cards', 'social'].includes(c.category)).map(cardTile).join('');
+        cardsRow.innerHTML = APP_DATA.giftCards.filter(c => ['ai_cards', 'gift_cards', 'social'].includes(c.category) && isAvailable(c)).map(cardTile).join('');
     }
+}
+
+// Chat & voice apps: tiles that open the shared top-up page
+function chatAppTile(game, index) {
+    return '<button type="button" class="tile chat-tile" onclick="openChatApp(\'' + escapeAttr(game.id) + '\')">' +
+        chatAppMark(game, index) +
+        '<span class="tile-name">' + escapeHtml(game.nameAr) + '</span>' +
+    '</button>';
+}
+function chatApps() {
+    return APP_DATA.games.filter(g => gameCategory(g) === 'chat' && isAvailable(g));
+}
+function renderHomeChat() {
+    const grid = document.getElementById('home-chat-grid');
+    if (!grid) return;
+    const apps = chatApps();
+    grid.innerHTML = apps.slice(0, 8).map(chatAppTile).join('') +
+        (apps.length > 8 ? '<button type="button" class="tile chat-tile more" onclick="navigateTo(\'chat\')"><span class="tile-art chat-art more-art">+' + (apps.length - 8) + '</span><span class="tile-name">عرض الكل</span></button>' : '');
+}
+function renderChatApps(query) {
+    const grid = document.getElementById('chat-apps-grid');
+    if (!grid) return;
+    const q = String(query || '').trim().toLowerCase();
+    const apps = chatApps();
+    const list = q ? apps.filter(g => g.nameAr.toLowerCase().includes(q) || String(g.nameEn || '').toLowerCase().includes(q)) : apps;
+    grid.innerHTML = list.map(g => chatAppTile(g, apps.indexOf(g))).join('') ||
+        '<p class="empty-note">لا يوجد تطبيق بهذا الاسم. تواصل معنا عبر واتساب لإضافته.</p>';
+}
+function openChatApp(gameId) {
+    selectGame(gameId);
+    navigateTo('games');
 }
 
 // Swipeable promo banners with dots + gentle autoplay
@@ -364,7 +416,11 @@ function initPromoCarousel() {
 
 function handleCategoryClick(catId) {
     if (catId === 'games') {
+        const current = APP_DATA.games.find(g => g.id === state.selectedGame);
+        if (!current || gameCategory(current) !== 'games') selectGame('pubg');
         navigateTo('games');
+    } else if (catId === 'chat') {
+        navigateTo('chat');
     } else {
         navigateTo('giftcards');
         filterGiftCards(catId);
@@ -376,7 +432,13 @@ function renderGamesNav() {
     const container = document.getElementById('games-selector');
     if (!container) return;
 
-    container.innerHTML = APP_DATA.games.map(game => {
+    const current = APP_DATA.games.find(g => g.id === state.selectedGame);
+    const isChat = gameCategory(current) === 'chat';
+    document.getElementById('games-selector-panel')?.classList.toggle('hidden', isChat);
+    document.getElementById('chat-back-btn')?.classList.toggle('hidden', !isChat);
+    if (isChat) { container.innerHTML = ''; return; }
+
+    container.innerHTML = APP_DATA.games.filter(g => gameCategory(g) === 'games' && isAvailable(g)).map(game => {
         const isActive = state.selectedGame === game.id;
         const activeClass = isActive 
             ? 'bg-sky-600 text-white shadow-lg shadow-sky-600/30 scale-105 border-sky-600' 
@@ -408,6 +470,13 @@ function renderGameDetail(gameId) {
     const game = APP_DATA.games.find(g => g.id === gameId) || APP_DATA.games[0];
     if (!game) return;
 
+    // كل لعبة/تطبيق له معرّفه الخاص: لا ننقل معرّف لعبة إلى أخرى
+    if (state.verifiedForGame !== game.id) {
+        state.verifiedPlayerId = '';
+        state.verifiedForGame = game.id;
+        const statusBox = document.getElementById('player-id-status');
+        if (statusBox) statusBox.innerHTML = '';
+    }
     state.selectedGame = game.id;
 
     const titleEl = document.getElementById('game-title-text');
@@ -430,12 +499,26 @@ function renderGameDetail(gameId) {
     const idCard = idInput ? idInput.closest('.p-5') : null;
     if (idCard) idCard.classList.toggle('hidden', !needsId);
 
+    const badge = document.getElementById('game-method-badge');
+    if (badge) {
+        badge.textContent = { id: '🆔 الشحن بمعرّف الحساب (ID)', qr: '🔳 الشحن عبر رمز QR', login: '🔐 الشحن عبر تسجيل الدخول' }[deliveryMethodOf(game)];
+    }
+
+    const note = document.getElementById('delivery-note');
+    if (note) {
+        const method = deliveryMethodOf(game);
+        const icon = method === 'qr' ? 'fa-qrcode' : 'fa-right-to-bracket';
+        const title = method === 'qr' ? 'الشحن عبر رمز QR' : 'الشحن عبر تسجيل الدخول';
+        note.innerHTML = needsId ? '' : '<i class="fa-solid ' + icon + '"></i><div><strong>' + title + '</strong><p>' + escapeHtml(game.deliveryNoteAr || 'بعد إرسال الطلب نتواصل معك عبر واتساب لإتمام الشحن.') + '</p></div>';
+        note.classList.toggle('hidden', needsId);
+    }
+
     state.selectedPackage = null;
     updateBuyBar();
 
     const packagesContainer = document.getElementById('packages-grid');
     if (packagesContainer) {
-        packagesContainer.innerHTML = game.packages.map(pkg => {
+        packagesContainer.innerHTML = game.packages.filter(isAvailable).map(pkg => {
             const tag = pkg.popular ? '<span class="pkg-tag hot">الأكثر طلباً</span>' : (pkg.bestValue ? '<span class="pkg-tag value">أفضل قيمة</span>' : '');
             return '<button type="button" class="pkg-tile" data-pkg="' + escapeAttr(pkg.id) + '" onclick="selectPackage(\'' + escapeAttr(game.id) + '\', \'' + escapeAttr(pkg.id) + '\')">' +
                 tag +
@@ -447,9 +530,18 @@ function renderGameDetail(gameId) {
     }
 }
 
-// PUBG is delivered as a redeem code; other games are charged directly to the player ID
+// طريقة الشحن لكل لعبة: id (معرّف اللاعب) | qr (رمز QR) | login (تسجيل الدخول عبر واتساب)
+function deliveryMethodOf(game) {
+    return (game && game.deliveryMethod) || 'id';
+}
 function gameNeedsPlayerId(gameId) {
-    return gameId !== 'pubg';
+    return deliveryMethodOf(APP_DATA.games.find(g => g.id === gameId)) === 'id';
+}
+function deliveryMeta(game, playerId) {
+    const method = deliveryMethodOf(game);
+    if (method === 'qr') return 'الشحن عبر رمز QR';
+    if (method === 'login') return 'الشحن عبر تسجيل الدخول';
+    return 'Player ID: ' + playerId;
 }
 
 function selectPackage(gameId, pkgId) {
@@ -508,7 +600,7 @@ function addGamePackageToCart(gameId, pkgId) {
     const game = APP_DATA.games.find(g => g.id === gameId);
     if (!game) return;
     const pkg = game.packages.find(p => p.id === pkgId);
-    if (!pkg) return;
+    if (!pkg || !isAvailable(game) || !isAvailable(pkg)) return false;
 
     let playerId = '';
     if (gameNeedsPlayerId(game.id)) {
@@ -521,7 +613,7 @@ function addGamePackageToCart(gameId, pkgId) {
         playerId = state.verifiedPlayerId;
     }
 
-    const meta = game.id === 'pubg' ? 'كود شدات ببجي' : ('Player ID: ' + playerId);
+    const meta = deliveryMeta(game, playerId);
     const existing = state.cart.find(i => i.type === 'game' && i.packageId === pkg.id && i.meta === meta);
     if (existing) {
         return updateCartQuantity(existing.cartItemId, 1) !== false;
@@ -559,7 +651,7 @@ function renderGiftCards(filter) {
     const container = document.getElementById('giftcards-grid');
     if (!container) return;
 
-    let cards = APP_DATA.giftCards;
+    let cards = APP_DATA.giftCards.filter(isAvailable);
     if (filter !== 'all') {
         cards = cards.filter(c => c.category === filter);
     }
@@ -2221,8 +2313,8 @@ function handleSearch(query) {
     const q = query.trim().toLowerCase();
     if (!q) return;
 
-    const matchedGames = APP_DATA.games.filter(g => g.nameAr.toLowerCase().includes(q) || g.nameEn.toLowerCase().includes(q));
-    const matchedCards = APP_DATA.giftCards.filter(c => c.nameAr.toLowerCase().includes(q) || c.brand.toLowerCase().includes(q));
+    const matchedGames = APP_DATA.games.filter(g => isAvailable(g) && (g.nameAr.toLowerCase().includes(q) || String(g.nameEn || '').toLowerCase().includes(q)));
+    const matchedCards = APP_DATA.giftCards.filter(c => isAvailable(c) && (c.nameAr.toLowerCase().includes(q) || String(c.brand || '').toLowerCase().includes(q)));
 
     if (matchedGames.length > 0) {
         selectGame(matchedGames[0].id);
