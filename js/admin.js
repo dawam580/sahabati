@@ -31,7 +31,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function initAdmin(){
     try { if (typeof checkBuildFresh === 'function') checkBuildFresh(); } catch(e){}
-    if(adminState.isAdminAuth){
+    if(getAdminToken()){
+        adminState.isAdminAuth=true;
+        showDashboard();
+        loadServerData();
+    } else if(adminState.isAdminAuth){
         showDashboard();
     } else {
         showLogin();
@@ -54,6 +58,48 @@ function showDashboard(){
     catch(err){ showToast('تعذر تحميل بيانات اللوحة: '+err.message,'fa-triangle-exclamation'); }
 }
 
+// ---------- Server mode (الخادم يتحقق من كلمة السر ويحفظ البيانات) ----------
+const ADMIN_TOKEN_KEY='sahabati_admin_token';
+function getAdminToken(){ try{ return sessionStorage.getItem(ADMIN_TOKEN_KEY)||''; }catch(e){ return ''; } }
+function setAdminToken(t){ try{ if(t) sessionStorage.setItem(ADMIN_TOKEN_KEY,t); else sessionStorage.removeItem(ADMIN_TOKEN_KEY); }catch(e){} }
+function adminApi(url, options){
+    const opts=Object.assign({}, options||{});
+    opts.headers=Object.assign({ 'Content-Type':'application/json' }, opts.headers||{});
+    const token=getAdminToken();
+    if(token) opts.headers['Authorization']='Bearer '+token;
+    return fetch(url, opts).then(res=>res.json().catch(()=>({})).then(data=>{
+        if(!res.ok){ const e=new Error(data.error||('HTTP '+res.status)); e.status=res.status; throw e; }
+        return data;
+    }));
+}
+// Load catalog + database from the server after login, and keep orders fresh
+function loadServerData(){
+    if(!getAdminToken()) return Promise.resolve();
+    return Promise.all([
+        adminApi('/api/catalog').then(catalog=>{
+            if(catalog && Array.isArray(catalog.games)){
+                APP_DATA=catalog;
+                APP_DATA.settings=Object.assign({}, DEFAULT_STORE_SETTINGS, catalog.settings||{});
+                delete APP_DATA.settings.adminPin;
+                saveAppDataLocal(APP_DATA);
+            }
+        }),
+        (typeof SahabatiDB!=='undefined' && SahabatiDB.syncWithServer) ? SahabatiDB.syncWithServer() : null
+    ]).then(()=>{ try{ renderAdminPanel(); }catch(e){} }).catch(err=>{
+        if(err && err.status===401){ setAdminToken(''); adminState.isAdminAuth=false; showLogin(); showToast('انتهت الجلسة، يرجى تسجيل الدخول مجدداً','fa-lock'); }
+    });
+}
+// Every catalog save in the panel is also sent to the server so customers see it
+const saveAppDataLocal = saveAppData;
+saveAppData = function(data){
+    saveAppDataLocal(data);
+    if(getAdminToken()){
+        adminApi('/api/catalog', { method:'PUT', body: JSON.stringify(data) })
+            .catch(err=>showToast('لم يتم حفظ التعديل على الخادم: '+err.message,'fa-triangle-exclamation'));
+    }
+};
+setInterval(()=>{ if(adminState.isAdminAuth && getAdminToken() && !document.hidden && typeof SahabatiDB!=='undefined'){ SahabatiDB.syncWithServer().then(()=>{ try{ renderAdminPanel(); }catch(e){} }); } }, 30000);
+
 function correctAdminPin(){
     try {
         if (typeof APP_DATA !== 'undefined' && APP_DATA && APP_DATA.settings && APP_DATA.settings.adminPin) return APP_DATA.settings.adminPin;
@@ -70,24 +116,46 @@ function shakeEl(el){
         setTimeout(()=>{ try{el.classList.remove('shake');}catch(e){} }, 450);
     } catch(e){}
 }
-function handleAdminLogin(e){
+function adminLoginFailed(pinInput){
+    shakeEl(pinInput);
+    showToast('كلمة السر غير صحيحة','fa-lock');
+    pinInput.value='';
+    try{pinInput.focus();}catch(e){}
+}
+async function handleAdminLogin(e){
     if(e && e.preventDefault) e.preventDefault();
     const pinInput=document.getElementById('admin-pin-input');
     if(!pinInput){ showToast('حقل كلمة السر غير موجود','fa-triangle-exclamation'); return; }
     const entered=(pinInput.value||'').trim();
-    const correct=correctAdminPin();
+    if(!entered) return adminLoginFailed(pinInput);
 
-    if(entered && entered===correct){
+    // 1) الخادم أولاً: كلمة السر محفوظة في متغير البيئة ADMIN_PIN وليس في المتصفح
+    if(!/github\.io$/.test(location.hostname)){
+        try {
+            const data=await adminApi('/api/admin/login', { method:'POST', body: JSON.stringify({ pin: entered }) });
+            setAdminToken(data.token);
+            adminState.isAdminAuth=true;
+            pinInput.value='';
+            showToast('مرحباً بك في لوحة تحكم سحّابتي 👑');
+            showDashboard();
+            loadServerData();
+            return;
+        } catch(err){
+            if(err.status===401 || err.status===429) return err.status===429 ? showToast(err.message,'fa-lock') : adminLoginFailed(pinInput);
+            // لا يوجد خادم (استضافة ثابتة): نكمل بالتحقق المحلي
+        }
+    }
+
+    // 2) استضافة بدون خادم: تحقق محلي
+    const correct=correctAdminPin();
+    if(entered===correct){
         adminState.isAdminAuth=true;
         if (typeof sessSet === 'function') sessSet('sahabati_admin_auth','true');
         showToast('مرحباً بك في لوحة تحكم سحّابتي 👑');
         try { showDashboard(); }
         catch(err){ showToast('تم الدخول لكن تعذر عرض اللوحة: '+err.message,'fa-triangle-exclamation'); }
     } else {
-        shakeEl(pinInput);
-        showToast('كلمة السر غير صحيحة','fa-lock');
-        pinInput.value='';
-        try{pinInput.focus();}catch(e){}
+        adminLoginFailed(pinInput);
     }
 }
 function togglePinVisibility(inputId, btn){
@@ -105,6 +173,7 @@ function resetLocalData(){
     try { location.reload(); } catch(e){}
 }
 function logoutAdmin(){
+    if(getAdminToken()){ adminApi('/api/admin/logout', { method:'POST' }).catch(()=>{}); setAdminToken(''); }
     adminState.isAdminAuth=false;
     if (typeof sessDel === 'function') sessDel('sahabati_admin_auth');
     showLogin();
@@ -348,7 +417,7 @@ function populateSettingsForm(){
     const libyana=document.getElementById('setting-libyana-info');
     const bank=document.getElementById('setting-bank-info');
     if(wa) wa.value=s.whatsappNumber||'218920541749';
-    if(pin) pin.value=s.adminPin||'admin2026';
+    if(pin){ pin.value=''; if(getAdminToken()){ pin.disabled=true; pin.placeholder='تُغيَّر من متغير ADMIN_PIN على الخادم'; } }
     if(onePay) onePay.value=s.paymentMethodsInfo?.one_pay?.accountInfo||'';
     if(libyana) libyana.value=s.paymentMethodsInfo?.telecom_libyana?.accountInfo||'';
     if(bank) bank.value=s.paymentMethodsInfo?.bank_transfer?.accountInfo||'';

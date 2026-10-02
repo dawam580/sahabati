@@ -9,6 +9,19 @@
 
     const DB_KEY = 'sahabati_database_v2';
     const SESSION_USER_KEY = 'sahabati_current_customer';
+    const ADMIN_TOKEN_KEY = 'sahabati_admin_token';
+
+    // قاعدة البيانات الكاملة على الخادم متاحة للمدير فقط (رمز دخول من /api/admin/login)
+    function adminToken() {
+        try {
+            if (typeof sessionStorage !== 'undefined') return sessionStorage.getItem(ADMIN_TOKEN_KEY) || '';
+        } catch (e) {}
+        return '';
+    }
+    function canSyncWithServer() {
+        return typeof fetch !== 'undefined' && typeof window !== 'undefined' && window.location?.hostname &&
+            !window.location.hostname.endsWith('github.io') && !!adminToken();
+    }
 
     // Simple SHA-256 hash helper using Web Crypto API or fallback
     async function sha256(message) {
@@ -194,9 +207,9 @@
         }
 
         async syncWithServer() {
-            if (typeof fetch !== 'undefined' && typeof window !== 'undefined' && window.location?.hostname && !window.location.hostname.endsWith('github.io')) {
+            if (canSyncWithServer()) {
                 try {
-                    const res = await fetch('/api/database');
+                    const res = await fetch('/api/database', { headers: { 'Authorization': 'Bearer ' + adminToken() } });
                     if (res.ok) {
                         const srvData = await res.json();
                         if (srvData && srvData.voucher_codes && srvData.users) {
@@ -241,10 +254,10 @@
             } catch (err) {
                 console.error('SahabatiDB: localStorage save failed', err);
             }
-            if (typeof fetch !== 'undefined' && typeof window !== 'undefined' && window.location?.hostname && !window.location.hostname.endsWith('github.io')) {
+            if (canSyncWithServer()) {
                 fetch('/api/database', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + adminToken() },
                     body: JSON.stringify(dataToSave)
                 }).catch(() => {});
             }

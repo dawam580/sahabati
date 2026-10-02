@@ -82,6 +82,7 @@ function initApp() {
     bindEvents();
     sanitizeStoredCart();
     initPromoCarousel();
+    connectToServer();
     
     if (typeof SahabatiDB !== 'undefined' && SahabatiDB.subscribe) {
         SahabatiDB.subscribe(() => {
@@ -114,6 +115,71 @@ function initApp() {
     } else {
         navigateTo('home');
     }
+}
+
+// ---------- Server connection (الخادم هو مصدر الأسعار والطلبات عند توفره) ----------
+function apiFetch(url, options) {
+    const opts = Object.assign({ headers: { 'Content-Type': 'application/json' } }, options || {});
+    if (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) opts.signal = AbortSignal.timeout(15000);
+    return fetch(url, opts).then(res => res.json().catch(() => ({})).then(data => {
+        if (!res.ok) { const e = new Error(data.error || ('HTTP ' + res.status)); e.status = res.status; throw e; }
+        return data;
+    }));
+}
+
+function connectToServer() {
+    if (typeof fetch === 'undefined' || typeof window === 'undefined' || !window.location) return;
+    if (!/^https?:$/.test(window.location.protocol) || /github\.io$/.test(window.location.hostname)) return;
+    apiFetch('/api/catalog').then(catalog => {
+        if (!catalog || !Array.isArray(catalog.games) || !Array.isArray(catalog.giftCards)) return;
+        state.serverMode = true;
+        APP_DATA = catalog;
+        APP_DATA.settings = Object.assign({}, DEFAULT_STORE_SETTINGS, catalog.settings || {});
+        delete APP_DATA.settings.adminPin;
+        updateWhatsAppLinks();
+        renderCategories();
+        renderHome();
+        renderGamesNav();
+        renderGameDetail(state.selectedGame || 'pubg');
+        renderGiftCards('all');
+        sanitizeStoredCart();
+        if (state.currentTab === 'checkout') renderCheckout();
+        if (state.currentTab === 'orders') refreshServerOrders();
+    }).catch(() => { /* لا يوجد خادم: يعمل المتجر محلياً */ });
+}
+
+function saveLocalOrders() {
+    try { localStorage.setItem('sahabati_orders', JSON.stringify(state.orders.slice(0, 100))); } catch (e) {}
+}
+
+// Ask the server for the latest status of this device's orders (codes appear only after payment)
+let ordersRefreshInFlight = false;
+function refreshServerOrders(showResult) {
+    if (!state.serverMode || ordersRefreshInFlight) return Promise.resolve(false);
+    const pending = state.orders.filter(o => o.serverOrder && o.status !== 'paid' && o.status !== 'cancelled');
+    if (!pending.length) return Promise.resolve(false);
+    const byPhone = {};
+    pending.forEach(o => { (byPhone[o.customerPhone] = byPhone[o.customerPhone] || []).push(o.id); });
+    ordersRefreshInFlight = true;
+    let changed = false;
+    return Promise.all(Object.keys(byPhone).map(phone =>
+        apiFetch('/api/orders/status', { method: 'POST', body: JSON.stringify({ phone: phone, ids: byPhone[phone] }) })
+            .then(data => (data.orders || []).forEach(fresh => {
+                const idx = state.orders.findIndex(o => o.id === fresh.id);
+                if (idx === -1) return;
+                if (state.orders[idx].status !== fresh.status) changed = true;
+                state.orders[idx] = Object.assign({}, state.orders[idx], fresh);
+            }))
+            .catch(() => {})
+    )).then(() => {
+        ordersRefreshInFlight = false;
+        if (changed) {
+            saveLocalOrders();
+            if (state.currentTab === 'orders') renderOrders();
+            if (showResult) showToast('تم تحديث حالة طلباتك ✓');
+        }
+        return changed;
+    });
 }
 
 // Currency Formatting - Exclusively in Libyan Dinar (د.ل)
@@ -867,6 +933,80 @@ function renderPaymentInstructions() {
     '</div>';
 }
 
+const PAYMENT_METHOD_NAMES = {
+    'one_pay': 'ون باي (OnePay) / دفع مصرفي',
+    'telecom_libyana': 'شفرة / كرت تعبئة ليبيانا (13 رقم)',
+    'telecom_madar': 'شفرة / كرت تعبئة مدار (13 رقم)',
+    'bank_transfer': 'تحويل مصرفي ليبي'
+};
+
+function buildOrderWhatsAppUrl(order, extra) {
+    const itemsListText = (order.items || []).map(item => '• ' + item.quantity + 'x ' + item.titleAr + ' (' + item.meta + ') - ' + formatPrice(item.priceLYD * item.quantity)).join('\n');
+    let cardDetails = '';
+    if (extra.cardCode13) {
+        const cardCompany = order.paymentMethod === 'telecom_libyana' ? 'ليبيانا (Libyana)' : (order.paymentMethod === 'telecom_madar' ? 'مدار الجديد (Madar)' : 'كرت تعبئة');
+        cardDetails = '🎟️ *كود كارت التعبئة (13 رقم):* `' + extra.cardCode13 + '`\n' + '🏢 *الشركة:* ' + cardCompany + '\n';
+    }
+    const waMessage =
+'🌟 *طلب جديد من منصة سحّابتي (Sahabati My Cloud)* 🌟\n' +
+'-----------------------------------\n' +
+'📋 *رقم الطلب:* #' + order.id + '\n' +
+'📅 *التاريخ:* ' + order.date + '\n' +
+(extra.customerName ? '👤 *الاسم:* ' + extra.customerName + '\n' : '') +
+'📱 *رقم هاتف الزبون:* ' + order.customerPhone + '\n' +
+'💳 *وسيلة الدفع:* ' + (PAYMENT_METHOD_NAMES[order.paymentMethod] || order.paymentMethod) + '\n' +
+cardDetails +
+'💰 *الإجمالي المطلوب للدفع:* ' + order.totalFormatted + '\n\n' +
+'🎮 *العناصر المطلوبة:*\n' + itemsListText + '\n\n' +
+'📝 *ملاحظات إضافية:*\n' + (extra.customerNotes || 'طلب عبر متجر سحّابتي') + '\n' +
+'-----------------------------------\n' +
+'يرجى تأكيد استلام الطلب وتزويدي بكود الشحن أو بيانات الحساب وشكراً! ✨';
+    const cleanPhone = (APP_DATA.settings?.whatsappNumber || '218920541749').replace(/[^0-9]/g, '');
+    return 'https://api.whatsapp.com/send?phone=' + cleanPhone + '&text=' + encodeURIComponent(waMessage);
+}
+
+// Server-side order: prices, product names and code reservation are decided by the server
+function submitOrderToServer(input) {
+    // نفتح النافذة الآن (مع ضغطة الزر) حتى لا يحجبها المتصفح، ثم نوجهها لواتساب بعد الحفظ
+    let waWindow = null;
+    try { waWindow = window.open('', '_blank'); } catch (e) {}
+    const payload = {
+        items: input.cartItems.map(i => ({
+            type: i.type, gameId: i.gameId, packageId: i.packageId, cardId: i.cardId, quantity: i.quantity,
+            playerId: i.type === 'game' && /^Player ID: /.test(i.meta || '') ? i.meta.replace('Player ID: ', '') : ''
+        })),
+        phone: input.customerPhone,
+        name: input.customerName,
+        notes: input.customerNotes,
+        paymentMethod: input.method,
+        cardCode13: input.cardCode13,
+        website: input.honeypot
+    };
+    return apiFetch('/api/orders', { method: 'POST', body: JSON.stringify(payload) }).then(order => {
+        order.waUrl = buildOrderWhatsAppUrl(order, input);
+        if (waWindow) { try { waWindow.location.href = order.waUrl; } catch (e) {} }
+
+        state.orders.unshift(order);
+        saveLocalOrders();
+        FraudGuard.recordOrder();
+        if (input.cardCode13) { FraudGuard.markVoucherUsed(input.cardCode13); FraudGuard.clearVoucherFailures(); }
+
+        state.cart = [];
+        state.checkoutOpenedAt = 0;
+        saveCart();
+        updateCartUI();
+        if (input.voucherInput) { input.voucherInput.value = ''; handleVoucherCardInput(input.voucherInput); }
+        showSuccessModal(order);
+        return true;
+    }).catch(err => {
+        if (waWindow) { try { waWindow.close(); } catch (e) {} }
+        if (input.cardCode13 && err.status === 400) FraudGuard.recordVoucherFailure();
+        showToast(err.status === 400 || err.status === 429 ? err.message : 'تعذر الاتصال بالخادم، تحقق من الإنترنت وحاول مجدداً', 'fa-triangle-exclamation');
+        if (err.status === 400) connectToServer(); // ربما تغيّرت الأسعار: نحدّث الكتالوج
+        return false;
+    });
+}
+
 // Complete Payment Execution & WhatsApp Redirect (with fraud guards)
 function checkoutFail(message, focusId) {
     showToast(message, 'fa-triangle-exclamation');
@@ -943,6 +1083,15 @@ function processPayment() {
         btn.disabled = true;
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-lg"></i> <span>جاري تسجيل الطلب...</span>';
     }
+    const restoreButton = () => { if (btn) { btn.disabled = false; btn.innerHTML = originalText; } };
+
+    if (state.serverMode) {
+        return submitOrderToServer({
+            cartItems: cartItems, method: method, customerPhone: customerPhone, customerName: customerName,
+            customerNotes: customerNotes, cardCode13: cleanCardDigits.length === 13 ? cleanCardDigits : '',
+            honeypot: honeypot ? honeypot.value : '', voucherInput: voucherInput
+        }).finally(restoreButton);
+    }
 
     try {
         const orderId = FraudGuard.secureOrderId();
@@ -971,42 +1120,14 @@ function processPayment() {
             };
         }
 
-        const itemsListText = cartItems.map(item => '• ' + item.quantity + 'x ' + item.titleAr + ' (' + item.meta + ') - ' + formatPrice(item.priceLYD * item.quantity)).join('\n');
-        let cardDetails = '';
-        if (cardCode13) {
-            const cardCompany = method === 'telecom_libyana' ? 'ليبيانا (Libyana)' : (method === 'telecom_madar' ? 'مدار الجديد (Madar)' : 'كرت تعبئة');
-            cardDetails = '🎟️ *كود كارت التعبئة (13 رقم):* `' + cardCode13 + '`\n' + '🏢 *الشركة:* ' + cardCompany + '\n';
-        }
-        const paymentMethodNames = {
-            'one_pay': 'ون باي (OnePay) / دفع مصرفي',
-            'telecom_libyana': 'شفرة / كرت تعبئة ليبيانا (13 رقم)',
-            'telecom_madar': 'شفرة / كرت تعبئة مدار (13 رقم)',
-            'bank_transfer': 'تحويل مصرفي ليبي'
-        };
-        const waMessage =
-'🌟 *طلب جديد من منصة سحّابتي (Sahabati My Cloud)* 🌟\n' +
-'-----------------------------------\n' +
-'📋 *رقم الطلب:* #' + orderId + '\n' +
-'📅 *التاريخ:* ' + orderDate + '\n' +
-(customerName ? '👤 *الاسم:* ' + customerName + '\n' : '') +
-'📱 *رقم هاتف الزبون:* ' + customerPhone + '\n' +
-'💳 *وسيلة الدفع:* ' + (paymentMethodNames[method] || method) + '\n' +
-cardDetails +
-'💰 *الإجمالي المطلوب للدفع:* ' + totalAmountText + '\n\n' +
-'🎮 *العناصر المطلوبة:*\n' + itemsListText + '\n\n' +
-'📝 *ملاحظات إضافية:*\n' + customerNotes + '\n' +
-'-----------------------------------\n' +
-'يرجى تأكيد استلام الطلب وتزويدي بكود الشحن أو بيانات الحساب وشكراً! ✨';
-
-        const cleanPhone = (APP_DATA.settings?.whatsappNumber || '218920541749').replace(/[^0-9]/g, '');
-        const waUrl = 'https://api.whatsapp.com/send?phone=' + cleanPhone + '&text=' + encodeURIComponent(waMessage);
+        const waUrl = buildOrderWhatsAppUrl(newOrder, { cardCode13: cardCode13, customerName: customerName, customerNotes: customerNotes });
         newOrder.waUrl = waUrl;
 
         // يُفتح بشكل متزامن مع الضغطة حتى لا يحجبه المتصفح
         window.open(waUrl, '_blank', 'noopener');
 
         state.orders.unshift(newOrder);
-        localStorage.setItem('sahabati_orders', JSON.stringify(state.orders));
+        saveLocalOrders();
 
         FraudGuard.recordOrder();
         if (cardCode13) { FraudGuard.markVoucherUsed(cardCode13); FraudGuard.clearVoucherFailures(); }
@@ -1405,7 +1526,10 @@ function renderOrders() {
 
     // Retrieve customer specific orders or all local orders
     let userOrders = [];
-    if (customer && typeof SahabatiDB !== 'undefined') {
+    if (state.serverMode) {
+        userOrders = state.orders;
+        refreshServerOrders();
+    } else if (customer && typeof SahabatiDB !== 'undefined') {
         userOrders = SahabatiDB.getOrdersForUser(customer.id);
         // Fallback: if user has no orders in DB yet, show legacy orders if phone matches
         if (userOrders.length === 0 && state.orders.length > 0) {
@@ -1671,6 +1795,14 @@ function renderOrders() {
 
 // Live Status Check by Customer
 function checkCustomerOrderStatus(orderId) {
+    if (state.serverMode) {
+        refreshServerOrders(true).then(changed => {
+            const order = state.orders.find(o => o.id === orderId);
+            if (changed || !order) return;
+            showToast('⏳ ما زال الطلب قيد مراجعة وتأكيد الدفع من الإدارة.', 'fa-clock');
+        });
+        return;
+    }
     if (typeof SahabatiDB !== 'undefined') {
         const order = SahabatiDB.getAllOrders().find(o => o.id === orderId);
         if (order) {
