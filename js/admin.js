@@ -186,7 +186,7 @@ function switchAdminTab(tabName){
     const active=document.getElementById('adm-tab-btn-'+tabName);
     if(active){ active.classList.add('bg-indigo-600','text-white'); active.classList.remove('bg-white','text-slate-700'); }
     ['products','vault','customers','settings','notices','backup'].forEach(t=>{ const v=document.getElementById('adm-view-'+t); if(v) v.classList.toggle('hidden', t!==tabName); });
-    if(tabName==='vault') renderVaultPanel();
+    if(tabName==='vault'){ fillVaultProductSelect(); renderVaultPanel(); }
     if(tabName==='customers') renderCustomersPanel();
     if(tabName==='settings') populateSettingsForm();
     if(tabName==='notices'){ try{renderNoticesAdmin();}catch(e){} }
@@ -609,47 +609,41 @@ function renderVaultPanel() {
     renderVaultCodesTable();
 }
 
-function updateVaultProductOptions(brand) {
-    const nameInput = document.getElementById('vault-product-name');
-    if (!nameInput) return;
-
-    const defaults = {
-        'apple': 'بطاقة آبل آيتونز 10$ (iTunes 10 USD)',
-        'pubg': '60 شدة (60 UC) ببجي موبايل',
-        'freefire': '100 جوهرة فري فاير (100 Diamonds)',
-        'netflix': 'اشتراك نتفليكس 4K UHD بريميوم (شهر)',
-        'shahid': 'شاهد VIP شامل المسلسلات والأفلام (حساب كامل)',
-        'general': 'بطاقة رقمية'
-    };
-
-    nameInput.value = defaults[brand] || '';
+// المنتجات التي تُسلَّم بكود أو حساب (البطاقات والاشتراكات). الألعاب وتطبيقات الشات تُشحن بالـ ID/QR/تسجيل الدخول
+function fillVaultProductSelect() {
+    const sel = document.getElementById('vault-product-select');
+    if (!sel) return;
+    const current = sel.value;
+    sel.innerHTML = APP_DATA.giftCards.map(c => '<option value="'+escapeAttr(c.id)+'">'+escapeHtml(c.nameAr)+(c.hidden?' (مخفي)':'')+'</option>').join('');
+    if (current) sel.value = current;
 }
 
 function handleVaultAddCodes(e) {
     if (e && e.preventDefault) e.preventDefault();
     if (typeof SahabatiDB === 'undefined') return;
 
-    const brand = document.getElementById('vault-brand-select')?.value || 'general';
-    const productName = document.getElementById('vault-product-name')?.value.trim();
+    const productId = document.getElementById('vault-product-select')?.value;
+    const product = APP_DATA.giftCards.find(c => c.id === productId);
     const notes = document.getElementById('vault-notes')?.value.trim();
     const rawText = document.getElementById('vault-codes-textarea')?.value.trim();
 
-    if (!productName || !rawText) {
-        showToast('يرجى إدخال اسم الصنف ولصق الأكواد', 'fa-triangle-exclamation');
+    if (!product || !rawText) {
+        showToast('اختر المنتج والصق الأكواد', 'fa-triangle-exclamation');
         return;
     }
 
     try {
         const addedCount = SahabatiDB.addBatchCodes({
-            brand: brand,
-            category: brand === 'apple' ? 'gift_cards' : (brand === 'pubg' || brand === 'freefire' ? 'games' : (brand === 'netflix' || brand === 'shahid' ? brand : 'ai_cards')),
-            productName: productName,
+            productId: product.id,
+            brand: product.brand || 'general',
+            category: product.category || 'gift_cards',
+            productName: product.nameAr,
             notes: notes
         }, rawText);
 
         document.getElementById('vault-codes-textarea').value = '';
         renderVaultPanel();
-        showToast('تمت إضافة ' + addedCount + ' كود إلى مخزن الأكواد الرقمية بنجاح! 🎟️');
+        showToast('تمت إضافة ' + addedCount + ' كود لمنتج: ' + product.nameAr + ' 🎟️');
     } catch(err) {
         showToast(err.message || 'حدث خطأ أثناء إضافة الأكواد', 'fa-triangle-exclamation');
     }
@@ -947,67 +941,54 @@ function renderOrdersAdminTable() {
     }).join('');
 }
 
+function adminCopyBtn(text){
+    return '<button type="button" class="adm-btn" title="نسخ" onclick="copyToClipboard(\''+escapeAttr(text)+'\')"><i class="fa-solid fa-copy"></i></button>';
+}
 function openAdminConfirmPaymentModal(orderId) {
     if (typeof SahabatiDB === 'undefined') return;
-
     const order = SahabatiDB.getAllOrders().find(o => o.id === orderId);
-    if (!order) {
-        showToast('الطلب غير موجود', 'fa-triangle-exclamation');
-        return;
-    }
+    if (!order) { showToast('الطلب غير موجود', 'fa-triangle-exclamation'); return; }
 
     const modal = document.getElementById('admin-confirm-payment-modal');
     const summary = document.getElementById('admin-confirm-order-summary');
-    const targetInput = document.getElementById('confirm-target-order-id');
-    const usernameInput = document.getElementById('confirm-account-username');
-    const passwordInput = document.getElementById('confirm-account-password');
-    const pinInput = document.getElementById('confirm-account-pin');
-    const notesInput = document.getElementById('confirm-account-notes');
+    document.getElementById('confirm-target-order-id').value = order.id;
 
-    if (targetInput) targetInput.value = order.id;
+    const vaultCount = (order.vouchers || []).filter(v => v.codeId).length;
+    const items = (order.items || []).map(i => {
+        const meta = String(i.meta || '');
+        const pid = /^Player ID: /.test(meta) ? meta.replace('Player ID: ', '') : '';
+        return '<div class="adm-row">'+
+            '<div class="adm-row-name"><span>'+escapeHtml(i.quantity+'× '+(i.titleAr||''))+'</span><small>'+escapeHtml(pid ? ('معرّف الحساب (ID): '+pid) : meta)+'</small></div>'+
+            (pid ? '<div class="adm-row-tools">'+adminCopyBtn(pid)+'</div>' : '')+
+        '</div>';
+    }).join('');
 
     if (summary) {
-        summary.innerHTML = '<div class="flex justify-between items-center">' +
-            '<span class="font-extrabold text-slate-900 text-sm">طلب #' + order.id + '</span>' +
-            '<span class="font-black text-emerald-700">' + order.totalFormatted + '</span>' +
-        '</div>' +
-        '<div class="text-slate-600 text-xs">' +
-            '<span>العميل: <strong>' + (order.customerName || 'عميل') + '</strong> (' + (order.customerPhone || '') + ')</span>' +
-        '</div>' +
-        '<div class="text-slate-500 text-[11px]">' +
-            'المنتج: ' + (order.items?.map(i => i.titleAr).join(', ') || 'شحن/اشتراك') +
-        '</div>';
+        summary.innerHTML =
+            '<div class="adm-row"><div class="adm-row-name"><span>طلب #'+escapeHtml(order.id)+' · '+escapeHtml(order.totalFormatted||'')+'</span>'+
+                '<small>'+escapeHtml((order.customerName||'عميل')+' · '+(order.customerPhone||''))+'</small></div>'+
+                (order.customerPhone ? '<div class="adm-row-tools">'+adminCopyBtn(order.customerPhone)+'</div>' : '')+'</div>'+
+            (order.cardCode13
+                ? '<div class="adm-row" style="border-color:#f59e0b;background:#fffbeb"><div class="adm-row-name"><span>🎟️ كرت ليبيانا: <b style="font-family:monospace;letter-spacing:1px">'+escapeHtml(order.cardCode13)+'</b></span><small>اشحن الكرت على رقمك وتأكد أن قيمته تغطي '+escapeHtml(order.totalFormatted||'')+' قبل التأكيد</small></div><div class="adm-row-tools">'+adminCopyBtn(order.cardCode13)+'</div></div>'
+                : '<div class="adm-row" style="border-color:#fca5a5;background:#fff1f2"><div class="adm-row-name"><span>⚠️ لا يوجد كود كرت في هذا الطلب</span><small>لا تؤكد قبل استلام الدفع عبر واتساب</small></div></div>')+
+            items+
+            (vaultCount ? '<div class="adm-note" style="color:#047857">📦 '+vaultCount+' كود محجوز من المخزن لهذا الطلب، سيظهر للعميل تلقائياً عند التأكيد.</div>' : '')+
+            (order.customerNotes ? '<div class="adm-note">📝 ملاحظة العميل: '+escapeHtml(order.customerNotes)+'</div>' : '');
     }
 
-    // Pre-fill fields
-    let initialUser = order.accountDetails?.username || '';
-    let initialPass = order.accountDetails?.password || '';
-    let initialPin = order.accountDetails?.pin || '';
+    document.getElementById('confirm-account-username').value = order.accountDetails?.username || '';
+    document.getElementById('confirm-account-password').value = order.accountDetails?.password || '';
+    document.getElementById('confirm-account-pin').value = order.accountDetails?.pin || '';
+    document.getElementById('confirm-account-notes').value = order.accountDetails?.notes || '';
 
-    // Check if vouchers has pre-allocated data
-    if (!initialUser && order.vouchers?.[0]) {
-        const vCode = order.vouchers[0].voucherCode || '';
-        if (vCode.includes('EMAIL:') && vCode.includes('PASS:')) {
-            const parts = vCode.split('|');
-            initialUser = (parts[0] || '').replace('EMAIL:', '').trim();
-            initialPass = (parts[1] || '').replace('PASS:', '').trim();
-            if (parts[2]) initialPin = parts[2].replace('PIN:', '').trim();
-        } else {
-            initialPass = vCode;
-        }
-        if (!initialPin && order.vouchers[0].pin) initialPin = order.vouchers[0].pin;
-    }
+    if (modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
+}
 
-    if (usernameInput) usernameInput.value = initialUser;
-    if (passwordInput) passwordInput.value = initialPass;
-    if (pinInput) pinInput.value = initialPin;
-    if (notesInput) notesInput.value = order.accountDetails?.notes || 'شاشات وهواتف - يعمل على جميع الأجهزة';
-
-    if (modal) {
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-        passwordInput?.focus();
-    }
+// رقم ليبي محلي 09XXXXXXXX → 2189XXXXXXXX لرابط واتساب
+function waNumber(phone){
+    const d=String(phone||'').replace(/[^0-9]/g,'');
+    if(/^0?9\d{8}$/.test(d)) return '218'+d.replace(/^0/,'');
+    return d;
 }
 
 function handleAdminConfirmPaymentSubmit(e) {
@@ -1016,40 +997,27 @@ function handleAdminConfirmPaymentSubmit(e) {
 
     const orderId = document.getElementById('confirm-target-order-id')?.value;
     const username = document.getElementById('confirm-account-username')?.value.trim();
-    const password = document.getElementById('confirm-account-password')?.value.trim();
+    const code = document.getElementById('confirm-account-password')?.value.trim();
     const pin = document.getElementById('confirm-account-pin')?.value.trim();
     const notes = document.getElementById('confirm-account-notes')?.value.trim();
-
-    if (!orderId || !password) {
-        showToast('يرجى إدخال كلمة السر على الأقل', 'fa-triangle-exclamation');
-        return;
-    }
+    if (!orderId) return;
 
     try {
-        const confirmedOrder = SahabatiDB.confirmOrderPayment(orderId, {
-            username: username,
-            password: password,
-            pin: pin,
-            notes: notes
-        });
-
+        const confirmedOrder = SahabatiDB.confirmOrderPayment(orderId, { username: username, password: code, pin: pin, notes: notes });
         closeModal('admin-confirm-payment-modal');
         renderCustomersPanel();
-        showToast('تم تأكيد الدفع بنجاح! ستظهر كلمة السر فوراً في شاشة العميل 🎉', 'fa-circle-check');
+        showToast('تم تأكيد الدفع ✅ سيرى العميل طلبه مكتملاً في «طلباتي»', 'fa-circle-check');
 
-        // Optional WhatsApp confirmation prompt
-        if (confirmedOrder.customerPhone) {
-            const notifyCustomer = confirm('هل تود إرسال إشعار للعميل عبر واتساب يفيد بأن حسابه وكلمة السر جاهزة في شاشته بالموقع؟');
-            if (notifyCustomer) {
-                const cleanPhone = confirmedOrder.customerPhone.replace(/[^0-9]/g, '');
-                const waText = encodeURIComponent('مرحباً ' + (confirmedOrder.customerName || '') + '،\nتم استلام وتأكيد دفع طلبك رقم #' + confirmedOrder.id + ' بنجاح! ✨\nيمكنك الآن الدخول إلى حسابك في موقع سحّابتي وفتح شاشة طلباتك لاستعراض بيانات الحساب وكلمة السر فوراً.');
-                window.open('https://wa.me/' + cleanPhone + '?text=' + waText, '_blank');
-            }
+        if (confirmedOrder.customerPhone && confirm('إرسال رسالة واتساب للعميل بأن طلبه اكتمل؟')) {
+            const waText = encodeURIComponent('مرحباً ' + (confirmedOrder.customerName || '') + '،\nتم تأكيد دفع طلبك رقم #' + confirmedOrder.id + ' وإتمامه بنجاح ✨\n' +
+                (code || vaultCodesCount(confirmedOrder) ? 'افتح «طلباتي» في موقع سحّابتي لرؤية الكود.' : (notes || 'تم شحن طلبك.')));
+            window.open('https://wa.me/' + waNumber(confirmedOrder.customerPhone) + '?text=' + waText, '_blank');
         }
     } catch(err) {
         showToast(err.message || 'حدث خطأ أثناء اعتماد الطلب', 'fa-triangle-exclamation');
     }
 }
+function vaultCodesCount(order){ return (order.vouchers || []).filter(v => v.codeId && v.voucherCode).length; }
 
 function adminCancelOrder(orderId) {
     if (!confirm('هل أنت متأكد من إلغاء هذا الطلب؟')) return;

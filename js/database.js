@@ -48,151 +48,10 @@
         return {
             version: '2.0.0',
             lastUpdated: new Date().toISOString(),
-            users: [
-                {
-                    id: 'usr_demo_01',
-                    name: 'محمد الزروق',
-                    phone: '0920541749',
-                    email: 'mohamed@example.ly',
-                    passwordHash: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', // sha256 of empty or dummy
-                    role: 'customer',
-                    createdAt: '2026-09-01T10:00:00.000Z'
-                }
-            ],
+            users: [],
             // مخزن الأكواد الرقمية (آيتونز، ببجي، فري فاير، نتفليكس، شاهد...)
-            voucher_codes: [
-                // أكواد آبل آيتونز (iTunes Gift Cards)
-                {
-                    id: 'vc_itunes_10_01',
-                    brand: 'apple',
-                    category: 'gift_cards',
-                    productName: 'بطاقة آيتونز 10$ (iTunes 10 USD)',
-                    code: 'XX78-9921-ITUNES-10USD-LY',
-                    pin: '9842',
-                    status: 'available', // available | sold
-                    assignedOrderId: null,
-                    assignedUserId: null,
-                    addedAt: '2026-09-15T09:00:00.000Z',
-                    soldAt: null,
-                    notes: 'متجر أمريكي / ليبي كود رقمي معتمد'
-                },
-                {
-                    id: 'vc_itunes_25_01',
-                    brand: 'apple',
-                    category: 'gift_cards',
-                    productName: 'بطاقة آيتونز 25$ (iTunes 25 USD)',
-                    code: 'XX44-1189-ITUNES-25USD-SHB',
-                    pin: '1092',
-                    status: 'available',
-                    assignedOrderId: null,
-                    assignedUserId: null,
-                    addedAt: '2026-09-15T09:30:00.000Z',
-                    soldAt: null,
-                    notes: 'كود أصلي جاهز للشحن'
-                },
-                // أكواد ببجي موبايل (PUBG Mobile UC)
-                {
-                    id: 'vc_pubg_60_01',
-                    brand: 'pubg',
-                    category: 'games',
-                    productName: '60 شدة (60 UC) ببجي موبايل',
-                    code: 'PUBG-UC60-88219-44021-LY',
-                    pin: '5561',
-                    status: 'available',
-                    assignedOrderId: null,
-                    assignedUserId: null,
-                    addedAt: '2026-09-16T12:00:00.000Z',
-                    soldAt: null,
-                    notes: 'شحن فوري موقع Midasbuy'
-                },
-                {
-                    id: 'vc_pubg_325_01',
-                    brand: 'pubg',
-                    category: 'games',
-                    productName: '325 شدة (325 UC) ببجي موبايل',
-                    code: 'PUBG-UC325-77102-99341-LY',
-                    pin: '8820',
-                    status: 'available',
-                    assignedOrderId: null,
-                    assignedUserId: null,
-                    addedAt: '2026-09-16T12:15:00.000Z',
-                    soldAt: null,
-                    notes: 'كود استرداد رسمي معتمد'
-                },
-                {
-                    id: 'vc_pubg_660_01',
-                    brand: 'pubg',
-                    category: 'games',
-                    productName: '660 شدة (660 UC) ببجي موبايل',
-                    code: 'PUBG-UC660-12093-84729-SHB',
-                    pin: '3341',
-                    status: 'available',
-                    assignedOrderId: null,
-                    assignedUserId: null,
-                    addedAt: '2026-09-16T12:30:00.000Z',
-                    soldAt: null,
-                    notes: 'رويال باس + سيزون جديد'
-                },
-                // أكواد فري فاير (Free Fire Diamonds)
-                {
-                    id: 'vc_ff_100_01',
-                    brand: 'freefire',
-                    category: 'games',
-                    productName: '100 جوهرة فري فاير (100 Diamonds)',
-                    code: 'FF-100D-99120-44182-LIBYA',
-                    pin: '6172',
-                    status: 'available',
-                    assignedOrderId: null,
-                    assignedUserId: null,
-                    addedAt: '2026-09-17T14:00:00.000Z',
-                    soldAt: null,
-                    notes: 'شحن فوري Garena الرسمي'
-                },
-                {
-                    id: 'vc_ff_530_01',
-                    brand: 'freefire',
-                    category: 'games',
-                    productName: '530 جوهرة فري فاير (530 Diamonds)',
-                    code: 'FF-530D-33819-77291-LIBYA',
-                    pin: '9012',
-                    status: 'available',
-                    assignedOrderId: null,
-                    assignedUserId: null,
-                    addedAt: '2026-09-17T14:30:00.000Z',
-                    soldAt: null,
-                    notes: 'شحن فوري عبر كود جارينا'
-                },
-                // اشتراك نتفليكس 4K
-                {
-                    id: 'vc_netflix_4k_01',
-                    brand: 'netflix',
-                    category: 'streaming',
-                    productName: 'اشتراك نتفليكس 4K UHD بريميوم (شهر)',
-                    code: 'EMAIL: sahabati.net1@gmail.com | PASS: Sha_4K_2026 | PIN: 1402',
-                    pin: '1402',
-                    status: 'available',
-                    assignedOrderId: null,
-                    assignedUserId: null,
-                    addedAt: '2026-09-18T10:00:00.000Z',
-                    soldAt: null,
-                    notes: 'بروفايل خاص 4K شاشات وهواتف'
-                },
-                // اشتراك شاهد VIP
-                {
-                    id: 'vc_shahid_vip_01',
-                    brand: 'shahid',
-                    category: 'streaming',
-                    productName: 'شاهد VIP شامل المسلسلات والأفلام (حساب كامل)',
-                    code: 'EMAIL: sahabati.shahid2@gmail.com | PASS: Shahid_VIP_99 | شاشات وهواتف',
-                    pin: 'VIP',
-                    status: 'available',
-                    assignedOrderId: null,
-                    assignedUserId: null,
-                    addedAt: '2026-09-18T10:30:00.000Z',
-                    soldAt: null,
-                    notes: 'حساب كامل يعمل على جميع الأجهزة شاشات وهواتف'
-                }
-            ],
+            // مخزن الأكواد يبدأ فارغاً: يضيف المدير الأكواد الحقيقية من لوحة التحكم ← المخزن
+            voucher_codes: [],
             // سجل الطلبات
             orders: []
         };
@@ -202,6 +61,7 @@
         constructor() {
             this.listeners = [];
             this.db = this.loadDB();
+            this.removeDemoData();
             this.currentUser = this.loadCurrentUserSession();
             this.syncWithServer();
         }
@@ -222,6 +82,16 @@
                     }
                 } catch(e) {}
             }
+        }
+
+        // حذف أكواد ومستخدم العرض التجريبي من قواعد البيانات القديمة (الأكواد المباعة أو المحجوزة تبقى للسجل)
+        removeDemoData() {
+            const demoCodes = ['vc_itunes_10_01', 'vc_itunes_25_01', 'vc_pubg_60_01', 'vc_pubg_325_01', 'vc_pubg_660_01', 'vc_ff_100_01', 'vc_ff_530_01', 'vc_netflix_4k_01', 'vc_shahid_vip_01'];
+            if (!this.db || !Array.isArray(this.db.voucher_codes)) return;
+            const before = this.db.voucher_codes.length + (this.db.users || []).length;
+            this.db.voucher_codes = this.db.voucher_codes.filter(c => !(demoCodes.includes(c.id) && c.status === 'available'));
+            this.db.users = (this.db.users || []).filter(u => u.id !== 'usr_demo_01');
+            if (this.db.voucher_codes.length + this.db.users.length !== before) this.saveDB();
         }
 
         // ================= PERSISTENCE =================
@@ -468,6 +338,7 @@
                 if (codeVal) {
                     this.db.voucher_codes.unshift({
                         id: 'vc_' + Date.now().toString(36) + '_' + index + '_' + Math.random().toString(36).substr(2, 3),
+                        productId: productInfo.productId || null,
                         brand: productInfo.brand || 'general',
                         category: productInfo.category || 'games',
                         productName: productInfo.productName || 'كود رقمي',
@@ -504,10 +375,13 @@
 
             cartItems.forEach(item => {
                 for (let qty = 0; qty < item.quantity; qty++) {
-                    // Try to find matching available code
+                    // الألعاب وتطبيقات الشات تُشحن بالـ ID / QR / تسجيل الدخول: لا تُسحب لها أكواد من المخزن
+                    if (item.type === 'game') { claimedCodes.push({ title: item.titleAr, voucherCode: '', pin: '', isRealVaultCode: false }); continue; }
                     const itemTitle = (item.titleAr || '').toLowerCase();
                     const availableCode = this.db.voucher_codes.find(c => {
                         if (c.status !== 'available') return false;
+                        // الأكواد المربوطة بمنتج تُسلَّم لهذا المنتج فقط
+                        if (c.productId) return !!item.cardId && c.productId === item.cardId;
                         const codeProd = (c.productName || '').toLowerCase();
                         
                         // Exact or partial match
@@ -552,11 +426,10 @@
                             codeId: availableCode.id
                         });
                     } else {
-                        // Fallback generated secure tracking code
-                        const generatedCode = 'SHB-' + Math.random().toString(36).substr(2, 4).toUpperCase() + '-' + Math.random().toString(36).substr(2, 4).toUpperCase() + '-LY';
+                        // لا يوجد كود في المخزن: يسلّمه المدير يدوياً عند التأكيد (لا نعرض للعميل كوداً وهمياً)
                         claimedCodes.push({
                             title: item.titleAr,
-                            voucherCode: generatedCode,
+                            voucherCode: '',
                             pin: '',
                             isRealVaultCode: false
                         });
@@ -647,6 +520,10 @@
                 };
             }
 
+            if (!credentials.username && !credentials.password && !credentials.pin && credentials.notes) {
+                // شحن بالـ ID / QR / تسجيل الدخول: لا كود، فقط رسالة للعميل
+                order.accountDetails = Object.assign({}, order.accountDetails || {}, { notes: credentials.notes });
+            }
             if (credentials.username || credentials.password || credentials.pin) {
                 order.accountDetails = {
                     username: credentials.username || order.accountDetails?.username || '',
@@ -666,11 +543,11 @@
                         isRealVaultCode: true
                     }];
                 } else {
-                    order.vouchers.forEach(v => {
+                    // الكود اليدوي يُسلَّم للعناصر التي ليس لها كود من المخزن فقط
+                    order.vouchers.filter(v => !v.codeId).forEach(v => {
                         if (credentials.username) v.accountUsername = credentials.username;
                         if (credentials.password) v.accountPassword = credentials.password;
                         if (credentials.pin) v.pin = credentials.pin;
-                        v.isRealVaultCode = true;
                     });
                 }
             }

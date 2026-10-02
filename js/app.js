@@ -1616,7 +1616,7 @@ function renderOrders() {
         const isPaid = o.status === 'paid' || o.paymentConfirmed === true;
         if (isPaid) {
             if (o.vouchers && Array.isArray(o.vouchers) && o.vouchers.length > 0) {
-                o.vouchers.forEach(v => {
+                o.vouchers.filter(v => v.accountPassword || v.voucherCode || o.accountDetails?.password).forEach(v => {
                     userCodes.push({
                         orderId: o.id,
                         date: o.date,
@@ -1664,7 +1664,7 @@ function renderOrders() {
                 if (isPaid) {
                     statusBadge = '<span class="px-2.5 py-1 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1 shadow-sm">' +
                         '<i class="fa-solid fa-circle-check text-emerald-600"></i>' +
-                        '<span>تم استلام الدفع وتسليم الحساب ✓</span>' +
+                        '<span>تم الدفع واكتمل الطلب ✓</span>' +
                     '</span>';
                 } else if (isCancelled) {
                     statusBadge = '<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200 flex items-center gap-1">' +
@@ -1690,7 +1690,7 @@ function renderOrders() {
                         '<div class="flex items-center justify-between pb-2 border-b border-emerald-200/60">' +
                             '<div class="flex items-center gap-2">' +
                                 '<span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>' +
-                                '<h4 class="font-black text-emerald-950 text-xs sm:text-sm">بيانات الحساب وكلمة السر (في شاشتك الخاصة 👑)</h4>' +
+                                '<h4 class="font-black text-emerald-950 text-xs sm:text-sm">' + (password || username ? 'بيانات طلبك (في شاشتك الخاصة 👑)' : 'تم تنفيذ طلبك بنجاح ✅') + '</h4>' +
                             '</div>' +
                             '<span class="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md">مُفعّل ومضمون</span>' +
                         '</div>';
@@ -1712,7 +1712,7 @@ function renderOrders() {
                         const pwdId = 'pwd-elem-' + escapeAttr(order.id);
                         contentHtml += '<div class="p-2.5 rounded-xl bg-white border-2 border-emerald-400 flex items-center justify-between gap-2 shadow-sm">' +
                             '<div class="min-w-0">' +
-                                '<span class="text-[10px] font-extrabold text-emerald-700 block">كلمة السر (خاصة بك فقط 🔒):</span>' +
+                                '<span class="text-[10px] font-extrabold text-emerald-700 block">' + (username ? 'كلمة السر (خاصة بك فقط 🔒):' : 'الكود (خاص بك فقط 🔒):') + '</span>' +
                                 '<div class="flex items-center gap-2 mt-0.5">' +
                                     '<code id="' + pwdId + '" class="font-mono text-emerald-950 font-black text-xs sm:text-sm select-all tracking-wider break-all">••••••••</code>' +
                                     '<button type="button" onclick="toggleSecretVisibility(\'' + pwdId + '\', \'' + escapeAttr(password) + '\', this)" class="text-slate-400 hover:text-emerald-700 p-1 transition" title="إظهار / إخفاء كلمة السر">' +
