@@ -8,7 +8,18 @@ const path = require('path');
 const vm = require('vm');
 const crypto = require('crypto');
 
-const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '.data');
+// مكان حفظ الطلبات والأكواد: DATA_DIR إن ضُبط، وإلا مسار Volume الذي يضيفه Railway تلقائياً،
+// وإلا مجلد مؤقت داخل الحاوية (يُمسح عند كل نشر — يظهر تحذير في السجل ولوحة الإدارة)
+const RAILWAY_VOLUME = process.env.RAILWAY_VOLUME_MOUNT_PATH || '';
+const DATA_DIR = process.env.DATA_DIR || RAILWAY_VOLUME || path.join(__dirname, '.data');
+const ON_RAILWAY = !!(process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_ENVIRONMENT_NAME || process.env.RAILWAY_PROJECT_ID);
+
+function storagePersistent() {
+    if (!ON_RAILWAY) return true; // خادم عادي (VPS/جهاز): المجلد دائم
+    if (!RAILWAY_VOLUME) return false;
+    const rel = path.relative(path.resolve(RAILWAY_VOLUME), path.resolve(DATA_DIR));
+    return rel === '' || (!rel.startsWith('..') && !path.isAbsolute(rel));
+}
 const FILES = {
     sahabati_database_v2: 'database.json',
     sahabati_catalog_data: 'catalog.json'
@@ -55,6 +66,11 @@ function cleanPin(value) {
 }
 
 function createStore() {
+    if (!storagePersistent()) {
+        console.warn('[sahabati] ⚠️ البيانات تُحفظ في مكان مؤقت (' + DATA_DIR + ') وستُمسح عند كل نشر أو إعادة تشغيل. أضف Volume في Railway (مثلاً على المسار /data).');
+    } else {
+        console.log('[sahabati] مكان حفظ البيانات: ' + DATA_DIR);
+    }
     const context = vm.createContext({
         console, Date, Math, JSON, Uint32Array, TextEncoder,
         crypto: crypto.webcrypto,
@@ -258,7 +274,9 @@ function createStore() {
         const ids = Array.isArray(body && body.ids) ? body.ids.slice(0, 50).map(String) : [];
         if (!phone || !ids.length) return { status: 400, error: 'بيانات غير مكتملة' };
         const orders = db.getAllOrders().filter(o => ids.includes(o.id) && o.customerPhone === phone);
-        return { status: 200, orders: orders.map(customerView) };
+        const found = new Set(orders.map(o => o.id));
+        // طلبات لم يعد الخادم يعرفها (مثلاً بعد فقدان البيانات): نخبر العميل بدل "قيد الدفع" للأبد
+        return { status: 200, orders: orders.map(customerView), missing: ids.filter(id => !found.has(id)) };
     }
 
     // ---------- admin database sync ----------
@@ -307,7 +325,22 @@ function createStore() {
         db.saveDB();
     }
 
+    function storageInfo() {
+        const orders = db.getAllOrders();
+        return {
+            dataDir: DATA_DIR,
+            persistent: storagePersistent(),
+            onRailway: ON_RAILWAY,
+            volumePath: RAILWAY_VOLUME || null,
+            orders: orders.length,
+            paid: orders.filter(o => o.status === 'paid').length,
+            pending: orders.filter(o => o.status === 'pending_payment').length,
+            codesAvailable: db.getAllCodes().filter(c => c.status === 'available').length
+        };
+    }
+
     return {
+        storageInfo,
         adminLogin, adminLogout, isAdmin,
         publicCatalog, saveCatalog,
         createOrder, orderStatus,

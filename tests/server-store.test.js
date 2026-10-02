@@ -227,3 +227,32 @@ test('admin confirms on the server; a stale full-database upload cannot turn a p
     assert.equal(code.status, 'sold');
     assert.throws(() => store.adminCancelOrder({ id: r.order.id }), /مدفوع/);
 });
+
+test('storage: Railway volume is used automatically; temporary storage is reported', () => {
+    const keep = { DATA_DIR: process.env.DATA_DIR, RAILWAY_ENVIRONMENT: process.env.RAILWAY_ENVIRONMENT, RAILWAY_VOLUME_MOUNT_PATH: process.env.RAILWAY_VOLUME_MOUNT_PATH };
+    const load = () => { delete require.cache[require.resolve('../store')]; return require('../store').createStore(); };
+    try {
+        process.env.ADMIN_PIN = 'secret-pin-1';
+        process.env.RAILWAY_ENVIRONMENT = 'production';
+        delete process.env.RAILWAY_VOLUME_MOUNT_PATH;
+        process.env.DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'sahabati-tmp-'));
+        assert.equal(load().storageInfo().persistent, false, 'Railway without a volume = temporary');
+
+        const vol = fs.mkdtempSync(path.join(os.tmpdir(), 'sahabati-vol-'));
+        delete process.env.DATA_DIR;
+        process.env.RAILWAY_VOLUME_MOUNT_PATH = vol;
+        const info = load().storageInfo();
+        assert.equal(info.dataDir, vol, 'volume path used without DATA_DIR');
+        assert.equal(info.persistent, true);
+    } finally {
+        for (const [k, v] of Object.entries(keep)) { if (v === undefined) delete process.env[k]; else process.env[k] = v; }
+    }
+});
+
+test('order status reports orders the server no longer has', () => {
+    const store = freshStore();
+    const r = store.createOrder(goodOrder(), 'ip-m');
+    const res = store.orderStatus({ phone: '0912345678', ids: [r.order.id, 'LYD-00000000'] }, 'ip-m');
+    assert.equal(res.orders.length, 1);
+    assert.deepEqual([...res.missing], ['LYD-00000000']);
+});
