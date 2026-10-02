@@ -31,11 +31,11 @@ const DEFAULT_STORE_SETTINGS = {
 // المعرّف ثابت حسب الترتيب: أضف التطبيقات الجديدة في آخر القائمة فقط.
 const CHAT_APP_NAMES = [
     'اب لايف',
-    'از لايف',
-    'ايمو شات',
+    'أزال لايف',
+    'أيومي شات',
     'اب فون',
     'الو شات',
-    'ام سي يو بارتي',
+    'اميسو بارتي',
     'اور تالك',
     'اولاميت',
     'اولو لايف',
@@ -66,9 +66,9 @@ const CHAT_APP_NAMES = [
     'جيمي لايف',
     'حكي شات',
     'دانا شات',
-    'دولو لايف',
+    'دولي لايف',
     'دي دي',
-    'تو لايف',
+    'ديتو لايف',
     'ديكا لايف',
     'دي مو شات',
     'روح',
@@ -135,7 +135,11 @@ const CHAT_APP_NAMES = [
     'ليغو لايف'
 ];
 // أسماء مكررة أو متشابهة: تبقى في القائمة (حتى لا تتغير المعرّفات) لكنها مخفية عن الزبائن
-const CHAT_APP_HIDDEN = ['اهلا', 'ليت', 'لايكي'];
+const CHAT_APP_HIDDEN = ['اهلا', 'ليت', 'لايكي', 'دي دي'];
+// تصحيح أسماء كُتبت بشكل مختلف عن اسم التطبيق الحقيقي (تُطبَّق أيضاً على الكتالوجات المحفوظة)
+const CHAT_APP_RENAMES = { 'از لايف': 'أزال لايف', 'ايمو شات': 'أيومي شات', 'ام سي يو بارتي': 'اميسو بارتي', 'دولو لايف': 'دولي لايف', 'تو لايف': 'ديتو لايف' };
+// أيقونات التطبيقات المحفوظة داخل الموقع (images/chat/<id>.webp)
+const CHAT_APP_IMAGES = ['chat_001', 'chat_002', 'chat_003', 'chat_004', 'chat_005', 'chat_006', 'chat_007', 'chat_008', 'chat_009', 'chat_025', 'chat_026', 'chat_027', 'chat_028', 'chat_029', 'chat_030', 'chat_034', 'chat_035', 'chat_036', 'chat_037', 'chat_039', 'chat_040', 'chat_042', 'chat_043'];
 // باقات افتراضية بالقيمة: يحصل العميل على رصيد يعادل المبلغ. يمكن تعديلها لكل تطبيق من لوحة الإدارة.
 const CHAT_APP_PACKAGES = [
     { suffix: 'v10', nameAr: 'شحن بقيمة 10 د.ل', priceLYD: 10.00, icon: '🪙' },
@@ -151,6 +155,7 @@ function buildChatApps() {
             category: 'chat',
             deliveryMethod: 'id',
             hidden: CHAT_APP_HIDDEN.includes(name),
+            image: CHAT_APP_IMAGES.includes(id) ? 'images/chat/' + id + '.webp' : undefined,
             nameAr: name,
             nameEn: name,
             idLabelAr: 'معرّف حسابك (ID) في ' + name + ':',
@@ -175,7 +180,7 @@ const TR_ITUNES_CARD = {
 const DEFAULT_APP_DATA = {
     settings: DEFAULT_STORE_SETTINGS,
     // رقم إصدار الكتالوج: عند تغييره يُهمل أي كتالوج قديم محفوظ في المتصفح أو على الخادم
-    catalogVersion: 5,
+    catalogVersion: 6,
     categories: [
         { id: 'games', titleAr: 'شحن ألعاب الفيديو', shortAr: 'الألعاب', icon: 'fa-gamepad', badge: 'شحن فوري ⚡' },
         { id: 'chat', titleAr: 'تطبيقات الشات والصوتية', shortAr: 'الشات والصوتية', icon: 'fa-microphone-lines', badge: 'شحن بالـ ID 🎙️' },
@@ -437,6 +442,19 @@ function migrateCatalog(data) {
         });
         if (!(data.giftCards || []).some(c => c.id === TR_ITUNES_CARD.id)) data.giftCards.push(JSON.parse(JSON.stringify(TR_ITUNES_CARD)));
         data.catalogVersion = 5;
+    }
+    if (data.catalogVersion === 5) {
+        (data.games || []).forEach(g => {
+            if (g.category !== 'chat') return;
+            const newName = CHAT_APP_RENAMES[g.nameAr];
+            if (newName) {
+                g.nameAr = newName; g.nameEn = newName;
+                g.idLabelAr = 'معرّف حسابك (ID) في ' + newName + ':';
+            }
+            if (g.nameAr === 'دي دي') g.hidden = true;
+            if (!g.image && CHAT_APP_IMAGES.includes(g.id)) g.image = 'images/chat/' + g.id + '.webp';
+        });
+        data.catalogVersion = 6;
     }
     return data;
 }
