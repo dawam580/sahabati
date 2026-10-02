@@ -309,9 +309,20 @@ function isAvailable(item) {
     return !!item && !item.hidden;
 }
 // Chat apps have no brand logo: a colored tile with the app's first letter
+// صورة التطبيق إن أضافها المدير (رابط https أو ملف داخل الموقع images/...)، وإلا مربع ملوّن بأول حرف
+function safeImageUrl(url) {
+    const u = String(url || '').trim();
+    return /^(https:\/\/|images\/)[^"'<>\s]+$/i.test(u) ? u : '';
+}
 function chatAppMark(game, index) {
     const hue = (index * 47) % 360;
     const letter = String(game.nameAr || '?').trim().split(/\s+/).slice(0, 2).map(w => w.charAt(0)).join('');
+    const img = safeImageUrl(game.image);
+    if (img) {
+        return '<span class="tile-art chat-art has-img" style="--h:' + hue + '" data-letter="' + escapeAttr(letter) + '">' +
+            '<img src="' + escapeAttr(img) + '" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.classList.remove(\'has-img\');this.parentNode.textContent=this.parentNode.dataset.letter">' +
+        '</span>';
+    }
     return '<span class="tile-art chat-art" style="--h:' + hue + '">' + escapeHtml(letter) + '</span>';
 }
 function shortName(nameAr) {
