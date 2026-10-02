@@ -39,7 +39,15 @@ const ON_RAILWAY_ENV = !!(process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY
 // قرص على /data، أو على Railway: القرص الإضافي الوحيد المركّب في الحاوية مهما كان مساره
 const MOUNTED_DATA = DATA_MOUNTS.find(m => m.point === '/data') ? '/data'
     : (ON_RAILWAY_ENV && DATA_MOUNTS.length === 1 ? DATA_MOUNTS[0].point : '');
-const DATA_DIR = process.env.DATA_DIR || RAILWAY_VOLUME || MOUNTED_DATA || path.join(__dirname, '.data');
+// DATA_DIR نسبي مثل "data" (بدون / في أوله) يقع داخل الحاوية المؤقتة: إذا وُجد قرص نستخدمه بدلاً منه
+const RAW_DATA_DIR = (process.env.DATA_DIR || '').trim();
+const VOLUME_DIR = RAILWAY_VOLUME || MOUNTED_DATA;
+const DATA_DIR = (RAW_DATA_DIR && (path.isAbsolute(RAW_DATA_DIR) || !VOLUME_DIR))
+    ? path.resolve(RAW_DATA_DIR)
+    : (VOLUME_DIR || (RAW_DATA_DIR ? path.resolve(RAW_DATA_DIR) : path.join(__dirname, '.data')));
+if (RAW_DATA_DIR && !path.isAbsolute(RAW_DATA_DIR) && VOLUME_DIR) {
+    console.warn('[sahabati] DATA_DIR="' + RAW_DATA_DIR + '" ليس مساراً كاملاً؛ سيُستخدم القرص ' + VOLUME_DIR + ' بدلاً منه. صحّح المتغير إلى "/data" أو احذفه.');
+}
 const ON_RAILWAY = ON_RAILWAY_ENV;
 
 function storagePersistent() {

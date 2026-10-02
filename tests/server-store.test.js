@@ -268,3 +268,20 @@ test('v8: manual-delivery badge on PUBG, Free Fire, TikTok, Snapchat and Telegra
     store.saveCatalog(cat);
     assert.equal(store.publicCatalog().games.find(g => g.id === 'pubg').manual, false);
 });
+
+test('storage: a relative DATA_DIR like "data" falls back to the attached volume', () => {
+    const keep = { DATA_DIR: process.env.DATA_DIR, RAILWAY_ENVIRONMENT: process.env.RAILWAY_ENVIRONMENT, RAILWAY_VOLUME_MOUNT_PATH: process.env.RAILWAY_VOLUME_MOUNT_PATH };
+    try {
+        const vol = fs.mkdtempSync(path.join(os.tmpdir(), 'sahabati-vol-'));
+        process.env.ADMIN_PIN = 'secret-pin-1';
+        process.env.RAILWAY_ENVIRONMENT = 'production';
+        process.env.RAILWAY_VOLUME_MOUNT_PATH = vol;
+        process.env.DATA_DIR = 'data';
+        delete require.cache[require.resolve('../store')];
+        const info = require('../store').createStore().storageInfo();
+        assert.equal(info.dataDir, vol);
+        assert.equal(info.persistent, true);
+    } finally {
+        for (const [k, v] of Object.entries(keep)) { if (v === undefined) delete process.env[k]; else process.env[k] = v; }
+    }
+});
