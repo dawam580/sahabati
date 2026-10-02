@@ -285,3 +285,30 @@ test('storage: a relative DATA_DIR like "data" falls back to the attached volume
         for (const [k, v] of Object.entries(keep)) { if (v === undefined) delete process.env[k]; else process.env[k] = v; }
     }
 });
+
+test('admin-chosen delivery method: a card by ID needs an account ID, a manual card never takes a vault code, a manual game needs no ID', () => {
+    const store = freshStore();
+    const cat = store.publicCatalog();
+    cat.giftCards.find(c => c.id === 'apple_itunes_10_us').deliveryMethod = 'id';
+    cat.games.find(g => g.id === 'pubg').deliveryMethod = 'manual';
+    store.saveCatalog(cat);
+    const card = (playerId) => goodOrder({ items: [{ type: 'giftcard', cardId: 'apple_itunes_10_us', quantity: 1, playerId }] });
+    assert.equal(store.createOrder(card(''), 'm1').status, 400, 'ID card needs an account ID');
+    const byId = store.createOrder(card('user@example.com'), 'm2');
+    assert.equal(byId.status, 201);
+    assert.equal(byId.order.items[0].meta, 'ID: user@example.com');
+    assert.ok(!byId.order.vouchers.some(v => v.codeId), 'ID delivery does not reserve a vault code');
+
+    const cat2 = store.publicCatalog();
+    cat2.giftCards.find(c => c.id === 'apple_itunes_10_us').deliveryMethod = 'manual';
+    store.saveCatalog(cat2);
+    const manual = store.createOrder(card(''), 'm3');
+    assert.equal(manual.status, 201);
+    assert.equal(manual.order.items[0].meta, 'تسليم يدوي');
+    assert.ok(!manual.order.vouchers.some(v => v.codeId), 'manual delivery does not reserve a vault code');
+    assert.equal(store.adminDatabase().voucher_codes.filter(c => c.status === 'available').length, 8);
+
+    const game = store.createOrder(goodOrder({ items: [{ type: 'game', gameId: 'pubg', packageId: 'pubg_60', quantity: 1, playerId: '' }] }), 'm4');
+    assert.equal(game.status, 201);
+    assert.equal(game.order.items[0].meta, 'تسليم يدوي');
+});

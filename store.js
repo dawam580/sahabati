@@ -238,10 +238,13 @@ function createStore() {
                 const pkg = game.packages.find(p => p.id === item.packageId);
                 item.titleAr = game.nameAr.split('(')[0].trim() + ' - ' + pkg.nameAr;
                 const method = game.deliveryMethod || 'id';
+                item.delivery = method;
                 if (method === 'qr') {
                     item.meta = 'الشحن عبر رمز QR';
                 } else if (method === 'login') {
                     item.meta = 'الشحن عبر تسجيل الدخول';
+                } else if (method === 'manual') {
+                    item.meta = 'تسليم يدوي';
                 } else {
                     const idProblem = guard.playerIdProblem(item.playerId);
                     if (idProblem) return { status: 400, error: idProblem };
@@ -250,7 +253,18 @@ function createStore() {
             } else {
                 const card = catalog.giftCards.find(c => c.id === item.cardId);
                 item.titleAr = card.nameAr;
-                item.meta = card.nominal || 'اشتراك وبطاقة رقمية';
+                // طريقة التسليم يحددها المدير من اللوحة: code (كود من المخزن) | id (معرّف حساب العميل) | manual (يدوي)
+                const method = card.deliveryMethod || 'code';
+                item.delivery = method;
+                if (method === 'id') {
+                    const idProblem = guard.accountIdProblem(item.playerId);
+                    if (idProblem) return { status: 400, error: idProblem + ' (' + card.nameAr + ')' };
+                    item.meta = 'ID: ' + guard.cleanText(item.playerId, 80);
+                } else if (method === 'manual') {
+                    item.meta = 'تسليم يدوي';
+                } else {
+                    item.meta = card.nominal || 'اشتراك وبطاقة رقمية';
+                }
             }
             delete item.playerId;
         }

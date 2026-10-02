@@ -224,7 +224,14 @@ function switchAdminTab(tabName){
 
 // ---------- Product manager (إدارة المنتجات والأسعار) ----------
 const ADMIN_SECTION_NAMES={ games:'الألعاب', chat:'الشات والصوتية', entertainment:'الترفيه', ai_cards:'ChatGPT و Claude', gift_cards:'آبل آيتونز', social:'سوشيال' };
-const ADMIN_METHOD_NAMES={ id:'🆔 بالمعرّف', qr:'🔳 QR', login:'🔐 تسجيل دخول' };
+const ADMIN_METHOD_NAMES={ id:'🆔 بالمعرّف', qr:'🔳 QR', login:'🔐 تسجيل دخول', manual:'✋ تسليم يدوي', code:'🎟️ كود تلقائي' };
+const ADMIN_GAME_METHODS=['id','qr','login','manual'];
+const ADMIN_CARD_METHODS=['code','id','manual'];
+function adminMethodSelect(kind, id, current, list){
+    return '<label class="adm-mini">طريقة التسليم: <select onchange="adminSetMethod(\''+kind+'\',\''+escapeAttr(id)+'\',this.value)">'+
+        list.map(m=>'<option value="'+m+'"'+(current===m?' selected':'')+'>'+ADMIN_METHOD_NAMES[m]+'</option>').join('')+
+    '</select></label>';
+}
 function adminGameSection(g){ return g.category||'games'; }
 
 // عدد القطع المباعة لكل منتج من الطلبات المدفوعة
@@ -295,9 +302,7 @@ function renderAdminPanel(){
                     (g.manual?'<span class="adm-chip">✋ يدوي</span>':'')+
                     '<span class="adm-chip ok">مبيع: '+sold+'</span></summary>'+
                 '<div class="adm-game-actions">'+
-                    '<label class="adm-mini">طريقة الشحن: <select onchange="adminSetMethod(\''+escapeAttr(g.id)+'\',this.value)">'+
-                        ['id','qr','login'].map(m=>'<option value="'+m+'"'+((g.deliveryMethod||'id')===m?' selected':'')+'>'+ADMIN_METHOD_NAMES[m]+'</option>').join('')+
-                    '</select></label>'+
+                    adminMethodSelect('game', g.id, g.deliveryMethod||'id', ADMIN_GAME_METHODS)+
                     adminRowActions('game', g.id, '', !!g.hidden)+
                 '</div>'+
                 '<div class="adm-rows">'+
@@ -314,7 +319,7 @@ function renderAdminPanel(){
         html+='<div class="adm-group-title"><i class="fa-solid fa-gift"></i> الاشتراكات والبطاقات ('+cards.length+')</div><div class="adm-rows">';
         html+=cards.map(c=>'<div class="adm-row'+(c.hidden?' is-hidden':'')+'">'+
             '<div class="adm-row-name"><span>'+escapeHtml(c.nameAr)+'</span><small>'+escapeHtml(ADMIN_SECTION_NAMES[c.category]||c.category||'')+' · مبيع: '+(sales.idx['c:'+c.id]||0)+(c.hidden?' · مخفي':'')+'</small></div>'+
-            '<div class="adm-row-tools">'+adminPriceInput('card', c.id, '', c.priceLYD)+adminRowActions('card', c.id, '', !!c.hidden)+'</div>'+
+            '<div class="adm-row-tools">'+adminMethodSelect('card', c.id, c.deliveryMethod||'code', ADMIN_CARD_METHODS)+adminPriceInput('card', c.id, '', c.priceLYD)+adminRowActions('card', c.id, '', !!c.hidden)+'</div>'+
         '</div>').join('')+'</div>';
     }
     box.innerHTML=html||'<p class="adm-note">لا توجد منتجات مطابقة للبحث.</p>';
@@ -374,9 +379,13 @@ function adminSetImage(kind, id){
     saveAppData(APP_DATA); renderAdminPanel();
     showToast(clean?'تم تحديث الصورة':'تمت إزالة الصورة','fa-image');
 }
-function adminSetMethod(gameId, method){
-    const g=adminFind('game',gameId); if(!g || !ADMIN_METHOD_NAMES[method]) return;
+function adminSetMethod(kind, id, method){
+    const list=kind==='card'?ADMIN_CARD_METHODS:ADMIN_GAME_METHODS;
+    const g=adminFind(kind==='card'?'card':'game',id); if(!g || !list.includes(method)) return;
     g.deliveryMethod=method;
+    // التسليم اليدوي يُظهر شارة «يدوي» للعميل، والطرق الآلية تزيلها
+    if(method==='manual') g.manual=true;
+    else if(method==='code') g.manual=false;
     saveAppData(APP_DATA); renderAdminPanel(); showToast('تم تغيير طريقة الشحن: '+ADMIN_METHOD_NAMES[method]);
 }
 
@@ -995,7 +1004,7 @@ function openAdminConfirmPaymentModal(orderId) {
     const vaultCount = (order.vouchers || []).filter(v => v.codeId).length;
     const items = (order.items || []).map(i => {
         const meta = String(i.meta || '');
-        const pid = /^Player ID: /.test(meta) ? meta.replace('Player ID: ', '') : '';
+        const pid = /^(Player ID|ID): /.test(meta) ? meta.replace(/^(Player ID|ID): /, '') : '';
         return '<div class="adm-row">'+
             '<div class="adm-row-name"><span>'+escapeHtml(i.quantity+'× '+(i.titleAr||''))+'</span><small>'+escapeHtml(pid ? ('معرّف الحساب (ID): '+pid) : meta)+'</small></div>'+
             (pid ? '<div class="adm-row-tools">'+adminCopyBtn(pid)+'</div>' : '')+
