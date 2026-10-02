@@ -126,7 +126,8 @@ async function handleAdminLogin(e){
     if(e && e.preventDefault) e.preventDefault();
     const pinInput=document.getElementById('admin-pin-input');
     if(!pinInput){ showToast('حقل كلمة السر غير موجود','fa-triangle-exclamation'); return; }
-    const entered=(pinInput.value||'').trim();
+    // أرقام لوحة المفاتيح العربية (١٢٣) تُحوَّل إلى 123
+    const entered=(pinInput.value||'').replace(/[\u0660-\u0669]/g,d=>String(d.charCodeAt(0)-0x0660)).replace(/[\u06F0-\u06F9]/g,d=>String(d.charCodeAt(0)-0x06F0)).trim();
     if(!entered) return adminLoginFailed(pinInput);
 
     // 1) الخادم أولاً: كلمة السر محفوظة في متغير البيئة ADMIN_PIN وليس في المتصفح

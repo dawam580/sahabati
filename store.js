@@ -43,8 +43,15 @@ function fileBackedStorage() {
     };
 }
 
+// لوحة مفاتيح الهاتف العربية تكتب الأرقام هكذا ١٢٣ أو ۱۲۳: نحوّلها إلى 123 قبل المقارنة
+function toLatinDigits(value) {
+    return String(value || '')
+        .replace(/[\u0660-\u0669]/g, d => String(d.charCodeAt(0) - 0x0660))
+        .replace(/[\u06F0-\u06F9]/g, d => String(d.charCodeAt(0) - 0x06F0));
+}
+
 function cleanPin(value) {
-    return String(value || '').trim().replace(/^(['"])(.*)\1$/, '$2').trim();
+    return toLatinDigits(value).trim().replace(/^(['"])(.*)\1$/, '$2').trim();
 }
 
 function createStore() {

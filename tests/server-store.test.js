@@ -136,3 +136,13 @@ test('admin PIN tolerates spaces and quotes copied into the hosting variable', (
     assert.match(store.adminLogin(' Pin@2026x '), /^[a-f0-9]{64}$/);
     assert.equal(store.adminLogin('pin@2026x'), null, 'still case-sensitive');
 });
+
+test('admin PIN typed with an Arabic phone keyboard (Arabic-Indic digits) is accepted', () => {
+    process.env.DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'sahabati-store-'));
+    process.env.ADMIN_PIN = '5550001@';
+    delete require.cache[require.resolve('../store')];
+    const store = require('../store').createStore();
+    assert.match(store.adminLogin('٥٥٥٠٠٠١@'), /^[a-f0-9]{64}$/);
+    assert.match(store.adminLogin('۵۵۵۰۰۰۱@'), /^[a-f0-9]{64}$/);
+    assert.equal(store.adminLogin('٥٥٥٠٠٠٢@'), null);
+});
