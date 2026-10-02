@@ -16,7 +16,7 @@ let state = {
     cart: (typeof localStorage !== 'undefined' ? JSON.parse(localStorage.getItem('sahabati_cart') || '[]') : []),
     orders: (typeof localStorage !== 'undefined' ? JSON.parse(localStorage.getItem('sahabati_orders') || '[]') : []),
     appliedPromo: null,
-    paymentMethod: 'one_pay',
+    paymentMethod: 'telecom_libyana',
     isAdminAuth: (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('sahabati_admin_auth') === 'true' : false)
 };
 
@@ -105,8 +105,9 @@ function initApp() {
     
     // Check initial tab hash if any
     const hash = window.location.hash.replace('#', '');
-    if (['home', 'games', 'giftcards', 'streaming', 'social', 'ai_cards', 'telecom', 'checkout', 'orders'].includes(hash)) {
-        if (['streaming', 'social', 'ai_cards', 'telecom'].includes(hash)) {
+    const cardFilters = (APP_DATA.categories || []).map(c => c.id).filter(id => id !== 'games');
+    if (['home', 'games', 'giftcards', 'checkout', 'orders'].concat(cardFilters).includes(hash)) {
+        if (cardFilters.includes(hash)) {
             navigateTo('giftcards');
             filterGiftCards(hash);
         } else {
@@ -258,12 +259,11 @@ function renderCategories() {
     if (!container) return;
 
     container.innerHTML = APP_DATA.categories.map(cat => {
-        const shortTitle = {
-            games: 'الألعاب', streaming: 'المشاهدة', social: 'سوشيال',
-            ai_cards: 'بطاقات', telecom: 'ليبيانا ومدار'
-        }[cat.id] || cat.titleAr;
+        const shortTitle = cat.shortAr || cat.titleAr;
+        const svg = cat.brand && typeof brandSvg === 'function' ? brandSvg(cat.brand, 'cat-svg') : '';
+        const icon = svg || ('<i class="' + (/^fa-(apple|tiktok)$/.test(cat.icon) ? 'fa-brands ' : 'fa-solid ') + escapeAttr(cat.icon) + '"></i>');
         return '<button type="button" role="listitem" onclick="handleCategoryClick(\'' + escapeAttr(cat.id) + '\')" class="cat-chip cat-' + escapeAttr(cat.id) + '">' +
-            '<span class="cat-icon"><i class="fa-solid ' + escapeAttr(cat.icon) + '"></i></span>' +
+            '<span class="cat-icon">' + icon + '</span>' +
             '<span class="cat-label">' + escapeHtml(shortTitle) + '</span>' +
         '</button>';
     }).join('');
@@ -284,11 +284,9 @@ const BRAND_LOOK = {
     snapchat: { cls: 'b-snapchat', mark: '<i class="fa-brands fa-snapchat"></i>' },
     telegram: { cls: 'b-telegram', mark: '<i class="fa-brands fa-telegram"></i>' },
     chatgpt: { cls: 'b-chatgpt', mark: '<i class="fa-solid fa-robot"></i>' },
-    playstation: { cls: 'b-playstation', mark: '<i class="fa-brands fa-playstation"></i>' },
-    steam: { cls: 'b-steam', mark: '<i class="fa-brands fa-steam"></i>' },
+    claude: { cls: 'b-claude', mark: 'Claude' },
     apple: { cls: 'b-apple', mark: '<i class="fa-brands fa-apple"></i>' },
-    libyana: { cls: 'b-libyana', mark: 'ليبيانا' },
-    madar: { cls: 'b-madar', mark: 'مدار' }
+    libyana: { cls: 'b-libyana', mark: 'ليبيانا' }
 };
 function brandLook(key) {
     const look = BRAND_LOOK[key] || { cls: 'b-default', mark: '<i class="fa-solid fa-gift"></i>' };
@@ -326,11 +324,11 @@ function renderHome() {
     };
     const streamingRow = document.getElementById('home-streaming-row');
     if (streamingRow) {
-        streamingRow.innerHTML = APP_DATA.giftCards.filter(c => c.category === 'streaming').map(cardTile).join('');
+        streamingRow.innerHTML = APP_DATA.giftCards.filter(c => ['netflix', 'shahid', 'streaming'].includes(c.category)).map(cardTile).join('');
     }
     const cardsRow = document.getElementById('home-cards-row');
     if (cardsRow) {
-        cardsRow.innerHTML = APP_DATA.giftCards.filter(c => c.category === 'social' || c.category === 'ai_cards').map(cardTile).join('');
+        cardsRow.innerHTML = APP_DATA.giftCards.filter(c => ['ai_cards', 'gift_cards', 'social'].includes(c.category)).map(cardTile).join('');
     }
 }
 
@@ -367,18 +365,9 @@ function initPromoCarousel() {
 function handleCategoryClick(catId) {
     if (catId === 'games') {
         navigateTo('games');
-    } else if (catId === 'streaming') {
+    } else {
         navigateTo('giftcards');
-        filterGiftCards('streaming');
-    } else if (catId === 'social') {
-        navigateTo('giftcards');
-        filterGiftCards('social');
-    } else if (catId === 'ai_cards') {
-        navigateTo('giftcards');
-        filterGiftCards('ai_cards');
-    } else if (catId === 'telecom') {
-        navigateTo('giftcards');
-        filterGiftCards('telecom');
+        filterGiftCards(catId);
     }
 }
 
@@ -572,13 +561,7 @@ function renderGiftCards(filter) {
 
     let cards = APP_DATA.giftCards;
     if (filter !== 'all') {
-        cards = cards.filter(c => {
-            if (filter === 'streaming') return c.category === 'streaming' || c.brand === 'netflix' || c.brand === 'shahid' || c.brand === 'disney';
-            if (filter === 'social') return c.category === 'social' || c.brand === 'tiktok' || c.brand === 'snapchat' || c.brand === 'telegram';
-            if (filter === 'ai_cards') return c.category === 'ai_cards' || c.brand === 'chatgpt' || c.brand === 'playstation' || c.brand === 'steam' || c.brand === 'apple';
-            if (filter === 'telecom') return c.category === 'telecom' || c.brand === 'madar' || c.brand === 'libyana';
-            return c.category === filter || c.brand === filter;
-        });
+        cards = cards.filter(c => c.category === filter);
     }
 
     container.innerHTML = cards.map(card => {
@@ -825,25 +808,7 @@ function selectPaymentMethod(method) {
     const voucherInput = document.getElementById('voucher-card-input');
 
     if (voucherLabel) {
-        if (method === 'telecom_libyana') {
-            voucherLabel.textContent = 'كود كارت تعبئة ليبيانا (13 رقم بالضبط):';
-            if (voucherContainer) {
-                voucherContainer.classList.remove('bg-blue-50/90', 'border-blue-300');
-                voucherContainer.classList.add('bg-amber-50/90', 'border-amber-300');
-            }
-        } else if (method === 'telecom_madar') {
-            voucherLabel.textContent = 'كود كارت تعبئة مدار الجديد (13 رقم بالضبط):';
-            if (voucherContainer) {
-                voucherContainer.classList.remove('bg-amber-50/90', 'border-amber-300');
-                voucherContainer.classList.add('bg-blue-50/90', 'border-blue-300');
-            }
-        } else {
-            voucherLabel.textContent = 'كود كارت التعبئة (13 رقم إن وجد):';
-            if (voucherContainer) {
-                voucherContainer.classList.remove('bg-blue-50/90', 'border-blue-300');
-                voucherContainer.classList.add('bg-amber-50/90', 'border-amber-300');
-            }
-        }
+        voucherLabel.textContent = 'كود كرت تعبئة ليبيانا (13 رقماً بالضبط):';
     }
 
     if (voucherInput) {
@@ -940,17 +905,14 @@ function renderPaymentInstructions() {
 }
 
 const PAYMENT_METHOD_NAMES = {
-    'one_pay': 'ون باي (OnePay) / دفع مصرفي',
-    'telecom_libyana': 'شفرة / كرت تعبئة ليبيانا (13 رقم)',
-    'telecom_madar': 'شفرة / كرت تعبئة مدار (13 رقم)',
-    'bank_transfer': 'تحويل مصرفي ليبي'
+    'telecom_libyana': 'كرت تعبئة ليبيانا (13 رقم)'
 };
 
 function buildOrderWhatsAppUrl(order, extra) {
     const itemsListText = (order.items || []).map(item => '• ' + item.quantity + 'x ' + item.titleAr + ' (' + item.meta + ') - ' + formatPrice(item.priceLYD * item.quantity)).join('\n');
     let cardDetails = '';
     if (extra.cardCode13) {
-        const cardCompany = order.paymentMethod === 'telecom_libyana' ? 'ليبيانا (Libyana)' : (order.paymentMethod === 'telecom_madar' ? 'مدار الجديد (Madar)' : 'كرت تعبئة');
+        const cardCompany = 'ليبيانا (Libyana)';
         cardDetails = '🎟️ *كود كارت التعبئة (13 رقم):* `' + extra.cardCode13 + '`\n' + '🏢 *الشركة:* ' + cardCompany + '\n';
     }
     const waMessage =
@@ -1064,10 +1026,10 @@ function processPayment() {
     if (phoneInput) phoneInput.value = customerPhone;
 
     // 5) Recharge card (13 digits, not reused, lockout after repeated failures)
-    const method = state.paymentMethod;
+    const method = 'telecom_libyana'; // الدفع عبر ليبيانا فقط
     const voucherInput = document.getElementById('voucher-card-input');
     const cleanCardDigits = (voucherInput ? voucherInput.value : '').replace(/[^0-9]/g, '');
-    const needsCard = method === 'telecom_libyana' || method === 'telecom_madar';
+    const needsCard = true;
     if (needsCard || cleanCardDigits.length > 0) {
         const lockMs = FraudGuard.voucherLockRemainingMs();
         if (lockMs > 0) {
