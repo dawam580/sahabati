@@ -134,6 +134,8 @@ const CHAT_APP_NAMES = [
     'ماي شات',
     'ليغو لايف'
 ];
+// أسماء مكررة أو متشابهة: تبقى في القائمة (حتى لا تتغير المعرّفات) لكنها مخفية عن الزبائن
+const CHAT_APP_HIDDEN = ['اهلا', 'ليت', 'لايكي'];
 // باقات افتراضية بالقيمة: يحصل العميل على رصيد يعادل المبلغ. يمكن تعديلها لكل تطبيق من لوحة الإدارة.
 const CHAT_APP_PACKAGES = [
     { suffix: 'v10', nameAr: 'شحن بقيمة 10 د.ل', priceLYD: 10.00, icon: '🪙' },
@@ -148,6 +150,7 @@ function buildChatApps() {
             id: id,
             category: 'chat',
             deliveryMethod: 'id',
+            hidden: CHAT_APP_HIDDEN.includes(name),
             nameAr: name,
             nameEn: name,
             idLabelAr: 'معرّف حسابك (ID) في ' + name + ':',
@@ -157,10 +160,22 @@ function buildChatApps() {
     });
 }
 
+// بطاقة آيتونز تركي (تُضاف أيضاً للكتالوجات المحفوظة عبر الترحيل أدناه)
+const TR_ITUNES_CARD = {
+    id: 'apple_itunes_tr_100',
+    brand: 'apple',
+    category: 'gift_cards',
+    nameAr: 'بطاقة آيتونز تركي 100 ليرة (Apple iTunes TR)',
+    nominal: '100 TL Apple Gift Card',
+    priceLYD: 25.00,
+    badge: 'آبل تركي 🇹🇷',
+    instructionsAr: 'كود بطاقة متجر آبل التركي 100 ليرة، يعمل فقط على حسابات آبل المسجلة على المتجر التركي.'
+};
+
 const DEFAULT_APP_DATA = {
     settings: DEFAULT_STORE_SETTINGS,
     // رقم إصدار الكتالوج: عند تغييره يُهمل أي كتالوج قديم محفوظ في المتصفح أو على الخادم
-    catalogVersion: 4,
+    catalogVersion: 5,
     categories: [
         { id: 'games', titleAr: 'شحن ألعاب الفيديو', shortAr: 'الألعاب', icon: 'fa-gamepad', badge: 'شحن فوري ⚡' },
         { id: 'chat', titleAr: 'تطبيقات الشات والصوتية', shortAr: 'الشات والصوتية', icon: 'fa-microphone-lines', badge: 'شحن بالـ ID 🎙️' },
@@ -402,16 +417,29 @@ const DEFAULT_APP_DATA = {
             id: 'apple_itunes_10_us',
             brand: 'apple',
             category: 'gift_cards',
-            nameAr: 'بطاقة آبل آيتونز 10 دولار (Apple iTunes $10 US)',
+            nameAr: 'بطاقة آيتونز أمريكي 10 دولار (Apple iTunes $10 US)',
             nominal: '$10 Apple Gift Card',
             priceLYD: 68.00,
             badge: 'آبل أمريكي 🍎',
             instructionsAr: 'كود بطاقة متجر آبل لشحن رصيد الآيفون والآيباد وشراء التطبيقات والاشتراكات.'
-        }
+        },
+        TR_ITUNES_CARD
     ]
 };
 
 DEFAULT_APP_DATA.games = DEFAULT_APP_DATA.games.concat(buildChatApps());
+
+// ترقية كتالوج محفوظ بدل حذفه: تبقى أسعار وتعديلات المدير كما هي
+function migrateCatalog(data) {
+    if (data.catalogVersion === 4) {
+        (data.games || []).forEach(g => {
+            if (g.category === 'chat' && CHAT_APP_HIDDEN.includes(g.nameAr)) g.hidden = true;
+        });
+        if (!(data.giftCards || []).some(c => c.id === TR_ITUNES_CARD.id)) data.giftCards.push(JSON.parse(JSON.stringify(TR_ITUNES_CARD)));
+        data.catalogVersion = 5;
+    }
+    return data;
+}
 
 // LocalStorage Persistence Layer
 function loadAppData() {
@@ -419,6 +447,7 @@ function loadAppData() {
         const stored = localStorage.getItem('sahabati_catalog_data');
         if (stored) {
             const parsed = JSON.parse(stored);
+            if (parsed && parsed.games && parsed.giftCards) migrateCatalog(parsed);
             if (parsed && parsed.games && parsed.giftCards && parsed.catalogVersion === DEFAULT_APP_DATA.catalogVersion) {
                 parsed.settings = { ...DEFAULT_STORE_SETTINGS, ...(parsed.settings || {}) };
                 parsed.settings.paymentMethodsInfo = DEFAULT_STORE_SETTINGS.paymentMethodsInfo && parsed.settings.paymentMethodsInfo && parsed.settings.paymentMethodsInfo.telecom_libyana

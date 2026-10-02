@@ -104,3 +104,25 @@ test('delivery methods: PUBG and chat apps need an ID, TikTok by QR, Roblox by l
     store.saveCatalog(cat);
     assert.equal(store.createOrder(goodOrder({ items: [{ type: 'giftcard', cardId: 'watchit_1m', quantity: 1 }] }), 'a7').status, 400);
 });
+
+test('v5: similar chat app names are hidden, Turkish iTunes added, and a saved v4 catalog keeps admin prices', () => {
+    process.env.DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'sahabati-store-'));
+    // simulate a catalog the admin saved under v4 with a custom price
+    const vm = require('node:vm');
+    const ctx = vm.createContext({ localStorage: { getItem: () => null, setItem() {} }, console });
+    vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'js', 'data.js'), 'utf8') + ';this.D=JSON.parse(JSON.stringify(DEFAULT_APP_DATA));', ctx);
+    const v4 = ctx.D;
+    v4.catalogVersion = 4;
+    v4.giftCards = v4.giftCards.filter(c => c.id !== 'apple_itunes_tr_100');
+    v4.games.forEach(g => { delete g.hidden; });
+    v4.giftCards.find(c => c.id === 'watchit_1m').priceLYD = 33;
+    fs.writeFileSync(path.join(process.env.DATA_DIR, 'catalog.json'), JSON.stringify(v4));
+    process.env.ADMIN_PIN = 'secret-pin-1';
+    delete require.cache[require.resolve('../store')];
+    const cat = require('../store').createStore().publicCatalog();
+    assert.equal(cat.catalogVersion, 5);
+    assert.equal(cat.giftCards.find(c => c.id === 'watchit_1m').priceLYD, 33, 'admin price kept');
+    assert.ok(cat.giftCards.some(c => c.id === 'apple_itunes_tr_100' && c.category === 'gift_cards'));
+    const hidden = cat.games.filter(g => g.category === 'chat' && g.hidden).map(g => g.nameAr).sort();
+    assert.deepEqual(hidden, ['اهلا', 'لايكي', 'ليت'].sort());
+});
