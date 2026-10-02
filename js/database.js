@@ -18,6 +18,13 @@
         } catch (e) {}
         return '';
     }
+    // إبلاغ لوحة الإدارة إذا رفض الخادم الحفظ (جلسة منتهية أو خطأ) بدلاً من الفشل بصمت
+    function reportSyncProblem(status) {
+        try {
+            if (typeof window === 'undefined' || typeof window.dispatchEvent !== 'function' || typeof CustomEvent === 'undefined') return;
+            window.dispatchEvent(new CustomEvent(status === 401 ? 'sahabati-auth-expired' : 'sahabati-sync-failed', { detail: { status: status } }));
+        } catch (e) {}
+    }
     function canSyncWithServer() {
         return typeof fetch !== 'undefined' && typeof window !== 'undefined' && window.location?.hostname &&
             !window.location.hostname.endsWith('github.io') && !!adminToken();
@@ -70,6 +77,7 @@
             if (canSyncWithServer()) {
                 try {
                     const res = await fetch('/api/database', { headers: { 'Authorization': 'Bearer ' + adminToken() } });
+                    if (!res.ok) reportSyncProblem(res.status);
                     if (res.ok) {
                         const srvData = await res.json();
                         if (srvData && srvData.voucher_codes && srvData.users) {
@@ -129,7 +137,7 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + adminToken() },
                     body: JSON.stringify(dataToSave)
-                }).catch(() => {});
+                }).then(res => { if (!res.ok) reportSyncProblem(res.status); }).catch(() => reportSyncProblem(0));
             }
             this.notify();
         }

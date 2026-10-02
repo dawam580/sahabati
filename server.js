@@ -222,6 +222,12 @@ async function handleApi(req, res, url, headers) {
             store.mergeAdminDatabase(await readJSONBody(req, MAX_DB_BYTES));
             return sendJSON(res, 200, headers, { success: true });
         }
+        if (url === '/api/admin/orders/confirm' && m === 'POST') {
+            return sendJSON(res, 200, headers, { order: store.adminConfirmOrder(await readJSONBody(req, 16 * 1024)) });
+        }
+        if (url === '/api/admin/orders/cancel' && m === 'POST') {
+            return sendJSON(res, 200, headers, { order: store.adminCancelOrder(await readJSONBody(req, 4 * 1024)) });
+        }
         if (url === '/api/catalog' && m === 'PUT') {
             store.saveCatalog(await readJSONBody(req, MAX_DB_BYTES));
             return sendJSON(res, 200, headers, { success: true });

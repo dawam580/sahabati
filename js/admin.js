@@ -98,6 +98,17 @@ saveAppData = function(data){
             .catch(err=>showToast('لم يتم حفظ التعديل على الخادم: '+err.message,'fa-triangle-exclamation'));
     }
 };
+// الخادم رفض الحفظ: نخبر المدير بوضوح بدلاً من أن يظن أن التعديل وصل للزبائن
+if (typeof window !== 'undefined' && window.addEventListener) {
+    window.addEventListener('sahabati-auth-expired', () => {
+        if (!getAdminToken()) return;
+        setAdminToken(''); adminState.isAdminAuth=false; showLogin();
+        showToast('انتهت جلسة الدخول. سجّل الدخول مرة أخرى ثم أعد آخر عملية (لم تُحفظ على الخادم).','fa-lock');
+    });
+    window.addEventListener('sahabati-sync-failed', () => {
+        if (getAdminToken()) showToast('تعذر حفظ آخر تعديل على الخادم. تحقق من الإنترنت وأعد المحاولة.','fa-triangle-exclamation');
+    });
+}
 setInterval(()=>{ if(adminState.isAdminAuth && getAdminToken() && !document.hidden && typeof SahabatiDB!=='undefined'){ SahabatiDB.syncWithServer().then(()=>{ try{ renderAdminPanel(); }catch(e){} }); } }, 30000);
 
 function correctAdminPin(){
@@ -1002,11 +1013,36 @@ function handleAdminConfirmPaymentSubmit(e) {
     const notes = document.getElementById('confirm-account-notes')?.value.trim();
     if (!orderId) return;
 
-    try {
-        const confirmedOrder = SahabatiDB.confirmOrderPayment(orderId, { username: username, password: code, pin: pin, notes: notes });
+    const submitBtn = document.querySelector('#admin-confirm-payment-form button[type=submit]');
+    const finish = (confirmedOrder) => {
         closeModal('admin-confirm-payment-modal');
         renderCustomersPanel();
         showToast('تم تأكيد الدفع ✅ سيرى العميل طلبه مكتملاً في «طلباتي»', 'fa-circle-check');
+        notifyCustomerOnWhatsApp(confirmedOrder, code, notes);
+    };
+
+    // مع الخادم: التأكيد يُحفظ على الخادم أولاً، ولا نعرض "تم" إلا بعد رده
+    if (getAdminToken()) {
+        if (submitBtn) submitBtn.disabled = true;
+        adminApi('/api/admin/orders/confirm', { method: 'POST', body: JSON.stringify({ id: orderId, username: username, password: code, pin: pin, notes: notes }) })
+            .then(data => SahabatiDB.syncWithServer().then(() => finish(data.order)))
+            .catch(err => {
+                if (err.status === 401) { window.dispatchEvent(new CustomEvent('sahabati-auth-expired')); return; }
+                showToast('لم يتم التأكيد: ' + (err.message || 'خطأ في الاتصال') + '. أعد المحاولة.', 'fa-triangle-exclamation');
+            })
+            .finally(() => { if (submitBtn) submitBtn.disabled = false; });
+        return;
+    }
+
+    try {
+        finish(SahabatiDB.confirmOrderPayment(orderId, { username: username, password: code, pin: pin, notes: notes }));
+    } catch(err) {
+        showToast(err.message || 'حدث خطأ أثناء اعتماد الطلب', 'fa-triangle-exclamation');
+    }
+}
+
+function notifyCustomerOnWhatsApp(confirmedOrder, code, notes) {
+    try {
 
         if (confirmedOrder.customerPhone && confirm('إرسال رسالة واتساب للعميل بأن طلبه اكتمل؟')) {
             const waText = encodeURIComponent('مرحباً ' + (confirmedOrder.customerName || '') + '،\nتم تأكيد دفع طلبك رقم #' + confirmedOrder.id + ' وإتمامه بنجاح ✨\n' +
@@ -1022,6 +1058,17 @@ function vaultCodesCount(order){ return (order.vouchers || []).filter(v => v.cod
 function adminCancelOrder(orderId) {
     if (!confirm('هل أنت متأكد من إلغاء هذا الطلب؟')) return;
     if (typeof SahabatiDB === 'undefined') return;
+
+    if (getAdminToken()) {
+        adminApi('/api/admin/orders/cancel', { method: 'POST', body: JSON.stringify({ id: orderId, reason: 'ملغي من قبل الإدارة' }) })
+            .then(() => SahabatiDB.syncWithServer())
+            .then(() => { renderCustomersPanel(); showToast('تم إلغاء الطلب بنجاح', 'fa-ban'); })
+            .catch(err => {
+                if (err.status === 401) { window.dispatchEvent(new CustomEvent('sahabati-auth-expired')); return; }
+                showToast('لم يتم الإلغاء: ' + (err.message || 'خطأ في الاتصال'), 'fa-triangle-exclamation');
+            });
+        return;
+    }
 
     try {
         SahabatiDB.cancelOrder(orderId, 'ملغي من قبل الإدارة');
