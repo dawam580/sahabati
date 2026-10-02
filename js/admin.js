@@ -77,7 +77,7 @@ function handleAdminLogin(e){
     const entered=(pinInput.value||'').trim();
     const correct=correctAdminPin();
 
-    if(entered && (entered===correct || entered==='1234' || entered==='admin2026' || entered==='admin')){
+    if(entered && entered===correct){
         adminState.isAdminAuth=true;
         if (typeof sessSet === 'function') sessSet('sahabati_admin_auth','true');
         showToast('مرحباً بك في لوحة تحكم سحّابتي 👑');
@@ -85,7 +85,7 @@ function handleAdminLogin(e){
         catch(err){ showToast('تم الدخول لكن تعذر عرض اللوحة: '+err.message,'fa-triangle-exclamation'); }
     } else {
         shakeEl(pinInput);
-        showToast('كلمة السر غير صحيحة، يرجى كتابة admin2026','fa-lock');
+        showToast('كلمة السر غير صحيحة','fa-lock');
         pinInput.value='';
         try{pinInput.focus();}catch(e){}
     }

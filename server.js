@@ -1,7 +1,14 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const { handleOrders } = require('./order-api');
+// وحدة الطلبات اختيارية: إذا لم يكن الملف موجوداً يعمل الخادم بدونها بدلاً من التوقف
+let handleOrders = async () => false;
+try {
+    ({ handleOrders } = require('./order-api'));
+} catch (e) {
+    if (e.code !== 'MODULE_NOT_FOUND') throw e;
+    console.warn('order-api.js غير موجود - تم تعطيل /api/orders');
+}
 
 const PORT = process.env.PORT || 5000;
 const MIME_TYPES = {
