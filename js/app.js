@@ -69,6 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function initApp() {
+    loadCartForActiveCustomer();
     updateWhatsAppLinks();
     updateCustomerAuthUI();
     renderCategories();
@@ -881,9 +882,29 @@ function closeModal(modalId) {
     }
 }
 
-// Cart Storage & UI
+// Cart Storage & UI - معزولة 100% لكل عميل (سلة مستقلة لكل حساب)
+function getCartStorageKey() {
+    const customer = typeof getActiveCustomer === 'function' ? getActiveCustomer() : null;
+    return customer ? ('sahabati_cart_' + customer.id) : 'sahabati_cart_guest';
+}
+
+function loadCartForActiveCustomer() {
+    try {
+        const key = getCartStorageKey();
+        const raw = localStorage.getItem(key);
+        state.cart = raw ? JSON.parse(raw) : [];
+    } catch (e) {
+        state.cart = [];
+    }
+    sanitizeStoredCart();
+    updateCartUI();
+    if (state.currentTab === 'checkout') renderCheckout();
+}
+
 function saveCart() {
-    localStorage.setItem('sahabati_cart', JSON.stringify(state.cart));
+    try {
+        localStorage.setItem(getCartStorageKey(), JSON.stringify(state.cart));
+    } catch (e) {}
 }
 
 function updateCartUI() {
@@ -1128,8 +1149,8 @@ function renderPaymentInstructions() {
 
 const PAYMENT_METHOD_NAMES = {
     'telecom_libyana': 'كروت شحن ليبيانا (13 رقم)',
-    'lypay': 'لي باي (LyPay) - مصرف الجمهورية',
-    'onepay': 'وان باي (OnePay) - مصرف التجارة والتنمية'
+    'lypay': 'LibyanaPay (ليبيانا باي)',
+    'onepay': 'OnePay (وان باي)'
 };
 
 function buildOrderWhatsAppUrl(order, extra) {
@@ -1141,11 +1162,11 @@ function buildOrderWhatsAppUrl(order, extra) {
             paymentDetails = '🎟️ *كود كارت التعبئة (13 رقم):* `' + extra.cardCode13 + '`\n🏢 *الشركة:* ' + cardCompany + '\n';
         }
     } else if (order.paymentMethod === 'lypay') {
-        paymentDetails = '🏦 *وسيلة الدفع:* تحويل لي باي (LyPay) - مصرف الجمهورية\n' +
+        paymentDetails = '🏦 *وسيلة الدفع:* تحويل LibyanaPay (ليبيانا باي)\n' +
             (extra.transferRef ? '🔖 *رقم العملية / الحساب المحول منه:* `' + extra.transferRef + '`\n' : '') +
             '📲 *رقم حساب المتجر المحول إليه:* `0920541749`\n';
     } else if (order.paymentMethod === 'onepay') {
-        paymentDetails = '🏦 *وسيلة الدفع:* تحويل وان باي (OnePay) - مصرف التجارة والتنمية\n' +
+        paymentDetails = '🏦 *وسيلة الدفع:* تحويل OnePay (وان باي)\n' +
             (extra.transferRef ? '🔖 *رقم العملية / الحساب المحول منه:* `' + extra.transferRef + '`\n' : '') +
             '📲 *رقم حساب المتجر المحول إليه:* `0920541749`\n';
     }
@@ -1380,20 +1401,20 @@ function showSuccessModal(order) {
     } else if (order.paymentMethod === 'lypay') {
         cardBanner = '<div class="p-3 rounded-2xl bg-sky-50 border border-sky-300 text-sky-950 text-xs mb-3 space-y-1 text-right">' +
             '<div class="flex items-center justify-between font-bold">' +
-                '<span>🏦 وسيلة الدفع: تحويل لي باي (LyPay) - مصرف الجمهورية</span>' +
+                '<span>🏦 وسيلة الدفع: تحويل LibyanaPay (ليبيانا باي)</span>' +
                 '<span class="font-mono text-sky-800 font-black">0920541749</span>' +
             '</div>' +
             (order.transferRef ? '<div class="text-[11px] text-sky-800 font-medium">🔖 رقم العملية / الحساب المحول منه: <strong class="font-mono font-bold">' + escapeHtml(order.transferRef) + '</strong></div>' : '') +
-            '<div class="text-[10px] text-sky-700">سيتم تفعيل طلبك فور مطابقة إشعار التحويل البنكي.</div>' +
+            '<div class="text-[10px] text-sky-700">سيتم تفعيل طلبك فور مطابقة إشعار التحويل الإلكتروني.</div>' +
         '</div>';
     } else if (order.paymentMethod === 'onepay') {
         cardBanner = '<div class="p-3 rounded-2xl bg-teal-50 border border-teal-300 text-teal-950 text-xs mb-3 space-y-1 text-right">' +
             '<div class="flex items-center justify-between font-bold">' +
-                '<span>🏦 وسيلة الدفع: تحويل وان باي (OnePay) - مصرف التجارة والتنمية</span>' +
+                '<span>🏦 وسيلة الدفع: تحويل OnePay (وان باي)</span>' +
                 '<span class="font-mono text-teal-800 font-black">0920541749</span>' +
             '</div>' +
             (order.transferRef ? '<div class="text-[11px] text-teal-800 font-medium">🔖 رقم العملية / الحساب المحول منه: <strong class="font-mono font-bold">' + escapeHtml(order.transferRef) + '</strong></div>' : '') +
-            '<div class="text-[10px] text-teal-700">سيتم تفعيل طلبك فور مطابقة إشعار التحويل البنكي.</div>' +
+            '<div class="text-[10px] text-teal-700">سيتم تفعيل طلبك فور مطابقة إشعار التحويل الإلكتروني.</div>' +
         '</div>';
     }
 
@@ -1574,6 +1595,7 @@ async function handleCustomerLoginSubmit(e) {
         if (typeof SahabatiDB !== 'undefined') {
             const user = await SahabatiDB.loginUser(ident, pass);
             closeCustomerAuthModal();
+            loadCartForActiveCustomer();
             updateCustomerAuthUI();
             showToast('مرحباً بك يا ' + user.name + ' في سحّابتي ☁️', 'fa-user-check');
             navigateTo('orders');
@@ -1607,6 +1629,7 @@ async function handleCustomerRegisterSubmit(e) {
         if (typeof SahabatiDB !== 'undefined') {
             const newUser = await SahabatiDB.registerUser({ name, phone, email, password: pass });
             closeCustomerAuthModal();
+            loadCartForActiveCustomer();
             updateCustomerAuthUI();
             showToast('تم إنشاء حسابك بنجاح! مرحباً بك يا ' + newUser.name + ' 🌟', 'fa-circle-check');
             navigateTo('orders');
@@ -1627,6 +1650,7 @@ function logoutCustomer() {
     const nameInput = document.getElementById('customer-name-input');
     if (phoneInput) phoneInput.value = '';
     if (nameInput) nameInput.value = '';
+    loadCartForActiveCustomer();
     updateCustomerAuthUI();
     renderOrders();
     showToast('تم تسجيل الخروج بنجاح', 'fa-arrow-right-from-bracket');
@@ -1960,9 +1984,9 @@ function renderOrders() {
 
                 let paymentBadge = '';
                 if (order.paymentMethod === 'lypay') {
-                    paymentBadge = '<span class="px-2 py-0.5 rounded-lg text-[10px] font-black bg-sky-100 text-sky-800 border border-sky-300">🏦 لي باي (مصرف الجمهورية)</span>';
+                    paymentBadge = '<span class="px-2 py-0.5 rounded-lg text-[10px] font-black bg-sky-100 text-sky-800 border border-sky-300">🏦 LibyanaPay</span>';
                 } else if (order.paymentMethod === 'onepay') {
-                    paymentBadge = '<span class="px-2 py-0.5 rounded-lg text-[10px] font-black bg-teal-100 text-teal-800 border border-teal-300">🏦 وان باي (مصرف التجارة والتنمية)</span>';
+                    paymentBadge = '<span class="px-2 py-0.5 rounded-lg text-[10px] font-black bg-teal-100 text-teal-800 border border-teal-300">🏦 OnePay</span>';
                 } else {
                     paymentBadge = '<span class="px-2 py-0.5 rounded-lg text-[10px] font-black bg-amber-100 text-amber-900 border border-amber-300">🎟️ كارت ليبيانا</span>';
                 }
@@ -1970,10 +1994,10 @@ function renderOrders() {
                 let paymentBox = '';
                 if (order.paymentMethod === 'lypay') {
                     paymentBox = '<div class="p-2.5 bg-sky-50 rounded-xl text-sky-950 text-xs font-bold mb-2.5 border border-sky-200 flex items-center justify-between">' +
-                        '<span>🏦 تحويل لي باي (LyPay):</span><span class="font-mono text-sky-800 font-black">' + escapeHtml(order.transferRef || 'حساب 0920541749') + '</span></div>';
+                        '<span>🏦 تحويل LibyanaPay:</span><span class="font-mono text-sky-800 font-black">' + escapeHtml(order.transferRef || 'حساب 0920541749') + '</span></div>';
                 } else if (order.paymentMethod === 'onepay') {
                     paymentBox = '<div class="p-2.5 bg-teal-50 rounded-xl text-teal-950 text-xs font-bold mb-2.5 border border-teal-200 flex items-center justify-between">' +
-                        '<span>🏦 تحويل وان باي (OnePay):</span><span class="font-mono text-teal-800 font-black">' + escapeHtml(order.transferRef || 'حساب 0920541749') + '</span></div>';
+                        '<span>🏦 تحويل OnePay:</span><span class="font-mono text-teal-800 font-black">' + escapeHtml(order.transferRef || 'حساب 0920541749') + '</span></div>';
                 } else if (order.cardCode13) {
                     paymentBox = '<div class="p-2.5 bg-amber-50 rounded-xl text-amber-950 text-xs font-mono font-bold mb-2.5 border border-amber-200 flex items-center justify-between">' +
                         '<span>🎟️ كود كارت التعبئة (13 رقم):</span><span class="tracking-wider">' + escapeHtml(order.cardCode13) + '</span></div>';
