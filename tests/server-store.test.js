@@ -83,7 +83,7 @@ test('catalog: entertainment section, chat apps, Libyana only, no telecom/PSN/St
     assert.ok(ids.includes('claude_pro_1m') && ids.includes('chatgpt_plus_1m') && ids.includes('apple_itunes_10_us'));
     assert.ok(!ids.some(id => id.startsWith('card_tt_')), 'TikTok is sold from the games section by QR');
     assert.ok(!cat.giftCards.some(c => c.category === 'telecom' || ['playstation', 'steam', 'madar', 'libyana'].includes(c.brand)));
-    assert.deepEqual(Object.keys(cat.settings.paymentMethodsInfo), ['telecom_libyana']);
+    assert.deepEqual(Object.keys(cat.settings.paymentMethodsInfo), ['telecom_libyana', 'lypay', 'onepay']);
     const chat = cat.games.filter(g => g.category === 'chat');
     assert.equal(chat.length, 23, 'only chat apps with an icon are listed');
     assert.ok(chat.every(g => g.deliveryMethod === 'id' && g.image));
@@ -91,6 +91,14 @@ test('catalog: entertainment section, chat apps, Libyana only, no telecom/PSN/St
     assert.deepEqual(['pubg', 'freefire', 'tiktok_coins', 'roblox', 'clashofclans'].map(method), ['id', 'id', 'qr', 'login', 'login']);
     const r = store.createOrder(goodOrder({ paymentMethod: 'telecom_madar' }), 'z');
     assert.equal(r.order.paymentMethod, 'telecom_libyana');
+    const rLy = store.createOrder(goodOrder({ paymentMethod: 'lypay', cardCode13: '', transferRef: '0912223344' }), 'z1');
+    assert.equal(rLy.status, 201);
+    assert.equal(rLy.order.paymentMethod, 'lypay');
+    assert.equal(rLy.order.transferRef, '0912223344');
+    const rOne = store.createOrder(goodOrder({ paymentMethod: 'onepay', cardCode13: '', transferRef: 'REF-9988' }), 'z2');
+    assert.equal(rOne.status, 201);
+    assert.equal(rOne.order.paymentMethod, 'onepay');
+    assert.equal(rOne.order.transferRef, 'REF-9988');
 });
 
 test('delivery methods: PUBG and chat apps need an ID, TikTok by QR, Roblox by login; hidden items cannot be ordered', () => {

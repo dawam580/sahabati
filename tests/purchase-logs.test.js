@@ -178,3 +178,51 @@ test('SahabatiDB: demo codes and demo user are removed from an existing database
     assert.equal(ids, JSON.stringify(['vc_itunes_10_01', 'vc_real']));
     assert.equal(context.SahabatiDB.getAllUsers().length, 0);
 });
+
+test('SahabatiDB: customer orders are strictly isolated between accounts', async () => {
+    const ctx = await createDatabaseContext();
+    const db = ctx.SahabatiDB;
+
+    // Register User A
+    const userA = await db.registerUser({ name: 'أحمد علي', phone: '0912223344', password: 'pass1234' });
+    const orderA1 = db.createOrder({
+        id: 'LYD-A01',
+        customerPhone: '0912223344',
+        paymentMethod: 'lypay',
+        transferRef: 'REF-A-01',
+        items: [{ titleAr: 'ببجي 60 شدة', quantity: 1, priceLYD: 10 }]
+    });
+
+    // Verify User A orders
+    assert.equal(db.getOrdersForCustomer(userA).length, 1);
+    assert.equal(db.getOrdersForCustomer(userA)[0].id, 'LYD-A01');
+
+    // User A logs out
+    db.logout();
+    assert.equal(db.getCurrentUser(), null);
+
+    // Register User B
+    const userB = await db.registerUser({ name: 'سالم عمر', phone: '0925556677', password: 'pass5678' });
+    assert.equal(userB.id !== userA.id, true);
+
+    // User B must have 0 orders
+    const ordersB = db.getOrdersForCustomer(userB);
+    assert.equal(ordersB.length, 0, 'New customer B must have zero orders and must not see customer A orders');
+
+    // User B creates an order
+    const orderB1 = db.createOrder({
+        id: 'LYD-B01',
+        customerPhone: '0925556677',
+        paymentMethod: 'onepay',
+        transferRef: 'REF-B-01',
+        items: [{ titleAr: 'فري فاير 100 جوهرة', quantity: 1, priceLYD: 8 }]
+    });
+
+    // Verify isolation: User A sees only order A, User B sees only order B
+    const userAOrders = db.getOrdersForCustomer(userA);
+    const userBOrders = db.getOrdersForCustomer(userB);
+    assert.equal(userAOrders.length, 1);
+    assert.equal(userAOrders[0].id, 'LYD-A01');
+    assert.equal(userBOrders.length, 1);
+    assert.equal(userBOrders[0].id, 'LYD-B01');
+});

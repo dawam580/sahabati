@@ -273,19 +273,25 @@ function createStore() {
         const maxOrder = Number(catalog.settings && catalog.settings.maxOrderLYD) || guard.LIMITS.maxOrderLYD;
         if (total > maxOrder) return { status: 400, error: 'الحد الأقصى للطلب الواحد ' + maxOrder.toFixed(2) + ' د.ل' };
 
-        const method = 'telecom_libyana'; // الدفع عبر ليبيانا فقط
-        const card = String(body.cardCode13 || '').replace(/[^0-9]/g, '');
-        const problem = guard.voucherProblem(card);
-        if (problem) return { status: 400, error: problem };
+        const allowedMethods = ['telecom_libyana', 'lypay', 'onepay'];
+        const method = allowedMethods.includes(body.paymentMethod) ? body.paymentMethod : 'telecom_libyana';
+        let card = '';
+        if (method === 'telecom_libyana') {
+            card = String(body.cardCode13 || '').replace(/[^0-9]/g, '');
+            const problem = guard.voucherProblem(card);
+            if (problem) return { status: 400, error: problem };
+        }
 
         const order = db.createOrder({
             id: guard.secureOrderId(),
+            userId: guard.cleanText(body.userId, 60) || null,
             date: new Date().toLocaleString('ar-LY', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Africa/Tripoli' }),
             items: cart,
             paymentMethod: method,
             customerName: guard.cleanText(body.name, 60) || 'عميل سحّابتي',
             customerPhone: phone,
             cardCode13: card.length === 13 ? card : '',
+            transferRef: guard.cleanText(body.transferRef, 80) || '',
             customerNotes: guard.cleanText(body.notes, 200),
             totalFormatted: total.toFixed(2) + ' د.ل'
         });
@@ -298,12 +304,14 @@ function createStore() {
         const paid = o.status === 'paid' || o.paymentConfirmed === true;
         return {
             id: o.id,
+            userId: o.userId || null,
             date: o.date,
             createdAt: o.createdAt,
             items: o.items,
-            paymentMethod: o.paymentMethod,
+            paymentMethod: o.paymentMethod || 'telecom_libyana',
             customerPhone: o.customerPhone,
             cardCode13: o.cardCode13 ? '•••••••••' + o.cardCode13.slice(-4) : '',
+            transferRef: o.transferRef || '',
             totalFormatted: o.totalFormatted,
             status: o.status,
             paymentConfirmed: paid,
@@ -324,8 +332,15 @@ function createStore() {
         if (hits.length > 30) return { status: 429, error: 'طلبات كثيرة، حاول بعد دقيقة' };
         const phone = guard.normalizeLibyanPhone(body && body.phone);
         const ids = Array.isArray(body && body.ids) ? body.ids.slice(0, 50).map(String) : [];
-        if (!phone || !ids.length) return { status: 400, error: 'بيانات غير مكتملة' };
-        const orders = db.getAllOrders().filter(o => ids.includes(o.id) && o.customerPhone === phone);
+        if (!phone && !ids.length) return { status: 400, error: 'بيانات غير مكتملة' };
+        let orders = [];
+        if (phone && ids.length) {
+            orders = db.getAllOrders().filter(o => ids.includes(o.id) && o.customerPhone === phone);
+        } else if (phone) {
+            orders = db.getAllOrders().filter(o => o.customerPhone === phone);
+        } else if (ids.length) {
+            orders = db.getAllOrders().filter(o => ids.includes(o.id));
+        }
         const found = new Set(orders.map(o => o.id));
         // طلبات لم يعد الخادم يعرفها (مثلاً بعد فقدان البيانات): نخبر العميل بدل "قيد الدفع" للأبد
         return { status: 200, orders: orders.map(customerView), missing: ids.filter(id => !found.has(id)) };

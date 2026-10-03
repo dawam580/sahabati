@@ -164,14 +164,68 @@ function saveLocalOrders() {
     try { localStorage.setItem('sahabati_orders', JSON.stringify(state.orders.slice(0, 100))); } catch (e) {}
 }
 
+// Retrieve orders strictly isolated for the active viewer (customer or guest)
+function getOrdersForCurrentViewer() {
+    const customer = typeof getActiveCustomer === 'function' ? getActiveCustomer() : null;
+    const cleanCustomerPhone = customer && customer.phone ? String(customer.phone).replace(/[^0-9]/g, '') : '';
+
+    const all = [];
+    const seen = new Set();
+    ((state && state.orders) || []).forEach(o => {
+        if (o && o.id && !seen.has(o.id)) {
+            seen.add(o.id);
+            all.push(o);
+        }
+    });
+
+    if (typeof SahabatiDB !== 'undefined' && SahabatiDB.getAllOrders) {
+        (SahabatiDB.getAllOrders() || []).forEach(o => {
+            if (o && o.id && !seen.has(o.id)) {
+                seen.add(o.id);
+                all.push(o);
+            }
+        });
+    }
+
+    if (customer) {
+        return all.filter(o => {
+            if (o.userId && o.userId === customer.id) return true;
+            if (cleanCustomerPhone && o.customerPhone) {
+                const op = String(o.customerPhone).replace(/[^0-9]/g, '');
+                if (op === cleanCustomerPhone || (op.length >= 9 && cleanCustomerPhone.length >= 9 && op.slice(-9) === cleanCustomerPhone.slice(-9))) {
+                    return !o.userId || o.userId === customer.id || o.userId === 'guest';
+                }
+            }
+            return false;
+        });
+    }
+
+    // Guest mode: only show orders placed by a guest without user association
+    return all.filter(o => !o.userId || o.userId === 'guest');
+}
+
 // Ask the server for the latest status of this device's orders (codes appear only after payment)
 let ordersRefreshInFlight = false;
 function refreshServerOrders(showResult) {
     if (!state.serverMode || ordersRefreshInFlight) return Promise.resolve(false);
-    const pending = state.orders.filter(o => o.serverOrder && o.status !== 'paid' && o.status !== 'cancelled' && o.status !== 'missing');
-    if (!pending.length) return Promise.resolve(false);
+    const customer = typeof getActiveCustomer === 'function' ? getActiveCustomer() : null;
+    const viewerOrders = getOrdersForCurrentViewer();
+    const pending = viewerOrders.filter(o => o.serverOrder && o.status !== 'paid' && o.status !== 'cancelled' && o.status !== 'missing');
+
     const byPhone = {};
-    pending.forEach(o => { (byPhone[o.customerPhone] = byPhone[o.customerPhone] || []).push(o.id); });
+    if (pending.length > 0) {
+        pending.forEach(o => {
+            const ph = o.customerPhone || (customer ? customer.phone : '');
+            if (ph) {
+                (byPhone[ph] = byPhone[ph] || []).push(o.id);
+            }
+        });
+    } else if (customer && customer.phone) {
+        byPhone[customer.phone] = [];
+    }
+
+    if (Object.keys(byPhone).length === 0) return Promise.resolve(false);
+
     ordersRefreshInFlight = true;
     let changed = false;
     return Promise.all(Object.keys(byPhone).map(phone =>
@@ -179,9 +233,14 @@ function refreshServerOrders(showResult) {
             .then(data => {
                 (data.orders || []).forEach(fresh => {
                     const idx = state.orders.findIndex(o => o.id === fresh.id);
-                    if (idx === -1) return;
-                    if (state.orders[idx].status !== fresh.status) changed = true;
-                    state.orders[idx] = Object.assign({}, state.orders[idx], fresh);
+                    if (idx !== -1) {
+                        if (state.orders[idx].status !== fresh.status) changed = true;
+                        state.orders[idx] = Object.assign({}, state.orders[idx], fresh);
+                    } else if (customer) {
+                        fresh.userId = customer.id;
+                        state.orders.unshift(fresh);
+                        changed = true;
+                    }
                 });
                 // الخادم لا يعرف هذا الطلب: لا نتركه "قيد الدفع" للأبد
                 (data.missing || []).forEach(id => {
@@ -940,30 +999,42 @@ function renderCheckout() {
     renderPaymentInstructions();
 }
 
-// Select Payment Method & Update 13-Digit Voucher Label
+// Select Payment Method & Update Input Fields dynamically
 function selectPaymentMethod(method) {
     state.paymentMethod = method;
     document.querySelectorAll('.payment-option-card').forEach(card => {
         if (card.dataset.method === method) {
             card.classList.add('border-emerald-500', 'bg-emerald-50/80', 'ring-2', 'ring-emerald-400');
-            card.classList.remove('border-slate-200');
+            card.classList.remove('border-slate-200', 'bg-white/70');
         } else {
             card.classList.remove('border-emerald-500', 'bg-emerald-50/80', 'ring-2', 'ring-emerald-400');
-            card.classList.add('border-slate-200');
+            card.classList.add('border-slate-200', 'bg-white/70');
         }
     });
 
-    // Update Voucher Card Label dynamically
-    const voucherLabel = document.getElementById('voucher-card-label-text');
     const voucherContainer = document.getElementById('voucher-card-field-container');
     const voucherInput = document.getElementById('voucher-card-input');
+    const bankTransferContainer = document.getElementById('bank-transfer-field-container');
+    const bankTransferLabel = document.getElementById('bank-transfer-label-text');
+    const bankTransferInput = document.getElementById('bank-transfer-ref-input');
+    const bankTransferHint = document.getElementById('bank-transfer-hint-text');
 
-    if (voucherLabel) {
-        voucherLabel.textContent = 'كود كرت تعبئة ليبيانا (13 رقماً بالضبط):';
-    }
-
-    if (voucherInput) {
-        handleVoucherCardInput(voucherInput);
+    if (method === 'telecom_libyana') {
+        if (voucherContainer) voucherContainer.classList.remove('hidden');
+        if (bankTransferContainer) bankTransferContainer.classList.add('hidden');
+        if (voucherInput) handleVoucherCardInput(voucherInput);
+    } else {
+        if (voucherContainer) voucherContainer.classList.add('hidden');
+        if (bankTransferContainer) bankTransferContainer.classList.remove('hidden');
+        if (method === 'lypay') {
+            if (bankTransferLabel) bankTransferLabel.innerHTML = '<i class="fa-solid fa-receipt text-sky-700 text-sm"></i> <span>رقم الهاتف المحول منه أو رقم العملية (LyPay):</span>';
+            if (bankTransferInput) bankTransferInput.placeholder = 'مثال: 091XXXXXXX أو رقم إشعار تحويل لي باي';
+            if (bankTransferHint) bankTransferHint.textContent = 'قم بالتحويل عبر تطبيق LyPay (مصرف الجمهورية) لحساب المتجر 0920541749، واكتب رقم هاتفك أو الإشعار لتأكيد الشحن فوراً.';
+        } else if (method === 'onepay') {
+            if (bankTransferLabel) bankTransferLabel.innerHTML = '<i class="fa-solid fa-receipt text-emerald-700 text-sm"></i> <span>رقم حساب/هاتف أو كود العملية (OnePay):</span>';
+            if (bankTransferInput) bankTransferInput.placeholder = 'مثال: رقم حسابك في ون باي أو كود الإشعار';
+            if (bankTransferHint) bankTransferHint.textContent = 'قم بالتحويل عبر تطبيق OnePay (مصرف التجارة والتنمية) لحساب المتجر 0920541749، واكتب رقم هاتفك أو الإشعار لتأكيد الشحن فوراً.';
+        }
     }
 
     renderPaymentInstructions();
@@ -1056,15 +1127,27 @@ function renderPaymentInstructions() {
 }
 
 const PAYMENT_METHOD_NAMES = {
-    'telecom_libyana': 'كرت تعبئة ليبيانا (13 رقم)'
+    'telecom_libyana': 'كروت شحن ليبيانا (13 رقم)',
+    'lypay': 'لي باي (LyPay) - مصرف الجمهورية',
+    'onepay': 'وان باي (OnePay) - مصرف التجارة والتنمية'
 };
 
 function buildOrderWhatsAppUrl(order, extra) {
     const itemsListText = (order.items || []).map(item => '• ' + item.quantity + 'x ' + item.titleAr + ' (' + item.meta + ') - ' + formatPrice(item.priceLYD * item.quantity)).join('\n');
-    let cardDetails = '';
-    if (extra.cardCode13) {
-        const cardCompany = 'ليبيانا (Libyana)';
-        cardDetails = '🎟️ *كود كارت التعبئة (13 رقم):* `' + extra.cardCode13 + '`\n' + '🏢 *الشركة:* ' + cardCompany + '\n';
+    let paymentDetails = '';
+    if (order.paymentMethod === 'telecom_libyana') {
+        if (extra.cardCode13) {
+            const cardCompany = 'ليبيانا (Libyana)';
+            paymentDetails = '🎟️ *كود كارت التعبئة (13 رقم):* `' + extra.cardCode13 + '`\n🏢 *الشركة:* ' + cardCompany + '\n';
+        }
+    } else if (order.paymentMethod === 'lypay') {
+        paymentDetails = '🏦 *وسيلة الدفع:* تحويل لي باي (LyPay) - مصرف الجمهورية\n' +
+            (extra.transferRef ? '🔖 *رقم العملية / الحساب المحول منه:* `' + extra.transferRef + '`\n' : '') +
+            '📲 *رقم حساب المتجر المحول إليه:* `0920541749`\n';
+    } else if (order.paymentMethod === 'onepay') {
+        paymentDetails = '🏦 *وسيلة الدفع:* تحويل وان باي (OnePay) - مصرف التجارة والتنمية\n' +
+            (extra.transferRef ? '🔖 *رقم العملية / الحساب المحول منه:* `' + extra.transferRef + '`\n' : '') +
+            '📲 *رقم حساب المتجر المحول إليه:* `0920541749`\n';
     }
     const waMessage =
 '🌟 *طلب جديد من منصة سحّابتي (Sahabati My Cloud)* 🌟\n' +
@@ -1074,7 +1157,7 @@ function buildOrderWhatsAppUrl(order, extra) {
 (extra.customerName ? '👤 *الاسم:* ' + extra.customerName + '\n' : '') +
 '📱 *رقم هاتف الزبون:* ' + order.customerPhone + '\n' +
 '💳 *وسيلة الدفع:* ' + (PAYMENT_METHOD_NAMES[order.paymentMethod] || order.paymentMethod) + '\n' +
-cardDetails +
+paymentDetails +
 '💰 *الإجمالي المطلوب للدفع:* ' + order.totalFormatted + '\n\n' +
 '🎮 *العناصر المطلوبة:*\n' + itemsListText + '\n\n' +
 '📝 *ملاحظات إضافية:*\n' + (extra.customerNotes || 'طلب عبر متجر سحّابتي') + '\n' +
@@ -1086,6 +1169,7 @@ cardDetails +
 
 // Server-side order: prices, product names and code reservation are decided by the server
 function submitOrderToServer(input) {
+    const customer = getActiveCustomer();
     // نفتح النافذة الآن (مع ضغطة الزر) حتى لا يحجبها المتصفح، ثم نوجهها لواتساب بعد الحفظ
     let waWindow = null;
     try { waWindow = window.open('', '_blank'); } catch (e) {}
@@ -1096,12 +1180,15 @@ function submitOrderToServer(input) {
         })),
         phone: input.customerPhone,
         name: input.customerName,
+        userId: customer ? customer.id : null,
         notes: input.customerNotes,
         paymentMethod: input.method,
         cardCode13: input.cardCode13,
+        transferRef: input.transferRef,
         website: input.honeypot
     };
     return apiFetch('/api/orders', { method: 'POST', body: JSON.stringify(payload) }).then(order => {
+        order.userId = customer ? customer.id : (order.userId || 'guest');
         order.waUrl = buildOrderWhatsAppUrl(order, input);
         if (waWindow) { try { waWindow.location.href = order.waUrl; } catch (e) {} }
 
@@ -1115,6 +1202,8 @@ function submitOrderToServer(input) {
         saveCart();
         updateCartUI();
         if (input.voucherInput) { input.voucherInput.value = ''; handleVoucherCardInput(input.voucherInput); }
+        const bankInput = document.getElementById('bank-transfer-ref-input');
+        if (bankInput) bankInput.value = '';
         showSuccessModal(order);
         return true;
     }).catch(err => {
@@ -1176,12 +1265,14 @@ function processPayment() {
     }
     if (phoneInput) phoneInput.value = customerPhone;
 
-    // 5) Recharge card (13 digits, not reused, lockout after repeated failures)
-    const method = 'telecom_libyana'; // الدفع عبر ليبيانا فقط
+    // 5) Payment Method & Verification
+    const method = state.paymentMethod || 'telecom_libyana';
     const voucherInput = document.getElementById('voucher-card-input');
+    const bankTransferInput = document.getElementById('bank-transfer-ref-input');
     const cleanCardDigits = (voucherInput ? voucherInput.value : '').replace(/[^0-9]/g, '');
-    const needsCard = true;
-    if (needsCard || cleanCardDigits.length > 0) {
+    const transferRef = FraudGuard.cleanText(bankTransferInput ? bankTransferInput.value : '', 80);
+
+    if (method === 'telecom_libyana') {
         const lockMs = FraudGuard.voucherLockRemainingMs();
         if (lockMs > 0) {
             return checkoutFail('تم إيقاف إدخال الكروت مؤقتاً بسبب محاولات خاطئة متكررة. حاول بعد ' + Math.ceil(lockMs / 60000) + ' دقيقة');
@@ -1195,7 +1286,8 @@ function processPayment() {
     }
 
     const customerNotes = FraudGuard.cleanText(document.getElementById('whatsapp-note-input')?.value, 200) || 'طلب عبر متجر سحّابتي';
-    const customerName = FraudGuard.cleanText(document.getElementById('customer-name-input')?.value, 60);
+    const customer = getActiveCustomer();
+    const customerName = FraudGuard.cleanText(document.getElementById('customer-name-input')?.value, 60) || (customer ? customer.name : '');
 
     const originalText = btn ? btn.innerHTML : '';
     if (btn) {
@@ -1207,8 +1299,8 @@ function processPayment() {
     if (state.serverMode) {
         return submitOrderToServer({
             cartItems: cartItems, method: method, customerPhone: customerPhone, customerName: customerName,
-            customerNotes: customerNotes, cardCode13: cleanCardDigits.length === 13 ? cleanCardDigits : '',
-            honeypot: honeypot ? honeypot.value : '', voucherInput: voucherInput
+            customerNotes: customerNotes, cardCode13: method === 'telecom_libyana' ? cleanCardDigits : '',
+            transferRef: transferRef, honeypot: honeypot ? honeypot.value : '', voucherInput: voucherInput
         }).finally(restoreButton);
     }
 
@@ -1216,7 +1308,7 @@ function processPayment() {
         const orderId = FraudGuard.secureOrderId();
         const orderDate = new Date().toLocaleString('ar-LY', { dateStyle: 'medium', timeStyle: 'short' });
         const totalAmountText = formatPrice(totalLYD);
-        const cardCode13 = cleanCardDigits.length === 13 ? cleanCardDigits : '';
+        const cardCode13 = method === 'telecom_libyana' ? cleanCardDigits : '';
 
         let newOrder;
         if (typeof SahabatiDB !== 'undefined' && SahabatiDB.createOrder) {
@@ -1225,21 +1317,23 @@ function processPayment() {
                 date: orderDate,
                 items: cartItems,
                 paymentMethod: method,
+                userId: customer ? customer.id : null,
                 customerName: customerName || undefined,
                 customerPhone: customerPhone,
                 cardCode13: cardCode13,
+                transferRef: transferRef,
                 customerNotes: customerNotes,
                 totalFormatted: totalAmountText
             });
         } else {
             newOrder = {
-                id: orderId, date: orderDate, items: cartItems, vouchers: [],
+                id: orderId, userId: customer ? customer.id : 'guest', date: orderDate, items: cartItems, vouchers: [],
                 paymentMethod: method, customerPhone: customerPhone, cardCode13: cardCode13,
-                customerNotes: customerNotes, totalFormatted: totalAmountText, status: 'pending_payment'
+                transferRef: transferRef, customerNotes: customerNotes, totalFormatted: totalAmountText, status: 'pending_payment'
             };
         }
 
-        const waUrl = buildOrderWhatsAppUrl(newOrder, { cardCode13: cardCode13, customerName: customerName, customerNotes: customerNotes });
+        const waUrl = buildOrderWhatsAppUrl(newOrder, { cardCode13: cardCode13, transferRef: transferRef, customerName: customerName, customerNotes: customerNotes });
         newOrder.waUrl = waUrl;
 
         // يُفتح بشكل متزامن مع الضغطة حتى لا يحجبه المتصفح
@@ -1278,10 +1372,28 @@ function showSuccessModal(order) {
     const isPaid = order.status === 'paid' || order.paymentConfirmed === true;
 
     let cardBanner = '';
-    if (order.cardCode13) {
+    if (order.paymentMethod === 'telecom_libyana' && order.cardCode13) {
         cardBanner = '<div class="p-2.5 rounded-xl bg-amber-100 text-amber-950 text-xs font-bold mb-3 font-mono flex items-center justify-between border border-amber-300">' +
             '<span>🎟️ كود كارت التعبئة (13 رقم):</span>' +
             '<span class="font-black text-amber-900 tracking-wider">' + escapeHtml(order.cardCode13) + '</span>' +
+        '</div>';
+    } else if (order.paymentMethod === 'lypay') {
+        cardBanner = '<div class="p-3 rounded-2xl bg-sky-50 border border-sky-300 text-sky-950 text-xs mb-3 space-y-1 text-right">' +
+            '<div class="flex items-center justify-between font-bold">' +
+                '<span>🏦 وسيلة الدفع: تحويل لي باي (LyPay) - مصرف الجمهورية</span>' +
+                '<span class="font-mono text-sky-800 font-black">0920541749</span>' +
+            '</div>' +
+            (order.transferRef ? '<div class="text-[11px] text-sky-800 font-medium">🔖 رقم العملية / الحساب المحول منه: <strong class="font-mono font-bold">' + escapeHtml(order.transferRef) + '</strong></div>' : '') +
+            '<div class="text-[10px] text-sky-700">سيتم تفعيل طلبك فور مطابقة إشعار التحويل البنكي.</div>' +
+        '</div>';
+    } else if (order.paymentMethod === 'onepay') {
+        cardBanner = '<div class="p-3 rounded-2xl bg-teal-50 border border-teal-300 text-teal-950 text-xs mb-3 space-y-1 text-right">' +
+            '<div class="flex items-center justify-between font-bold">' +
+                '<span>🏦 وسيلة الدفع: تحويل وان باي (OnePay) - مصرف التجارة والتنمية</span>' +
+                '<span class="font-mono text-teal-800 font-black">0920541749</span>' +
+            '</div>' +
+            (order.transferRef ? '<div class="text-[11px] text-teal-800 font-medium">🔖 رقم العملية / الحساب المحول منه: <strong class="font-mono font-bold">' + escapeHtml(order.transferRef) + '</strong></div>' : '') +
+            '<div class="text-[10px] text-teal-700">سيتم تفعيل طلبك فور مطابقة إشعار التحويل البنكي.</div>' +
         '</div>';
     }
 
@@ -1511,6 +1623,10 @@ function logoutCustomer() {
     if (typeof SahabatiDB !== 'undefined') {
         SahabatiDB.logout();
     }
+    const phoneInput = document.getElementById('whatsapp-phone-input');
+    const nameInput = document.getElementById('customer-name-input');
+    if (phoneInput) phoneInput.value = '';
+    if (nameInput) nameInput.value = '';
     updateCustomerAuthUI();
     renderOrders();
     showToast('تم تسجيل الخروج بنجاح', 'fa-arrow-right-from-bracket');
@@ -1643,19 +1759,10 @@ function renderOrders() {
     const codesEmpty = document.getElementById('customer-codes-empty-state');
     const codesBadge = document.getElementById('cust-codes-badge');
 
-    // Retrieve customer specific orders or all local orders
-    let userOrders = [];
+    // Retrieve orders strictly isolated for this customer (zero leakage between accounts)
+    let userOrders = getOrdersForCurrentViewer();
     if (state.serverMode) {
-        userOrders = state.orders;
         refreshServerOrders();
-    } else if (customer && typeof SahabatiDB !== 'undefined') {
-        userOrders = SahabatiDB.getOrdersForUser(customer.id);
-        // Fallback: if user has no orders in DB yet, show legacy orders if phone matches
-        if (userOrders.length === 0 && state.orders.length > 0) {
-            userOrders = state.orders.filter(o => o.customerPhone === customer.phone || o.userId === customer.id);
-        }
-    } else {
-        userOrders = state.orders;
     }
 
     // Retrieve digital codes owned by this customer (ONLY for confirmed/paid orders)
@@ -1851,16 +1958,40 @@ function renderOrders() {
                     '</div>';
                 }
 
+                let paymentBadge = '';
+                if (order.paymentMethod === 'lypay') {
+                    paymentBadge = '<span class="px-2 py-0.5 rounded-lg text-[10px] font-black bg-sky-100 text-sky-800 border border-sky-300">🏦 لي باي (مصرف الجمهورية)</span>';
+                } else if (order.paymentMethod === 'onepay') {
+                    paymentBadge = '<span class="px-2 py-0.5 rounded-lg text-[10px] font-black bg-teal-100 text-teal-800 border border-teal-300">🏦 وان باي (مصرف التجارة والتنمية)</span>';
+                } else {
+                    paymentBadge = '<span class="px-2 py-0.5 rounded-lg text-[10px] font-black bg-amber-100 text-amber-900 border border-amber-300">🎟️ كارت ليبيانا</span>';
+                }
+
+                let paymentBox = '';
+                if (order.paymentMethod === 'lypay') {
+                    paymentBox = '<div class="p-2.5 bg-sky-50 rounded-xl text-sky-950 text-xs font-bold mb-2.5 border border-sky-200 flex items-center justify-between">' +
+                        '<span>🏦 تحويل لي باي (LyPay):</span><span class="font-mono text-sky-800 font-black">' + escapeHtml(order.transferRef || 'حساب 0920541749') + '</span></div>';
+                } else if (order.paymentMethod === 'onepay') {
+                    paymentBox = '<div class="p-2.5 bg-teal-50 rounded-xl text-teal-950 text-xs font-bold mb-2.5 border border-teal-200 flex items-center justify-between">' +
+                        '<span>🏦 تحويل وان باي (OnePay):</span><span class="font-mono text-teal-800 font-black">' + escapeHtml(order.transferRef || 'حساب 0920541749') + '</span></div>';
+                } else if (order.cardCode13) {
+                    paymentBox = '<div class="p-2.5 bg-amber-50 rounded-xl text-amber-950 text-xs font-mono font-bold mb-2.5 border border-amber-200 flex items-center justify-between">' +
+                        '<span>🎟️ كود كارت التعبئة (13 رقم):</span><span class="tracking-wider">' + escapeHtml(order.cardCode13) + '</span></div>';
+                }
+
                 return '<div class="glass-card rounded-3xl p-4 sm:p-5 border border-white/80 shadow-md transition hover:shadow-lg">' +
                     '<div class="flex items-center justify-between border-b border-slate-100 pb-2.5 mb-2.5">' +
                         '<div>' +
-                            '<span class="font-extrabold text-slate-900 text-xs sm:text-sm">#' + escapeHtml(order.id) + '</span>' +
-                            '<span class="text-[10px] text-slate-500 block">' + escapeHtml(order.date) + '</span>' +
+                            '<div class="flex items-center gap-2">' +
+                                '<span class="font-extrabold text-slate-900 text-xs sm:text-sm">#' + escapeHtml(order.id) + '</span>' +
+                                paymentBadge +
+                            '</div>' +
+                            '<span class="text-[10px] text-slate-500 block mt-0.5">' + escapeHtml(order.date) + '</span>' +
                         '</div>' +
                         '<div>' + statusBadge + '</div>' +
                     '</div>' +
                     contentHtml +
-                    (order.cardCode13 ? '<div class="p-2.5 bg-amber-50 rounded-xl text-amber-950 text-xs font-mono font-bold mb-2.5 border border-amber-200 flex items-center justify-between"><span>🎟️ كود كارت التعبئة (13 رقم):</span><span class="tracking-wider">' + escapeHtml(order.cardCode13) + '</span></div>' : '') +
+                    paymentBox +
                     '<div class="flex items-center justify-between text-xs font-bold text-slate-700 pt-2 border-t border-slate-100">' +
                         '<span>الإجمالي بالدينار الليبي:</span>' +
                         '<span class="text-emerald-700 font-extrabold text-sm sm:text-base">' + escapeHtml(order.totalFormatted || formatPrice(order.totalLYD || 0)) + '</span>' +

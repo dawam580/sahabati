@@ -463,7 +463,7 @@
 
             const newOrder = {
                 id: orderId,
-                userId: userId,
+                userId: orderData.userId || userId,
                 customerName: orderData.customerName || (currentUsr ? currentUsr.name : 'عميل سحّابتي'),
                 customerPhone: orderData.customerPhone || (currentUsr ? currentUsr.phone : ''),
                 date: orderData.date || new Date().toLocaleString('ar-LY', { dateStyle: 'medium', timeStyle: 'short' }),
@@ -473,6 +473,7 @@
                 accountDetails: accountDetails,
                 paymentMethod: orderData.paymentMethod || 'telecom_libyana',
                 cardCode13: orderData.cardCode13 || '',
+                transferRef: orderData.transferRef || '',
                 customerNotes: orderData.customerNotes || '',
                 totalFormatted: orderData.totalFormatted || '0.00 د.ل',
                 status: 'pending_payment', // pending_payment | paid | cancelled
@@ -626,6 +627,23 @@
         getOrdersForUser(userId) {
             if (!userId) return [];
             return this.db.orders.filter(o => o.userId === userId);
+        }
+
+        getOrdersForCustomer(customer) {
+            if (!customer) return [];
+            const cleanPhone = (customer.phone || '').replace(/[^0-9]/g, '');
+            return this.db.orders.filter(o => {
+                if (o.userId && o.userId === customer.id) return true;
+                if (cleanPhone && o.customerPhone) {
+                    const orderPhone = String(o.customerPhone).replace(/[^0-9]/g, '');
+                    return orderPhone === cleanPhone || (orderPhone.length >= 9 && cleanPhone.length >= 9 && orderPhone.slice(-9) === cleanPhone.slice(-9));
+                }
+                return false;
+            });
+        }
+
+        getGuestOrders() {
+            return this.db.orders.filter(o => !o.userId || o.userId === 'guest');
         }
 
         getAllOrders() {

@@ -20,9 +20,22 @@ const DEFAULT_STORE_SETTINGS = {
     },
     paymentMethodsInfo: {
         telecom_libyana: {
-            title: 'الدفع عبر كرت ليبيانا (Libyana)',
+            id: 'telecom_libyana',
+            title: 'كروت شحن ليبيانا (Libyana)',
             accountInfo: 'كرت تعبئة ليبيانا بقيمة الطلب',
-            instructions: 'اشترِ كرت تعبئة ليبيانا بقيمة طلبك، وأدخل الكود المكوّن من 13 رقماً في الخانة بالأسفل. نتحقق من الكرت ثم نسلّمك طلبك.'
+            instructions: 'اشترِ كرت تعبئة ليبيانا بقيمة طلبك، وأدخل الكود المكوّن من 13 رقماً في الخانة بالأسفل. نتحقق من الكرت ثم نسلّمك طلبك فوراً.'
+        },
+        lypay: {
+            id: 'lypay',
+            title: 'لي باي (LyPay) - مصرف الجمهورية',
+            accountInfo: 'رقم هاتف التحويل: 0920541749',
+            instructions: 'قم بتحويل قيمة الطلب عبر تطبيق LyPay (مصرف الجمهورية) إلى رقم المتجر 0920541749، واكتب رقم هاتفك أو مرجع العملية لتأكيد الشحن.'
+        },
+        onepay: {
+            id: 'onepay',
+            title: 'وان باي (OnePay) - مصرف التجارة والتنمية',
+            accountInfo: 'رقم هاتف التحويل: 0920541749',
+            instructions: 'قم بتحويل قيمة الطلب عبر تطبيق OnePay (مصرف التجارة والتنمية) إلى رقم المتجر 0920541749، واكتب رقم المعاملة لتأكيد الشحن.'
         }
     }
 };
@@ -487,9 +500,7 @@ function loadAppData() {
             if (parsed && parsed.games && parsed.giftCards) migrateCatalog(parsed);
             if (parsed && parsed.games && parsed.giftCards && parsed.catalogVersion === DEFAULT_APP_DATA.catalogVersion) {
                 parsed.settings = { ...DEFAULT_STORE_SETTINGS, ...(parsed.settings || {}) };
-                parsed.settings.paymentMethodsInfo = DEFAULT_STORE_SETTINGS.paymentMethodsInfo && parsed.settings.paymentMethodsInfo && parsed.settings.paymentMethodsInfo.telecom_libyana
-                    ? { telecom_libyana: parsed.settings.paymentMethodsInfo.telecom_libyana }
-                    : DEFAULT_STORE_SETTINGS.paymentMethodsInfo;
+                parsed.settings.paymentMethodsInfo = Object.assign({}, DEFAULT_STORE_SETTINGS.paymentMethodsInfo, parsed.settings.paymentMethodsInfo || {});
                 return parsed;
             }
         }

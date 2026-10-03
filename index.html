@@ -387,9 +387,28 @@
                             <span>طريقة الدفع:</span>
                         </h3>
 
-                        <div data-method="telecom_libyana" class="payment-option-card border-emerald-500 bg-emerald-50/80 ring-2 ring-emerald-400 p-3 rounded-2xl text-center flex items-center justify-center gap-2 border">
-                            <i class="fa-solid fa-sim-card text-2xl text-amber-600"></i>
-                            <span class="text-sm font-black text-slate-800">كرت تعبئة ليبيانا فقط</span>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                            <div onclick="selectPaymentMethod('telecom_libyana')" data-method="telecom_libyana" class="payment-option-card cursor-pointer border-emerald-500 bg-emerald-50/80 ring-2 ring-emerald-400 p-3 rounded-2xl text-center flex sm:flex-col items-center justify-center gap-2 border transition-all">
+                                <i class="fa-solid fa-sim-card text-2xl text-amber-600"></i>
+                                <div>
+                                    <span class="text-xs font-black text-slate-800 block">كروت ليبيانا</span>
+                                    <span class="text-[10px] text-slate-500 block">كود 13 رقماً</span>
+                                </div>
+                            </div>
+                            <div onclick="selectPaymentMethod('lypay')" data-method="lypay" class="payment-option-card cursor-pointer border-slate-200 bg-white/70 hover:bg-slate-50 p-3 rounded-2xl text-center flex sm:flex-col items-center justify-center gap-2 border transition-all">
+                                <i class="fa-solid fa-building-columns text-2xl text-sky-600"></i>
+                                <div>
+                                    <span class="text-xs font-black text-slate-800 block">لي باي (LyPay)</span>
+                                    <span class="text-[10px] text-slate-500 block">مصرف الجمهورية</span>
+                                </div>
+                            </div>
+                            <div onclick="selectPaymentMethod('onepay')" data-method="onepay" class="payment-option-card cursor-pointer border-slate-200 bg-white/70 hover:bg-slate-50 p-3 rounded-2xl text-center flex sm:flex-col items-center justify-center gap-2 border transition-all">
+                                <i class="fa-solid fa-money-bill-transfer text-2xl text-emerald-600"></i>
+                                <div>
+                                    <span class="text-xs font-black text-slate-800 block">وان باي (OnePay)</span>
+                                    <span class="text-[10px] text-slate-500 block">التجارة والتنمية</span>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Dynamic Payment Gateway Information & Instructions -->
@@ -410,7 +429,7 @@
                                 <input type="text" id="checkout-website-field" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" class="hp-field">
                             </div>
 
-                            <!-- Dedicated 13-Digit Voucher Card Code Input (Applies to Libyana & Madar or Voucher Payments) -->
+                            <!-- Dedicated 13-Digit Voucher Card Code Input (Applies to Libyana) -->
                             <div id="voucher-card-field-container" class="space-y-1.5 p-3.5 rounded-2xl bg-amber-50/90 border-2 border-amber-300 transition-all">
                                 <div class="flex items-center justify-between">
                                     <label for="voucher-card-input" class="text-xs font-black text-amber-950 flex items-center gap-1.5">
@@ -435,6 +454,30 @@
                                 <div id="voucher-validation-feedback" class="text-[11px] font-bold text-amber-900 flex items-center gap-1.5 pt-0.5">
                                     <i class="fa-solid fa-circle-info text-amber-700"></i>
                                     <span>يجب أن يتكون كود كارت التعبئة من 13 رقم بالضبط.</span>
+                                </div>
+                            </div>
+
+                            <!-- Dedicated Banking Transfer Reference Input (Applies to LyPay & OnePay) -->
+                            <div id="bank-transfer-field-container" class="hidden space-y-1.5 p-3.5 rounded-2xl bg-sky-50/90 border-2 border-sky-300 transition-all">
+                                <div class="flex items-center justify-between">
+                                    <label for="bank-transfer-ref-input" id="bank-transfer-label-text" class="text-xs font-black text-sky-950 flex items-center gap-1.5">
+                                        <i class="fa-solid fa-receipt text-sky-700 text-sm"></i>
+                                        <span>رقم الهاتف المحول منه أو رقم الإشعار (LyPay):</span>
+                                    </label>
+                                    <span class="text-[10px] font-bold text-sky-800 bg-sky-200/90 px-2 py-0.5 rounded-md">
+                                        تحويل مصرفي
+                                    </span>
+                                </div>
+                                <div class="relative">
+                                    <input type="text" id="bank-transfer-ref-input" maxlength="40" placeholder="مثال: رقم هاتفك في التطبيق أو رقم العملية"
+                                           class="glass-input w-full rounded-xl py-2.5 px-3 text-xs font-bold text-slate-900 border-2 border-sky-300 focus:border-sky-600 shadow-inner">
+                                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-sky-500">
+                                        <i class="fa-solid fa-arrow-right-arrow-left"></i>
+                                    </span>
+                                </div>
+                                <div class="text-[11px] font-bold text-sky-900 flex items-center gap-1.5 pt-0.5">
+                                    <i class="fa-solid fa-circle-info text-sky-700"></i>
+                                    <span id="bank-transfer-hint-text">قم بالتحويل عبر التطبيق لحساب المتجر 0920541749، واكتب رقم هاتفك أو الإشعار لتأكيد الشحن فوراً.</span>
                                 </div>
                             </div>
 
