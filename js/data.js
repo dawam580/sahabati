@@ -18,24 +18,40 @@ const DEFAULT_STORE_SETTINGS = {
         symbol: 'د.ل',
         name: 'دينار ليبي'
     },
+    bankDetails: {
+        bankName: 'مصرف التجارة والتنمية',
+        accountName: 'عطيه موسى عطيه مفتاح',
+        accountNumber: '0041609456001',
+        iban: 'LY65010041000041609456001'
+    },
     paymentMethodsInfo: {
+        lypay: {
+            id: 'lypay',
+            title: 'رصيد ليبيانا (LY)',
+            accountInfo: 'رقم هاتف المتجر: 0920541749',
+            instructions: 'تحويل رصيد ليبيانا فوري لرقم المتجر 0920541749 عبر كود التحويل المباشر.'
+        },
+        bank_transfer: {
+            id: 'bank_transfer',
+            title: 'التحويل المصرفي',
+            accountInfo: 'مصرف التجارة والتنمية: 0041609456001',
+            bankName: 'مصرف التجارة والتنمية',
+            accountName: 'عطيه موسى عطيه مفتاح',
+            accountNumber: '0041609456001',
+            iban: 'LY65010041000041609456001',
+            instructions: 'قم بالتحويل لحساب المتجر في مصرف التجارة والتنمية (عطيه موسى عطيه مفتاح).'
+        },
+        onepay: {
+            id: 'onepay',
+            title: 'OnePay (وان باي)',
+            accountInfo: 'رقم حساب المتجر: 0920541749',
+            instructions: 'قم بالتحويل عبر خدمة OnePay إلى حساب المتجر 0920541749.'
+        },
         telecom_libyana: {
             id: 'telecom_libyana',
             title: 'كروت شحن ليبيانا (Libyana)',
             accountInfo: 'كرت تعبئة ليبيانا بقيمة الطلب',
-            instructions: 'اشترِ كرت تعبئة ليبيانا بقيمة طلبك، وأدخل الكود المكوّن من 13 رقماً في الخانة بالأسفل. نتحقق من الكرت ثم نسلّمك طلبك فوراً.'
-        },
-        lypay: {
-            id: 'lypay',
-            title: 'LibyanaLY (دفع إلكتروني فوري)',
-            accountInfo: 'رقم هاتف التحويل: 0920541749',
-            instructions: 'قم بالتحويل الإلكتروني الفوري بقيمة الطلب عبر LibyanaLY إلى رقم المتجر 0920541749، واكتب رقم هاتفك أو مرجع التحويل لتأكيد الشحن فوراً.'
-        },
-        onepay: {
-            id: 'onepay',
-            title: 'OnePay (دفع إلكتروني فوري)',
-            accountInfo: 'رقم هاتف التحويل: 0920541749',
-            instructions: 'قم بالتحويل الإلكتروني المباشر بقيمة الطلب عبر خدمة OnePay إلى رقم المتجر 0920541749، واكتب رقم المعاملة لتأكيد الشحن فوراً.'
+            instructions: 'اشترِ كرت تعبئة ليبيانا بقيمة طلبك، وأدخل الكود المكوّن من 13 رقماً في الخانة بالأسفل.'
         }
     }
 };
@@ -340,7 +356,13 @@ const DEFAULT_APP_DATA = {
             category: 'entertainment',
             nameAr: 'اشتراك شاهد VIP (Shahid VIP) - حساب كامل',
             nominal: 'Full Account - جميع الأجهزة',
-            priceLYD: 40.00,
+            priceLYD: 30.00,
+            prices: {
+                lypay: 35.00,
+                bank_transfer: 30.00,
+                onepay: 31.00,
+                telecom_libyana: 35.00
+            },
             badge: 'حساب كامل 📺📱',
             type: 'Full Account',
             quality: 'Full HD / 4K',
@@ -482,6 +504,7 @@ function migrateCatalog(data) {
         });
         data.catalogVersion = 8;
     }
+
     return data;
 }
 

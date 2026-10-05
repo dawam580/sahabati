@@ -387,28 +387,8 @@
                             <span>طريقة الدفع:</span>
                         </h3>
 
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                            <div onclick="selectPaymentMethod('telecom_libyana')" data-method="telecom_libyana" class="payment-option-card cursor-pointer border-emerald-500 bg-emerald-50/80 ring-2 ring-emerald-400 p-3 rounded-2xl text-center flex sm:flex-col items-center justify-center gap-2 border transition-all">
-                                <i class="fa-solid fa-sim-card text-2xl text-amber-600"></i>
-                                <div>
-                                    <span class="text-xs font-black text-slate-800 block">كروت ليبيانا</span>
-                                    <span class="text-[10px] text-slate-500 block">كود 13 رقماً</span>
-                                </div>
-                            </div>
-                            <div onclick="selectPaymentMethod('lypay')" data-method="lypay" class="payment-option-card cursor-pointer border-slate-200 bg-white/70 hover:bg-slate-50 p-3 rounded-2xl text-center flex sm:flex-col items-center justify-center gap-2 border transition-all">
-                                <i class="fa-solid fa-mobile-screen-button text-2xl text-sky-600"></i>
-                                <div>
-                                    <span class="text-xs font-black text-slate-800 block">LibyanaLY</span>
-                                    <span class="text-[10px] text-slate-500 block">دفع إلكتروني فوري</span>
-                                </div>
-                            </div>
-                            <div onclick="selectPaymentMethod('onepay')" data-method="onepay" class="payment-option-card cursor-pointer border-slate-200 bg-white/70 hover:bg-slate-50 p-3 rounded-2xl text-center flex sm:flex-col items-center justify-center gap-2 border transition-all">
-                                <i class="fa-solid fa-money-bill-transfer text-2xl text-emerald-600"></i>
-                                <div>
-                                    <span class="text-xs font-black text-slate-800 block">OnePay</span>
-                                    <span class="text-[10px] text-slate-500 block">دفع إلكتروني فوري</span>
-                                </div>
-                            </div>
+                        <div id="payment-options-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                            <!-- Populated dynamically by JS with specific totals -->
                         </div>
 
                         <!-- Dynamic Payment Gateway Information & Instructions -->
@@ -503,10 +483,15 @@
                     <div class="glass-panel rounded-3xl p-5 sm:p-6 shadow-xl space-y-4 sticky top-20">
                         <h3 class="font-extrabold text-slate-900 text-base border-b border-sky-100 pb-3 flex items-center gap-2">
                             <i class="fa-solid fa-receipt text-sky-600"></i>
-                            <span>ملخص طلب الدفع (بالدينار الليبي)</span>
+                            <span>ملخص الطلب (بالدينار الليبي)</span>
                         </h3>
 
-                        <div class="space-y-3 pt-1 text-xs font-bold text-slate-700">
+                        <!-- Dynamic Itemized Order Summary Box -->
+                        <div id="checkout-order-summary-box" class="space-y-2.5">
+                            <!-- Populated dynamically by JS -->
+                        </div>
+
+                        <div class="space-y-3 pt-2 text-xs font-bold text-slate-700 border-t border-sky-100">
                             <div class="flex justify-between">
                                 <span>مجموع الباقات والاشتراكات:</span>
                                 <span id="checkout-subtotal" class="font-mono text-slate-900">0.00 د.ل</span>

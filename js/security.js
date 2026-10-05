@@ -120,35 +120,52 @@
         writeJSON(KEYS.orderTimes, times);
     }
 
-    // ---------- سلامة السلة والأسعار ----------
+    // ---------- سلامة السلة والأسعار (دعم تعدد الأسعار حسب طريقة الدفع) ----------
     // السلة محفوظة في localStorage ويمكن لأي شخص تعديل سعرها من المتصفح،
-    // لذلك نعيد تسعير كل عنصر من الكتالوج الرسمي ونحذف أي عنصر غير معروف.
-    function catalogPrice(item, data) {
+    // لذلك نعيد تسعير كل عنصر من الكتالوج الرسمي حسب طريقة الدفع ونحذف أي عنصر غير معروف أو طريقة غير مسموحة.
+    function getProductPrice(item, data, paymentMethod) {
         if (!item || !data) return null;
-        // المنتجات التي أخفاها المدير لا تُباع
+        let target = null;
         if (item.type === 'game') {
             const game = (data.games || []).find(g => g.id === item.gameId);
-            const pkg = game && !game.hidden && (game.packages || []).find(p => p.id === item.packageId);
-            return pkg && !pkg.hidden ? Number(pkg.priceLYD) : null;
+            if (!game || game.hidden) return null;
+            target = (game.packages || []).find(p => p.id === item.packageId);
+        } else if (item.type === 'giftcard') {
+            target = (data.giftCards || []).find(c => c.id === item.cardId);
         }
-        if (item.type === 'giftcard') {
-            const card = (data.giftCards || []).find(c => c.id === item.cardId);
-            return card && !card.hidden ? Number(card.priceLYD) : null;
+        if (!target || target.hidden) return null;
+
+        // إذا تم تحديد طريقة الدفع وكان للمنتج أسعار مخصصة
+        if (paymentMethod && target.prices && typeof target.prices === 'object') {
+            if (target.prices[paymentMethod] !== undefined && target.prices[paymentMethod] !== null) {
+                const num = Number(target.prices[paymentMethod]);
+                return (isFinite(num) && num > 0) ? num : null; // صفر أو قيمة غير موجبة = طريقة معطلة
+            }
+            // إذا كانت هناك طرق دفع محددة في prices، وهذه الطريقة لم تُذكر = غير متاحة لهذا المنتج
+            const configured = Object.keys(target.prices).filter(k => target.prices[k] !== undefined && target.prices[k] !== null && Number(target.prices[k]) > 0);
+            if (configured.length > 0) {
+                return null; // طريقة الدفع غير مدعومة لهذا المنتج
+            }
         }
-        return null;
+        const defaultPrice = Number(target.priceLYD);
+        return (isFinite(defaultPrice) && defaultPrice > 0) ? defaultPrice : null;
     }
 
-    function sanitizeCart(cart, data) {
+    function catalogPrice(item, data) {
+        return getProductPrice(item, data, null);
+    }
+
+    function sanitizeCart(cart, data, paymentMethod) {
         const clean = [];
         let changed = false;
         (Array.isArray(cart) ? cart : []).forEach(item => {
-            const price = catalogPrice(item, data);
+            const price = getProductPrice(item, data, paymentMethod || null);
             if (price === null || !isFinite(price) || price <= 0) { changed = true; return; }
             let qty = Math.floor(Number(item.quantity));
             if (!isFinite(qty) || qty < 1) { changed = true; return; }
             if (qty > LIMITS.maxQtyPerItem) { qty = LIMITS.maxQtyPerItem; changed = true; }
             if (item.priceLYD !== price) changed = true;
-            clean.push(Object.assign({}, item, { priceLYD: price, quantity: qty }));
+            clean.push(Object.assign({}, item, { priceLYD: price, unitPrice: price, quantity: qty }));
         });
         if (clean.length > LIMITS.maxCartLines) { clean.length = LIMITS.maxCartLines; changed = true; }
         return { cart: clean, changed: changed };
@@ -201,6 +218,7 @@
         clearVoucherFailures: clearVoucherFailures,
         rateLimitProblem: rateLimitProblem,
         recordOrder: recordOrder,
+        getProductPrice: getProductPrice,
         sanitizeCart: sanitizeCart,
         cartTotal: cartTotal,
         playerIdProblem: playerIdProblem,

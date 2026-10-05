@@ -83,7 +83,7 @@ test('catalog: entertainment section, chat apps, Libyana only, no telecom/PSN/St
     assert.ok(ids.includes('claude_pro_1m') && ids.includes('chatgpt_plus_1m') && ids.includes('apple_itunes_10_us'));
     assert.ok(!ids.some(id => id.startsWith('card_tt_')), 'TikTok is sold from the games section by QR');
     assert.ok(!cat.giftCards.some(c => c.category === 'telecom' || ['playstation', 'steam', 'madar', 'libyana'].includes(c.brand)));
-    assert.deepEqual(Object.keys(cat.settings.paymentMethodsInfo), ['telecom_libyana', 'lypay', 'onepay']);
+    assert.deepEqual(Object.keys(cat.settings.paymentMethodsInfo).sort(), ['bank_transfer', 'lypay', 'onepay', 'telecom_libyana'].sort());
     const chat = cat.games.filter(g => g.category === 'chat');
     assert.equal(chat.length, 23, 'only chat apps with an icon are listed');
     assert.ok(chat.every(g => g.deliveryMethod === 'id' && g.image));
@@ -99,6 +99,24 @@ test('catalog: entertainment section, chat apps, Libyana only, no telecom/PSN/St
     assert.equal(rOne.status, 201);
     assert.equal(rOne.order.paymentMethod, 'onepay');
     assert.equal(rOne.order.transferRef, 'REF-9988');
+
+    const rBank = store.createOrder(goodOrder({ paymentMethod: 'bank_transfer', cardCode13: '', transferRef: 'BANK-001' }), 'z3');
+    assert.equal(rBank.status, 201);
+    assert.equal(rBank.order.paymentMethod, 'bank_transfer');
+    assert.equal(rBank.order.transferRef, 'BANK-001');
+
+    // Multi-pricing verification: Shahid VIP has LY: 35, Bank: 30, OnePay: 31
+    const rShahidLy = store.createOrder(goodOrder({ items: [{ type: 'giftcard', cardId: 'shahid_vip_full', quantity: 1 }], paymentMethod: 'lypay', transferRef: '092000' }), 'z4');
+    assert.equal(rShahidLy.status, 201);
+    assert.equal(rShahidLy.order.items[0].priceLYD, 35, 'Shahid LY price is 35 LYD');
+
+    const rShahidBank = store.createOrder(goodOrder({ items: [{ type: 'giftcard', cardId: 'shahid_vip_full', quantity: 1 }], paymentMethod: 'bank_transfer', transferRef: 'TR-1' }), 'z5');
+    assert.equal(rShahidBank.status, 201);
+    assert.equal(rShahidBank.order.items[0].priceLYD, 30, 'Shahid Bank price is 30 LYD');
+
+    const rShahidOne = store.createOrder(goodOrder({ items: [{ type: 'giftcard', cardId: 'shahid_vip_full', quantity: 1 }], paymentMethod: 'onepay', transferRef: 'ONE-1' }), 'z6');
+    assert.equal(rShahidOne.status, 201);
+    assert.equal(rShahidOne.order.items[0].priceLYD, 31, 'Shahid OnePay price is 31 LYD');
 });
 
 test('delivery methods: PUBG and chat apps need an ID, TikTok by QR, Roblox by login; hidden items cannot be ordered', () => {

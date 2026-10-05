@@ -218,6 +218,9 @@ function createStore() {
         const phone = guard.normalizeLibyanPhone(body.phone);
         if (!phone) return { status: 400, error: 'أدخل رقم هاتف ليبي صحيح (مثال: 0912345678)' };
 
+        const allowedMethods = ['telecom_libyana', 'lypay', 'bank_transfer', 'onepay'];
+        const method = allowedMethods.includes(body.paymentMethod) ? body.paymentMethod : 'telecom_libyana';
+
         const catalog = getCatalog();
         const rawItems = Array.isArray(body.items) ? body.items.slice(0, guard.LIMITS.maxCartLines) : [];
         const items = rawItems.map(i => ({
@@ -228,22 +231,28 @@ function createStore() {
             playerId: String(i && i.playerId || '').replace(/\s/g, ''),
             quantity: i && i.quantity
         }));
-        const { cart } = guard.sanitizeCart(items, catalog);
-        if (!cart.length || cart.length !== items.length) return { status: 400, error: 'بعض المنتجات لم تعد متوفرة، حدّث الصفحة وحاول مجدداً' };
+        // تسعير السلة بالكامل اعتماداً على طريقة الدفع لمنع التلاعب وحساب السعر الصحيح
+        const { cart } = guard.sanitizeCart(items, catalog, method);
+        if (!cart.length || cart.length !== items.length) return { status: 400, error: 'طريقة الدفع المختارة غير متاحة لبعض المنتجات، أو نفدت من الكتالوج' };
 
         // أسماء المنتجات ومعرّف اللاعب تُبنى على الخادم وليس من نص المتصفح
         for (const item of cart) {
+            item.paymentMethod = method;
+            item.unitPrice = item.priceLYD;
+            item.totalPrice = Math.round(item.priceLYD * item.quantity * 100) / 100;
             if (item.type === 'game') {
                 const game = catalog.games.find(g => g.id === item.gameId);
                 const pkg = game.packages.find(p => p.id === item.packageId);
                 item.titleAr = game.nameAr.split('(')[0].trim() + ' - ' + pkg.nameAr;
-                const method = game.deliveryMethod || 'id';
-                item.delivery = method;
-                if (method === 'qr') {
+                item.productId = pkg.id;
+                item.productName = item.titleAr;
+                const dMethod = game.deliveryMethod || 'id';
+                item.delivery = dMethod;
+                if (dMethod === 'qr') {
                     item.meta = 'الشحن عبر رمز QR';
-                } else if (method === 'login') {
+                } else if (dMethod === 'login') {
                     item.meta = 'الشحن عبر تسجيل الدخول';
-                } else if (method === 'manual') {
+                } else if (dMethod === 'manual') {
                     item.meta = 'تسليم يدوي';
                 } else {
                     const idProblem = guard.playerIdProblem(item.playerId);
@@ -253,14 +262,16 @@ function createStore() {
             } else {
                 const card = catalog.giftCards.find(c => c.id === item.cardId);
                 item.titleAr = card.nameAr;
+                item.productId = card.id;
+                item.productName = card.nameAr;
                 // طريقة التسليم يحددها المدير من اللوحة: code (كود من المخزن) | id (معرّف حساب العميل) | manual (يدوي)
-                const method = card.deliveryMethod || 'code';
-                item.delivery = method;
-                if (method === 'id') {
+                const dMethod = card.deliveryMethod || 'code';
+                item.delivery = dMethod;
+                if (dMethod === 'id') {
                     const idProblem = guard.accountIdProblem(item.playerId);
                     if (idProblem) return { status: 400, error: idProblem + ' (' + card.nameAr + ')' };
                     item.meta = 'ID: ' + guard.cleanText(item.playerId, 80);
-                } else if (method === 'manual') {
+                } else if (dMethod === 'manual') {
                     item.meta = 'تسليم يدوي';
                 } else {
                     item.meta = card.nominal || 'اشتراك وبطاقة رقمية';
@@ -273,8 +284,6 @@ function createStore() {
         const maxOrder = Number(catalog.settings && catalog.settings.maxOrderLYD) || guard.LIMITS.maxOrderLYD;
         if (total > maxOrder) return { status: 400, error: 'الحد الأقصى للطلب الواحد ' + maxOrder.toFixed(2) + ' د.ل' };
 
-        const allowedMethods = ['telecom_libyana', 'lypay', 'onepay'];
-        const method = allowedMethods.includes(body.paymentMethod) ? body.paymentMethod : 'telecom_libyana';
         let card = '';
         if (method === 'telecom_libyana') {
             card = String(body.cardCode13 || '').replace(/[^0-9]/g, '');

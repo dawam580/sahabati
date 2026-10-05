@@ -16,7 +16,7 @@ let state = {
     cart: (typeof localStorage !== 'undefined' ? JSON.parse(localStorage.getItem('sahabati_cart') || '[]') : []),
     orders: (typeof localStorage !== 'undefined' ? JSON.parse(localStorage.getItem('sahabati_orders') || '[]') : []),
     appliedPromo: null,
-    paymentMethod: 'telecom_libyana',
+    paymentMethod: 'lypay',
     isAdminAuth: (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('sahabati_admin_auth') === 'true' : false)
 };
 
@@ -721,7 +721,7 @@ function addGamePackageToCart(gameId, pkgId) {
         packageId: pkg.id,
         titleAr: game.nameAr.split('(')[0] + ' - ' + pkg.nameAr,
         meta: meta,
-        priceLYD: pkg.priceLYD,
+        priceLYD: (typeof FraudGuard !== 'undefined' && FraudGuard.getProductPrice) ? (FraudGuard.getProductPrice(pkg, APP_DATA, state.paymentMethod) || pkg.priceLYD) : pkg.priceLYD,
         quantity: 1
     };
 
@@ -816,7 +816,7 @@ function addGiftCardToCart(cardId, accountId) {
         cardId: card.id,
         titleAr: card.nameAr,
         meta: meta,
-        priceLYD: card.priceLYD,
+        priceLYD: (typeof FraudGuard !== 'undefined' && FraudGuard.getProductPrice) ? (FraudGuard.getProductPrice(card, APP_DATA, state.paymentMethod) || card.priceLYD) : card.priceLYD,
         quantity: 1
     };
 
@@ -844,6 +844,47 @@ function openCardDetailsModal(cardId) {
             ? '<div class="mb-4 p-3 rounded-2xl bg-amber-50 border border-amber-200 text-xs font-bold text-amber-900"><i class="fa-solid fa-hand"></i> تسليم يدوي: بعد تأكيد الدفع نسلّمك الطلب ويظهر في «طلباتي».</div>'
             : '');
 
+    const methodsList = [
+        { id: 'lypay', name: 'رصيد LY', icon: 'fa-solid fa-mobile-screen-button' },
+        { id: 'bank_transfer', name: 'تحويل مصرفي', icon: 'fa-solid fa-building-columns' },
+        { id: 'onepay', name: 'OnePay', icon: 'fa-solid fa-money-bill-transfer' },
+        { id: 'telecom_libyana', name: 'كروت ليبيانا', icon: 'fa-solid fa-sim-card' }
+    ];
+
+    const availableForCard = methodsList.filter(m => {
+        const p = (typeof FraudGuard !== 'undefined' && FraudGuard.getProductPrice)
+            ? FraudGuard.getProductPrice(card, APP_DATA, m.id)
+            : card.priceLYD;
+        return p !== null && p > 0;
+    });
+
+    const activeMethod = (state.paymentMethod && availableForCard.some(m => m.id === state.paymentMethod))
+        ? state.paymentMethod
+        : (availableForCard[0]?.id || 'lypay');
+
+    const currentPrice = (typeof FraudGuard !== 'undefined' && FraudGuard.getProductPrice)
+        ? (FraudGuard.getProductPrice(card, APP_DATA, activeMethod) || card.priceLYD)
+        : card.priceLYD;
+
+    const multiPriceHtml = availableForCard.length > 0 ? (
+        '<div class="mb-4 space-y-2 text-right">' +
+            '<div class="flex items-center justify-between">' +
+                '<label class="text-xs font-black text-slate-800">اختر طريقة الدفع لمعرفة السعر النهائي:</label>' +
+                '<span class="text-[10px] text-sky-700 font-bold bg-sky-50 px-2 py-0.5 rounded-full border border-sky-200">تحديث فوري</span>' +
+            '</div>' +
+            '<div class="grid grid-cols-2 sm:grid-cols-4 gap-2" id="card-modal-methods-grid">' +
+                availableForCard.map(m => {
+                    const mPrice = FraudGuard.getProductPrice(card, APP_DATA, m.id);
+                    const isSel = m.id === activeMethod;
+                    return '<div onclick="selectCardModalMethod('' + escapeAttr(card.id) + '', '' + m.id + '')" id="card-method-pill-' + m.id + '" class="card-modal-method-pill cursor-pointer p-2 rounded-xl border text-center transition ' + (isSel ? 'border-emerald-500 bg-emerald-50/90 ring-2 ring-emerald-400 font-black' : 'border-slate-200 bg-white hover:bg-slate-50 font-bold') + '">' +
+                        '<span class="text-[11px] text-slate-800 block"><i class="' + m.icon + ' text-sky-600 ml-1"></i> ' + m.name + '</span>' +
+                        '<span class="text-xs font-mono font-black text-emerald-700 block mt-0.5">' + formatPrice(mPrice) + '</span>' +
+                    '</div>';
+                }).join('') +
+            '</div>' +
+        '</div>'
+    ) : '';
+
     content.innerHTML = '<div class="text-center mb-4">' +
         '<div class="w-full h-28 rounded-2xl bg-gradient-to-br from-sky-600 to-indigo-800 p-4 text-white flex flex-col justify-between shadow-lg mb-3">' +
             '<span class="text-xs uppercase tracking-wider bg-white/20 self-start px-2 py-0.5 rounded">سحّابتي My Cloud</span>' +
@@ -851,8 +892,9 @@ function openCardDetailsModal(cardId) {
             '<span class="text-xs text-white/90 text-left font-bold">' + (method === 'manual' ? 'تسليم يدوي' : 'تسليم مباشر') + '</span>' +
         '</div>' +
         '<h3 class="text-xl font-black text-slate-900">' + escapeHtml(card.nameAr) + '</h3>' +
-        '<p class="text-xl font-black text-emerald-700 mt-1">' + formatPrice(card.priceLYD) + '</p>' +
+        '<p id="card-modal-price" class="text-2xl font-black text-emerald-700 mt-1">' + formatPrice(currentPrice) + '</p>' +
     '</div>' +
+    multiPriceHtml +
     '<div class="bg-emerald-50/70 p-4 rounded-2xl border border-emerald-200 mb-4 text-xs leading-relaxed text-slate-700">' +
         '<h4 class="font-bold text-slate-900 mb-1 flex items-center gap-1.5">' +
             '<i class="fa-solid fa-circle-question text-emerald-600"></i>' +
@@ -862,16 +904,37 @@ function openCardDetailsModal(cardId) {
     '</div>' +
     deliveryHtml +
     '<div class="flex gap-2">' +
-        '<button onclick="if (addGiftCardToCart(\'' + escapeAttr(card.id) + '\', (document.getElementById(\'card-account-input\') || {}).value) !== false) closeModal(\'card-detail-modal\');" class="flex-1 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-lg shadow-emerald-600/30">' +
+        '<button onclick="if (addGiftCardToCart('' + escapeAttr(card.id) + '', (document.getElementById('card-account-input') || {}).value) !== false) closeModal('card-detail-modal');" class="flex-1 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-lg shadow-emerald-600/30">' +
             'إضافة إلى السلة' +
         '</button>' +
-        '<button onclick="closeModal(\'card-detail-modal\')" class="px-5 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm">' +
+        '<button onclick="closeModal('card-detail-modal')" class="px-5 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm">' +
             'إغلاق' +
         '</button>' +
     '</div>';
 
     modal.classList.remove('hidden');
     modal.classList.add('flex');
+}
+
+function selectCardModalMethod(cardId, methodId) {
+    const card = APP_DATA.giftCards.find(c => c.id === cardId);
+    if (!card) return;
+    state.paymentMethod = methodId;
+    const price = (typeof FraudGuard !== 'undefined' && FraudGuard.getProductPrice)
+        ? (FraudGuard.getProductPrice(card, APP_DATA, methodId) || card.priceLYD)
+        : card.priceLYD;
+    const priceEl = document.getElementById('card-modal-price');
+    if (priceEl) priceEl.textContent = formatPrice(price);
+
+    document.querySelectorAll('.card-modal-method-pill').forEach(el => {
+        el.classList.remove('border-emerald-500', 'bg-emerald-50/90', 'ring-2', 'ring-emerald-400', 'font-black');
+        el.classList.add('border-slate-200', 'bg-white', 'font-bold');
+    });
+    const activePill = document.getElementById('card-method-pill-' + methodId);
+    if (activePill) {
+        activePill.classList.add('border-emerald-500', 'bg-emerald-50/90', 'ring-2', 'ring-emerald-400', 'font-black');
+        activePill.classList.remove('border-slate-200', 'bg-white');
+    }
 }
 
 function closeModal(modalId) {
@@ -948,15 +1011,114 @@ function updateCartQuantity(cartItemId, delta) {
 }
 
 // Re-price the stored cart from the official catalog (prevents edited prices in localStorage)
-function sanitizeStoredCart() {
+function sanitizeStoredCart(method) {
     if (typeof FraudGuard === 'undefined') return;
-    const result = FraudGuard.sanitizeCart(state.cart, APP_DATA);
+    const pm = method || state.paymentMethod || null;
+    const result = FraudGuard.sanitizeCart(state.cart, APP_DATA, pm);
     if (result.changed) {
         state.cart = result.cart;
         saveCart();
         updateCartUI();
     }
     return result.changed;
+}
+
+const ALL_PAYMENT_METHODS = [
+    { id: 'lypay', nameAr: 'رصيد LY', sub: 'دفع إلكتروني فوري', icon: 'fa-solid fa-mobile-screen-button', color: 'sky' },
+    { id: 'bank_transfer', nameAr: 'تحويل مصرفي', sub: 'التجارة والتنمية', icon: 'fa-solid fa-building-columns', color: 'blue' },
+    { id: 'onepay', nameAr: 'OnePay', sub: 'دفع إلكتروني فوري', icon: 'fa-solid fa-money-bill-transfer', color: 'emerald' },
+    { id: 'telecom_libyana', nameAr: 'كروت ليبيانا', sub: 'كود 13 رقماً', icon: 'fa-solid fa-sim-card', color: 'amber' }
+];
+
+function getAvailablePaymentMethods() {
+    if (!state.cart || state.cart.length === 0) return ALL_PAYMENT_METHODS;
+    return ALL_PAYMENT_METHODS.filter(m => {
+        return state.cart.every(item => {
+            const p = (typeof FraudGuard !== 'undefined' && FraudGuard.getProductPrice)
+                ? FraudGuard.getProductPrice(item, APP_DATA, m.id)
+                : item.priceLYD;
+            return p !== null && p > 0;
+        });
+    });
+}
+
+function renderPaymentOptions() {
+    const grid = document.getElementById('payment-options-grid');
+    if (!grid) return;
+
+    const available = getAvailablePaymentMethods();
+    if (available.length > 0 && !available.some(m => m.id === state.paymentMethod)) {
+        state.paymentMethod = available[0].id;
+    }
+
+    grid.innerHTML = available.map(m => {
+        const isSelected = state.paymentMethod === m.id;
+        const mTotal = state.cart.reduce((sum, item) => {
+            const p = (typeof FraudGuard !== 'undefined' && FraudGuard.getProductPrice)
+                ? (FraudGuard.getProductPrice(item, APP_DATA, m.id) || item.priceLYD)
+                : item.priceLYD;
+            return sum + p * item.quantity;
+        }, 0);
+
+        const activeClasses = isSelected
+            ? 'border-emerald-500 bg-emerald-50/90 ring-2 ring-emerald-400 font-black shadow-md'
+            : 'border-slate-200 bg-white/70 hover:bg-slate-50 font-bold';
+
+        return '<div onclick="selectPaymentMethod(\'' + m.id + '\')" data-method="' + m.id + '" class="payment-option-card cursor-pointer ' + activeClasses + ' p-3 rounded-2xl text-center flex sm:flex-col items-center justify-between sm:justify-center gap-2 border transition-all">' +
+            '<div class="flex sm:flex-col items-center gap-2">' +
+                '<i class="' + m.icon + ' text-2xl text-' + m.color + '-600"></i>' +
+                '<div class="text-right sm:text-center">' +
+                    '<span class="text-xs font-black text-slate-800 block">' + m.nameAr + '</span>' +
+                    '<span class="text-[10px] text-slate-500 block">' + m.sub + '</span>' +
+                '</div>' +
+            '</div>' +
+            '<div class="text-left sm:text-center mt-0 sm:mt-1">' +
+                '<span class="text-xs font-mono font-black text-emerald-700 bg-white/90 px-2 py-0.5 rounded-lg border border-slate-200 block shadow-inner">' + formatPrice(mTotal) + '</span>' +
+            '</div>' +
+        '</div>';
+    }).join('');
+}
+
+function renderOrderSummary() {
+    const summaryBox = document.getElementById('checkout-order-summary-box');
+    if (!summaryBox) return;
+
+    if (state.cart.length === 0) {
+        summaryBox.innerHTML = '';
+        return;
+    }
+
+    const curMethodObj = ALL_PAYMENT_METHODS.find(m => m.id === state.paymentMethod) || { nameAr: state.paymentMethod };
+
+    summaryBox.innerHTML = state.cart.map(item => {
+        const itemPrice = (typeof FraudGuard !== 'undefined' && FraudGuard.getProductPrice)
+            ? (FraudGuard.getProductPrice(item, APP_DATA, state.paymentMethod) || item.priceLYD)
+            : item.priceLYD;
+        const itemTotal = itemPrice * item.quantity;
+
+        return '<div class="p-3 rounded-2xl bg-slate-50/90 border border-slate-200 space-y-1.5 text-xs shadow-sm">' +
+            '<div class="flex justify-between items-center">' +
+                '<span class="text-slate-500 font-bold">المنتج:</span>' +
+                '<span class="font-black text-slate-900">' + escapeHtml(item.titleAr) + '</span>' +
+            '</div>' +
+            '<div class="flex justify-between items-center">' +
+                '<span class="text-slate-500 font-bold">طريقة الدفع:</span>' +
+                '<span class="font-extrabold text-sky-700 bg-sky-50 px-2 py-0.5 rounded-md border border-sky-200 text-[11px]">' + curMethodObj.nameAr + '</span>' +
+            '</div>' +
+            '<div class="flex justify-between items-center text-slate-600">' +
+                '<span>السعر:</span>' +
+                '<span class="font-mono font-bold text-slate-800">' + formatPrice(itemPrice) + '</span>' +
+            '</div>' +
+            '<div class="flex justify-between items-center text-slate-600">' +
+                '<span>الكمية:</span>' +
+                '<span class="font-mono font-bold text-slate-800">' + item.quantity + '</span>' +
+            '</div>' +
+            '<div class="flex justify-between items-center pt-1.5 border-t border-slate-200">' +
+                '<span class="font-black text-slate-900">الإجمالي:</span>' +
+                '<span class="font-mono font-black text-emerald-700 text-sm">' + formatPrice(itemTotal) + '</span>' +
+            '</div>' +
+        '</div>';
+    }).join('');
 }
 
 // Render Checkout Page
@@ -967,7 +1129,13 @@ function renderCheckout() {
 
     if (!itemsContainer) return;
     if (!state.checkoutOpenedAt) state.checkoutOpenedAt = Date.now();
-    sanitizeStoredCart();
+
+    const available = getAvailablePaymentMethods();
+    if (available.length > 0 && !available.some(m => m.id === state.paymentMethod)) {
+        state.paymentMethod = available[0].id;
+    }
+
+    sanitizeStoredCart(state.paymentMethod);
 
     if (state.cart.length === 0) {
         if (emptyState) emptyState.classList.remove('hidden');
@@ -996,43 +1164,41 @@ function renderCheckout() {
             '</div>' +
             '<div class="flex items-center gap-2.5">' +
                 '<div class="flex items-center border border-slate-200 rounded-lg bg-white overflow-hidden text-xs">' +
-                    '<button onclick="updateCartQuantity(\'' + item.cartItemId + '\', -1)" class="px-2 py-1 hover:bg-slate-100 text-slate-600 font-bold">-</button>' +
+                    '<button onclick="updateCartQuantity('' + item.cartItemId + '', -1)" class="px-2 py-1 hover:bg-slate-100 text-slate-600 font-bold">-</button>' +
                     '<span class="px-2 py-1 font-bold text-slate-800">' + item.quantity + '</span>' +
-                    '<button onclick="updateCartQuantity(\'' + item.cartItemId + '\', 1)" class="px-2 py-1 hover:bg-slate-100 text-slate-600 font-bold">+</button>' +
+                    '<button onclick="updateCartQuantity('' + item.cartItemId + '', 1)" class="px-2 py-1 hover:bg-slate-100 text-slate-600 font-bold">+</button>' +
                 '</div>' +
                 '<div class="text-right">' +
                     '<span class="font-bold text-emerald-700 text-xs sm:text-sm block">' + formatPrice(itemTotalLYD) + '</span>' +
                 '</div>' +
-                '<button onclick="removeFromCart(\'' + item.cartItemId + '\')" class="text-rose-500 hover:text-rose-700 text-xs p-1">' +
+                '<button onclick="removeFromCart('' + item.cartItemId + '')" class="text-rose-500 hover:text-rose-700 text-xs p-1">' +
                     '<i class="fa-solid fa-trash-can"></i>' +
                 '</button>' +
             '</div>' +
         '</div>';
     }).join('');
 
-    // Clean Total without promo code
     const subtotalEl = document.getElementById('checkout-subtotal');
     const totalEl = document.getElementById('checkout-total');
 
     if (subtotalEl) subtotalEl.textContent = formatPrice(subtotalLYD);
     if (totalEl) totalEl.textContent = formatPrice(subtotalLYD);
 
+    renderPaymentOptions();
+    renderOrderSummary();
     renderPaymentInstructions();
+    updatePaymentInputContainers();
 }
 
-// Select Payment Method & Update Input Fields dynamically
+// Select Payment Method & Update Prices Dynamically
 function selectPaymentMethod(method) {
     state.paymentMethod = method;
-    document.querySelectorAll('.payment-option-card').forEach(card => {
-        if (card.dataset.method === method) {
-            card.classList.add('border-emerald-500', 'bg-emerald-50/80', 'ring-2', 'ring-emerald-400');
-            card.classList.remove('border-slate-200', 'bg-white/70');
-        } else {
-            card.classList.remove('border-emerald-500', 'bg-emerald-50/80', 'ring-2', 'ring-emerald-400');
-            card.classList.add('border-slate-200', 'bg-white/70');
-        }
-    });
+    sanitizeStoredCart(method);
+    renderCheckout();
+}
 
+function updatePaymentInputContainers() {
+    const method = state.paymentMethod || 'lypay';
     const voucherContainer = document.getElementById('voucher-card-field-container');
     const voucherInput = document.getElementById('voucher-card-input');
     const bankTransferContainer = document.getElementById('bank-transfer-field-container');
@@ -1048,24 +1214,25 @@ function selectPaymentMethod(method) {
         if (voucherContainer) voucherContainer.classList.add('hidden');
         if (bankTransferContainer) bankTransferContainer.classList.remove('hidden');
         if (method === 'lypay') {
-            if (bankTransferLabel) bankTransferLabel.innerHTML = '<i class="fa-solid fa-receipt text-sky-700 text-sm"></i> <span>رقم الهاتف المحول منه أو رقم العملية (LyPay):</span>';
-            if (bankTransferInput) bankTransferInput.placeholder = 'مثال: 091XXXXXXX أو رقم إشعار تحويل لي باي';
-            if (bankTransferHint) bankTransferHint.textContent = 'قم بالتحويل عبر تطبيق LyPay (مصرف الجمهورية) لحساب المتجر 0920541749، واكتب رقم هاتفك أو الإشعار لتأكيد الشحن فوراً.';
+            if (bankTransferLabel) bankTransferLabel.innerHTML = '<i class="fa-solid fa-receipt text-sky-700 text-sm"></i> <span>رقم الهاتف المحول منه أو رقم العملية (رصيد ليبيانا):</span>';
+            if (bankTransferInput) bankTransferInput.placeholder = 'مثال: 092XXXXXXX أو رقم رسالة التحويل';
+            if (bankTransferHint) bankTransferHint.textContent = 'قم بالتحويل عبر الكود المباشر أعلاه لرقم المتجر 0920541749، واكتب رقم هاتفك أو الإشعار لتأكيد الشحن فوراً.';
+        } else if (method === 'bank_transfer') {
+            if (bankTransferLabel) bankTransferLabel.innerHTML = '<i class="fa-solid fa-building-columns text-blue-700 text-sm"></i> <span>اسم المحوّل / رقم الحساب / إشعار التحويل (مصرف التجارة والتنمية):</span>';
+            if (bankTransferInput) bankTransferInput.placeholder = 'مثال: اسمك في المصرف أو رقم الحساب أو كود الإشعار';
+            if (bankTransferHint) bankTransferHint.textContent = 'تم التحويل لحساب المتجر 0041609456001 (عطيه موسى عطيه مفتاح). اكتب بياناتك لتأكيد الشحن.';
         } else if (method === 'onepay') {
-            if (bankTransferLabel) bankTransferLabel.innerHTML = '<i class="fa-solid fa-receipt text-emerald-700 text-sm"></i> <span>رقم حساب/هاتف أو كود العملية (OnePay):</span>';
+            if (bankTransferLabel) bankTransferLabel.innerHTML = '<i class="fa-solid fa-money-bill-transfer text-emerald-700 text-sm"></i> <span>رقم حساب/هاتف أو كود العملية (OnePay):</span>';
             if (bankTransferInput) bankTransferInput.placeholder = 'مثال: رقم حسابك في ون باي أو كود الإشعار';
-            if (bankTransferHint) bankTransferHint.textContent = 'قم بالتحويل عبر تطبيق OnePay (مصرف التجارة والتنمية) لحساب المتجر 0920541749، واكتب رقم هاتفك أو الإشعار لتأكيد الشحن فوراً.';
+            if (bankTransferHint) bankTransferHint.textContent = 'قم بالتحويل عبر تطبيق OnePay لحساب المتجر 0920541749، واكتب رقم هاتفك أو الإشعار لتأكيد الشحن فوراً.';
         }
     }
-
-    renderPaymentInstructions();
 }
 
 // 13-Digit Scratch Card Code Live Input Handler & Strict Rule
 function handleVoucherCardInput(inputEl) {
     if (!inputEl) return;
     
-    // Strict numeric only, max 13 digits
     let val = inputEl.value.replace(/[^0-9]/g, '').slice(0, 13);
     inputEl.value = val;
     
@@ -1124,52 +1291,241 @@ function renderPaymentInstructions() {
     const box = document.getElementById('payment-instructions-box');
     if (!box) return;
 
-    const infoMap = APP_DATA.settings?.paymentMethodsInfo || DEFAULT_STORE_SETTINGS.paymentMethodsInfo;
-    const method = state.paymentMethod;
-    const currentInfo = infoMap[method] || {
-        title: 'الدفع المباشر بالدينار الليبي',
-        accountInfo: 'تواصل مع خدمة العملاء 0920541749',
-        instructions: 'سيتم الاتفاق على وسيلة الدفع وتأكيد الشحن الفوري عبر محادثة واتساب.'
-    };
+    const method = state.paymentMethod || 'lypay';
+    const totalLYD = (typeof FraudGuard !== 'undefined' && FraudGuard.cartTotal)
+        ? FraudGuard.cartTotal(state.cart)
+        : state.cart.reduce((s, i) => s + i.priceLYD * i.quantity, 0);
 
-    box.innerHTML = '<div class="flex items-center gap-3">' +
-        '<div class="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center text-xl shadow-md flex-shrink-0">' +
-            '<i class="fa-solid fa-money-check-dollar"></i>' +
-        '</div>' +
-        '<div>' +
-            '<h4 class="font-black text-emerald-950 text-sm">' + currentInfo.title + '</h4>' +
-            '<p class="text-xs font-mono font-bold text-emerald-800 mt-0.5">' + currentInfo.accountInfo + '</p>' +
-        '</div>' +
-    '</div>' +
-    '<div class="bg-white/80 p-2.5 rounded-xl border border-emerald-200 text-xs text-slate-700 leading-relaxed font-medium">' +
-        '<i class="fa-solid fa-circle-info text-emerald-600 ml-1"></i>' +
-        '<span>' + currentInfo.instructions + '</span>' +
-    '</div>';
+    if (method === 'lypay') {
+        const amountThousands = Math.round(totalLYD * 1000);
+        const ussdCode = '*122*920541749*' + amountThousands + '#';
+        const dialUrl = 'tel:*122*920541749*' + amountThousands + '%23';
+
+        box.innerHTML = '<div class="space-y-3">' +
+            '<div class="flex items-center justify-between border-b border-sky-200 pb-2">' +
+                '<div class="flex items-center gap-2.5">' +
+                    '<div class="w-10 h-10 rounded-xl bg-sky-600 text-white flex items-center justify-center text-xl shadow-md flex-shrink-0">' +
+                        '<i class="fa-solid fa-mobile-screen-button"></i>' +
+                    '</div>' +
+                    '<div>' +
+                        '<h4 class="font-black text-sky-950 text-sm">رصيد ليبيانا (LibyanaLY)</h4>' +
+                        '<p class="text-xs text-sky-800 font-bold">تحويل رصيد مباشر فوري</p>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="text-left">' +
+                    '<span class="text-[10px] text-sky-700 font-bold block">المبلغ المطلوب تحويله:</span>' +
+                    '<span class="text-base font-black font-mono text-sky-950">' + formatPrice(totalLYD) + '</span>' +
+                '</div>' +
+            '</div>' +
+
+            '<div class="p-3 bg-white/95 rounded-2xl border-2 border-sky-300 space-y-2">' +
+                '<div class="flex items-center justify-between">' +
+                    '<span class="text-xs font-black text-sky-950 flex items-center gap-1.5">' +
+                        '<i class="fa-solid fa-bolt text-amber-500"></i>' +
+                        '<span>كود تحويل الرصيد المباشر (جاهز لمبلغ ' + formatPrice(totalLYD) + '):</span>' +
+                    '</span>' +
+                    '<span class="text-[10px] font-mono font-bold bg-sky-100 text-sky-800 px-2 py-0.5 rounded">' +
+                        'القيمة: ' + amountThousands +
+                    '</span>' +
+                '</div>' +
+                '<div class="flex flex-col sm:flex-row items-center gap-2">' +
+                    '<code class="flex-1 w-full text-center py-2.5 px-3 rounded-xl bg-slate-900 text-emerald-400 font-mono font-black text-base tracking-wider dir-ltr select-all">' +
+                        ussdCode +
+                    '</code>' +
+                    '<div class="flex items-center gap-2 w-full sm:w-auto">' +
+                        '<button type="button" onclick="copyToClipboard(\'' + ussdCode + '\', \'كود تحويل الرصيد\')" class="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs shadow-sm transition flex items-center justify-center gap-1.5">' +
+                            '<i class="fa-solid fa-copy"></i>' +
+                            '<span>نسخ الكود</span>' +
+                        '</button>' +
+                        '<a href="' + dialUrl + '" class="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition flex items-center justify-center gap-1.5">' +
+                            '<i class="fa-solid fa-phone"></i>' +
+                            '<span>اتصال فوري</span>' +
+                        '</a>' +
+                    '</div>' +
+                '</div>' +
+                '<p class="text-[11px] text-slate-600 font-medium pt-0.5">' +
+                    '* اضغط «اتصال فوري» أو انسخ الكود ونفّذه من هاتفك لتحويل الرصيد مباشرة لحساب المتجر <strong>0920541749</strong>.' +
+                '</p>' +
+            '</div>' +
+        '</div>';
+    } else if (method === 'bank_transfer') {
+        box.innerHTML = '<div class="space-y-3">' +
+            '<div class="flex items-center justify-between border-b border-blue-200 pb-2">' +
+                '<div class="flex items-center gap-2.5">' +
+                    '<div class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center text-xl shadow-md flex-shrink-0">' +
+                        '<i class="fa-solid fa-building-columns"></i>' +
+                    '</div>' +
+                    '<div>' +
+                        '<h4 class="font-black text-blue-950 text-sm">التحويل المصرفي</h4>' +
+                        '<p class="text-xs text-blue-800 font-bold">مصرف التجارة والتنمية</p>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="text-left">' +
+                    '<span class="text-[10px] text-blue-700 font-bold block">المبلغ المطلوب تحويله:</span>' +
+                    '<span class="text-base font-black font-mono text-blue-950">' + formatPrice(totalLYD) + '</span>' +
+                '</div>' +
+            '</div>' +
+
+            '<div class="p-2.5 rounded-xl bg-blue-100 text-blue-950 font-bold text-xs flex items-center justify-between border border-blue-300">' +
+                '<span class="flex items-center gap-1.5">' +
+                    '<i class="fa-solid fa-circle-exclamation text-blue-700"></i>' +
+                    '<span>المبلغ المطلوب تحويله مصرفياً:</span>' +
+                '</span>' +
+                '<span class="font-mono font-black text-base text-blue-900">' + formatPrice(totalLYD) + '</span>' +
+            '</div>' +
+
+            '<div class="p-3 bg-white/95 rounded-2xl border-2 border-blue-200 space-y-2 text-xs">' +
+                '<div class="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-100">' +
+                    '<div>' +
+                        '<span class="text-[10px] text-slate-500 block">المصرف:</span>' +
+                        '<span class="font-black text-slate-900">مصرف التجارة والتنمية</span>' +
+                    '</div>' +
+                    '<span class="text-[10px] bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded">حساب رسمي</span>' +
+                '</div>' +
+                '<div class="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-100">' +
+                    '<div>' +
+                        '<span class="text-[10px] text-slate-500 block">اسم المستفيد:</span>' +
+                        '<span class="font-black text-slate-900">عطيه موسى عطيه مفتاح</span>' +
+                    '</div>' +
+                    '<button type="button" onclick="copyToClipboard(\'عطيه موسى عطيه مفتاح\', \'اسم المستفيد\')" class="px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-[11px] border border-blue-200 transition flex items-center gap-1">' +
+                        '<i class="fa-solid fa-copy"></i> <span>نسخ</span>' +
+                    '</button>' +
+                '</div>' +
+                '<div class="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-100">' +
+                    '<div>' +
+                        '<span class="text-[10px] text-slate-500 block">رقم الحساب:</span>' +
+                        '<span class="font-mono font-black text-slate-900 dir-ltr text-sm">0041609456001</span>' +
+                    '</div>' +
+                    '<button type="button" onclick="copyToClipboard(\'0041609456001\', \'رقم الحساب\')" class="px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-[11px] border border-blue-200 transition flex items-center gap-1">' +
+                        '<i class="fa-solid fa-copy"></i> <span>نسخ</span>' +
+                    '</button>' +
+                '</div>' +
+                '<div class="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-100">' +
+                    '<div class="min-w-0 pr-1">' +
+                        '<span class="text-[10px] text-slate-500 block">IBAN الدولي:</span>' +
+                        '<span class="font-mono font-black text-slate-900 dir-ltr text-[11px] truncate block select-all">LY65010041000041609456001</span>' +
+                    '</div>' +
+                    '<button type="button" onclick="copyToClipboard(\'LY65010041000041609456001\', \'رمز IBAN\')" class="px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-[11px] border border-blue-200 transition flex items-center gap-1 flex-shrink-0">' +
+                        '<i class="fa-solid fa-copy"></i> <span>نسخ</span>' +
+                    '</button>' +
+                '</div>' +
+                '<p class="text-[11px] text-slate-600 font-medium pt-1">' +
+                    '* بعد إتمام التحويل، اكتب اسمك في المصرف أو رقم الإشعار في الخانة بالأسفل لتأكيد الشحن فوراً.' +
+                '</p>' +
+            '</div>' +
+        '</div>';
+    } else if (method === 'onepay') {
+        box.innerHTML = '<div class="space-y-3">' +
+            '<div class="flex items-center justify-between border-b border-emerald-200 pb-2">' +
+                '<div class="flex items-center gap-2.5">' +
+                    '<div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-xl shadow-md flex-shrink-0">' +
+                        '<i class="fa-solid fa-money-bill-transfer"></i>' +
+                    '</div>' +
+                    '<div>' +
+                        '<h4 class="font-black text-emerald-950 text-sm">OnePay (وان باي)</h4>' +
+                        '<p class="text-xs text-emerald-800 font-bold">دفع إلكتروني فوري</p>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="text-left">' +
+                    '<span class="text-[10px] text-emerald-700 font-bold block">المبلغ المطلوب دفعه عبر OnePay:</span>' +
+                    '<span class="text-base font-black font-mono text-emerald-950">' + formatPrice(totalLYD) + '</span>' +
+                '</div>' +
+            '</div>' +
+
+            '<div class="p-3 bg-white/95 rounded-2xl border-2 border-emerald-300 space-y-2">' +
+                '<div class="flex items-center justify-between p-2 rounded-xl bg-emerald-50 border border-emerald-200">' +
+                    '<div>' +
+                        '<span class="text-[10px] text-slate-600 block">رقم حساب المتجر في OnePay:</span>' +
+                        '<span class="font-mono font-black text-slate-900 text-base dir-ltr">0920541749</span>' +
+                    '</div>' +
+                    '<button type="button" onclick="copyToClipboard(\'0920541749\', \'رقم حساب OnePay\')" class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition flex items-center gap-1">' +
+                        '<i class="fa-solid fa-copy"></i> <span>نسخ الحساب</span>' +
+                    '</button>' +
+                '</div>' +
+                '<p class="text-[11px] text-slate-600 font-medium">' +
+                    '* حوّل المبلغ المطلوب (' + formatPrice(totalLYD) + ') لحساب المتجر أعلاه، ثم اكتب رقم الإشعار بالأسفل لتأكيد الشحن فوراً.' +
+                '</p>' +
+            '</div>' +
+        '</div>';
+    } else if (method === 'telecom_libyana') {
+        box.innerHTML = '<div class="space-y-3">' +
+            '<div class="flex items-center justify-between border-b border-amber-200 pb-2">' +
+                '<div class="flex items-center gap-2.5">' +
+                    '<div class="w-10 h-10 rounded-xl bg-amber-600 text-white flex items-center justify-center text-xl shadow-md flex-shrink-0">' +
+                        '<i class="fa-solid fa-sim-card"></i>' +
+                    '</div>' +
+                    '<div>' +
+                        '<h4 class="font-black text-amber-950 text-sm">كروت شحن ليبيانا</h4>' +
+                        '<p class="text-xs text-amber-800 font-bold">كرت تعبئة 13 رقماً</p>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="text-left">' +
+                    '<span class="text-[10px] text-amber-700 font-bold block">المبلغ المطلوب بكروت الشحن:</span>' +
+                    '<span class="text-base font-black font-mono text-amber-950">' + formatPrice(totalLYD) + '</span>' +
+                '</div>' +
+            '</div>' +
+            '<div class="p-3 bg-white/95 rounded-2xl border-2 border-amber-200 text-xs text-slate-700">' +
+                '<p class="font-medium">' +
+                    '* اشترِ كرت تعبئة ليبيانا بقيمة طلبك (' + formatPrice(totalLYD) + ')، ثم أدخل كود الكرت المكون من 13 رقماً في الخانة بالأسفل.' +
+                '</p>' +
+            '</div>' +
+        '</div>';
+    }
 }
 
 const PAYMENT_METHOD_NAMES = {
-    'telecom_libyana': 'كروت شحن ليبيانا (13 رقم)',
-    'lypay': 'LibyanaLY (دفع إلكتروني فوري)',
-    'onepay': 'OnePay (دفع إلكتروني فوري)'
+    'lypay': 'رصيد ليبيانا (LibyanaLY)',
+    'bank_transfer': 'تحويل مصرفي (مصرف التجارة والتنمية)',
+    'onepay': 'OnePay (دفع إلكتروني فوري)',
+    'telecom_libyana': 'كروت شحن ليبيانا (13 رقم)'
 };
 
 function buildOrderWhatsAppUrl(order, extra) {
-    const itemsListText = (order.items || []).map(item => '• ' + item.quantity + 'x ' + item.titleAr + ' (' + item.meta + ') - ' + formatPrice(item.priceLYD * item.quantity)).join('\n');
+    const methodName = PAYMENT_METHOD_NAMES[order.paymentMethod] || order.paymentMethod;
+
+    const itemsListText = (order.items || []).map(item => {
+        const uPrice = item.priceLYD || item.unitPrice || 0;
+        const lineTotal = uPrice * item.quantity;
+        return '• ' + item.quantity + 'x ' + (item.titleAr || item.productName || 'منتج') + 
+               (item.meta ? ' (' + item.meta + ')' : '') +
+               ' - سعر الوحدة: ' + formatPrice(uPrice) +
+               ' - الإجمالي: ' + formatPrice(lineTotal);
+    }).join('\n');
+
     let paymentDetails = '';
     if (order.paymentMethod === 'telecom_libyana') {
         if (extra.cardCode13) {
-            const cardCompany = 'ليبيانا (Libyana)';
-            paymentDetails = '🎟️ *كود كارت التعبئة (13 رقم):* `' + extra.cardCode13 + '`\n🏢 *الشركة:* ' + cardCompany + '\n';
+            paymentDetails = '🎟️ *كود كارت التعبئة (13 رقم):* `' + extra.cardCode13 + '`\n🏢 *الشركة:* ليبيانا (Libyana)\n';
         }
     } else if (order.paymentMethod === 'lypay') {
-        paymentDetails = '🏦 *وسيلة الدفع:* دفع إلكتروني فوري عبر LibyanaLY\n' +
-            (extra.transferRef ? '🔖 *رقم العملية / الحساب المحول منه:* `' + extra.transferRef + '`\n' : '') +
-            '📲 *رقم حساب المتجر المحول إليه:* `0920541749`\n';
+        const totalNum = (order.items || []).reduce((s, i) => s + (i.priceLYD || i.unitPrice || 0) * i.quantity, 0);
+        const ussdCode = '*122*920541749*' + Math.round(totalNum * 1000) + '#';
+        paymentDetails = '📱 *وسيلة الدفع:* رصيد ليبيانا (LibyanaLY)\n' +
+            '📞 *رقم المتجر المحول إليه:* `0920541749`\n' +
+            '🔢 *كود التحويل المستخدم:* `' + ussdCode + '`\n' +
+            (extra.transferRef ? '🔖 *رقم الهاتف المحول منه / الإشعار:* `' + extra.transferRef + '`\n' : '');
+    } else if (order.paymentMethod === 'bank_transfer') {
+        paymentDetails = '🏦 *وسيلة الدفع:* تحويل مصرفي\n' +
+            '🏛️ *المصرف:* مصرف التجارة والتنمية\n' +
+            '👤 *اسم المستفيد:* عطيه موسى عطيه مفتاح\n' +
+            '🔢 *رقم الحساب:* `0041609456001`\n' +
+            '🌐 *IBAN:* `LY65010041000041609456001`\n' +
+            (extra.transferRef ? '🔖 *بيانات التحويل / الإشعار:* `' + extra.transferRef + '`\n' : '');
+    } else if (order.paymentMethod === 'bank_transfer') {
+        cardBanner = '<div class="p-3 rounded-2xl bg-blue-50 border border-blue-300 text-blue-950 text-xs mb-3 space-y-1 text-right">' +
+            '<div class="flex items-center justify-between font-bold">' +
+                '<span>🏛️ وسيلة الدفع: التحويل المصرفي (مصرف التجارة والتنمية)</span>' +
+                '<span class="font-mono text-blue-800 font-black">0041609456001</span>' +
+            '</div>' +
+            (order.transferRef ? '<div class="text-[11px] text-blue-800 font-medium">🔖 بيانات التحويل / الإشعار: <strong class="font-mono font-bold">' + escapeHtml(order.transferRef) + '</strong></div>' : '') +
+            '<div class="text-[10px] text-blue-700">سيتم تفعيل طلبك فور مطابقة إشعار التحويل في مصرف التجارة والتنمية.</div>' +
+        '</div>';
     } else if (order.paymentMethod === 'onepay') {
-        paymentDetails = '🏦 *وسيلة الدفع:* دفع إلكتروني فوري عبر OnePay\n' +
-            (extra.transferRef ? '🔖 *رقم العملية / الحساب المحول منه:* `' + extra.transferRef + '`\n' : '') +
-            '📲 *رقم حساب المتجر المحول إليه:* `0920541749`\n';
+        paymentDetails = '💳 *وسيلة الدفع:* دفع إلكتروني فوري (OnePay)\n' +
+            '📲 *رقم حساب المتجر المحول إليه:* `0920541749`\n' +
+            (extra.transferRef ? '🔖 *رقم العملية / حساب المحول:* `' + extra.transferRef + '`\n' : '');
     }
+
     const waMessage =
 '🌟 *طلب جديد من منصة سحّابتي (Sahabati My Cloud)* 🌟\n' +
 '-----------------------------------\n' +
@@ -1177,13 +1533,14 @@ function buildOrderWhatsAppUrl(order, extra) {
 '📅 *التاريخ:* ' + order.date + '\n' +
 (extra.customerName ? '👤 *الاسم:* ' + extra.customerName + '\n' : '') +
 '📱 *رقم هاتف الزبون:* ' + order.customerPhone + '\n' +
-'💳 *وسيلة الدفع:* ' + (PAYMENT_METHOD_NAMES[order.paymentMethod] || order.paymentMethod) + '\n' +
+'💳 *وسيلة الدفع المختارة:* ' + methodName + '\n' +
 paymentDetails +
-'💰 *الإجمالي المطلوب للدفع:* ' + order.totalFormatted + '\n\n' +
+'💰 *المبلغ الإجمالي المطلوب للدفع:* ' + order.totalFormatted + '\n\n' +
 '🎮 *العناصر المطلوبة:*\n' + itemsListText + '\n\n' +
 '📝 *ملاحظات إضافية:*\n' + (extra.customerNotes || 'طلب عبر متجر سحّابتي') + '\n' +
 '-----------------------------------\n' +
 'يرجى تأكيد استلام الطلب وتزويدي بكود الشحن أو بيانات الحساب وشكراً! ✨';
+
     const cleanPhone = (APP_DATA.settings?.whatsappNumber || '218920541749').replace(/[^0-9]/g, '');
     return 'https://api.whatsapp.com/send?phone=' + cleanPhone + '&text=' + encodeURIComponent(waMessage);
 }
@@ -1478,10 +1835,30 @@ function showSuccessModal(order) {
     modal.classList.add('flex');
 }
 
-function copyToClipboard(text) {
-    navigator.clipboard.writeText(text).then(() => {
-        showToast('تم نسخ الكود: ' + text, 'fa-clipboard-check');
-    });
+function copyToClipboard(text, label) {
+    const showSuccess = () => showToast(label ? ('تم نسخ ' + label) : ('تم النسخ بنجاح: ' + text), 'fa-clipboard-check');
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(showSuccess).catch(() => {
+            fallbackCopy(text, showSuccess);
+        });
+    } else {
+        fallbackCopy(text, showSuccess);
+    }
+}
+function fallbackCopy(text, cb) {
+    try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        if (cb) cb();
+    } catch (e) {
+        showToast('تعذر النسخ تلقائياً', 'fa-triangle-exclamation');
+    }
 }
 
 // ================= CUSTOMER AUTHENTICATION & DATABASE ENGINE =================

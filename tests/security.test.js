@@ -74,3 +74,70 @@ test('player IDs must be numeric and plausible', async () => {
     assert.ok(g.playerIdProblem('11111111'));
     assert.equal(g.playerIdProblem('123456789'), null);
 });
+
+test('multi-pricing: getProductPrice respects payment method and drops unsupported items', async () => {
+    const g = await guardContext();
+    const catalog = {
+        games: [{
+            id: 'pubg',
+            packages: [{
+                id: 'pkg_1',
+                priceLYD: 50,
+                prices: { lypay: 55, bank_transfer: 48, onepay: 49 }
+            }, {
+                id: 'pkg_ly_only',
+                priceLYD: 20,
+                prices: { lypay: 20 }
+            }]
+        }],
+        giftCards: [{
+            id: 'shahid',
+            priceLYD: 30,
+            prices: { lypay: 35, bank_transfer: 30, onepay: 31 }
+        }]
+    };
+
+    // Correct method prices
+    assert.equal(g.getProductPrice({ type: 'game', gameId: 'pubg', packageId: 'pkg_1' }, catalog, 'lypay'), 55);
+    assert.equal(g.getProductPrice({ type: 'game', gameId: 'pubg', packageId: 'pkg_1' }, catalog, 'bank_transfer'), 48);
+    assert.equal(g.getProductPrice({ type: 'game', gameId: 'pubg', packageId: 'pkg_1' }, catalog, 'onepay'), 49);
+
+    // Default fallback when no method specified
+    assert.equal(g.getProductPrice({ type: 'game', gameId: 'pubg', packageId: 'pkg_1' }, catalog, null), 50);
+
+    // Product with only LY allowed
+    assert.equal(g.getProductPrice({ type: 'game', gameId: 'pubg', packageId: 'pkg_ly_only' }, catalog, 'lypay'), 20);
+    assert.equal(g.getProductPrice({ type: 'game', gameId: 'pubg', packageId: 'pkg_ly_only' }, catalog, 'bank_transfer'), null);
+    assert.equal(g.getProductPrice({ type: 'game', gameId: 'pubg', packageId: 'pkg_ly_only' }, catalog, 'onepay'), null);
+
+    // Sanitize cart with supported vs unsupported method
+    const { cart: lyCart } = g.sanitizeCart([
+        { type: 'game', gameId: 'pubg', packageId: 'pkg_1', quantity: 1 },
+        { type: 'game', gameId: 'pubg', packageId: 'pkg_ly_only', quantity: 1 }
+    ], catalog, 'lypay');
+    assert.equal(lyCart.length, 2);
+    assert.equal(lyCart[0].priceLYD, 55);
+    assert.equal(lyCart[1].priceLYD, 20);
+
+    const { cart: bankCart } = g.sanitizeCart([
+        { type: 'game', gameId: 'pubg', packageId: 'pkg_1', quantity: 1 },
+        { type: 'game', gameId: 'pubg', packageId: 'pkg_ly_only', quantity: 1 }
+    ], catalog, 'bank_transfer');
+    assert.equal(bankCart.length, 1, 'unsupported item is dropped');
+    assert.equal(bankCart[0].packageId, 'pkg_1');
+    assert.equal(bankCart[0].priceLYD, 48);
+});
+
+test('multi-pricing: Libyana USSD transfer code formula matches requirement', () => {
+    // 35 LYD -> *122*920541749*35000#
+    const price1 = 35;
+    assert.equal(`*122*920541749*${Math.round(price1 * 1000)}#`, '*122*920541749*35000#');
+
+    // 25 LYD -> *122*920541749*25000#
+    const price2 = 25;
+    assert.equal(`*122*920541749*${Math.round(price2 * 1000)}#`, '*122*920541749*25000#');
+
+    // Multi-quantity total e.g. 2 x 35 LYD = 70 LYD -> *122*920541749*70000#
+    const total = 35 * 2;
+    assert.equal(`*122*920541749*${Math.round(total * 1000)}#`, '*122*920541749*70000#');
+});

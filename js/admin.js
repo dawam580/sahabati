@@ -258,9 +258,112 @@ function adminRowActions(kind, a, b, hidden){
     const item = kind!=='pkg' ? adminFind(kind, a) : null;
     return (kind!=='pkg' ? '<button type="button" class="adm-btn '+(item&&item.manual?'on':'')+'" title="'+(item&&item.manual?'إزالة شارة «يدوي»':'إظهار شارة «يدوي» للعميل')+'" onclick="adminToggleManual(\''+kind+'\',\''+escapeAttr(a)+'\')"><i class="fa-solid fa-hand"></i></button>' : '')+
         (kind!=='pkg' ? '<button type="button" class="adm-btn" title="تغيير الصورة" onclick="adminSetImage(\''+kind+'\',\''+escapeAttr(a)+'\')"><i class="fa-solid fa-image"></i></button>' : '')+
+        '<button type="button" class="adm-btn" title="أسعار طرق الدفع (LY / بنك / OnePay)" onclick="openAdminMultiPriceModal(\''+kind+'\',\''+escapeAttr(a)+'\',\''+escapeAttr(b||'')+'\')"><i class="fa-solid fa-tags"></i></button>'+
         '<button type="button" class="adm-btn" title="تعديل الاسم" onclick="adminRename(\''+kind+'\',\''+escapeAttr(a)+'\',\''+escapeAttr(b||'')+'\')"><i class="fa-solid fa-pen"></i></button>'+
         '<button type="button" class="adm-btn '+(hidden?'off':'')+'" title="'+(hidden?'إظهار للزبائن':'إخفاء عن الزبائن')+'" onclick="adminToggleHidden(\''+kind+'\',\''+escapeAttr(a)+'\',\''+escapeAttr(b||'')+'\')"><i class="fa-solid '+(hidden?'fa-eye-slash':'fa-eye')+'"></i></button>'+
         '<button type="button" class="adm-btn danger" title="حذف" onclick="adminDelete(\''+kind+'\',\''+escapeAttr(a)+'\',\''+escapeAttr(b||'')+'\')"><i class="fa-solid fa-trash"></i></button>';
+}
+
+function openAdminMultiPriceModal(kind, a, b) {
+    const item = adminFind(kind, a, b);
+    if (!item) return;
+
+    const modal = document.getElementById('admin-multi-price-modal');
+    if (!modal) return;
+
+    document.getElementById('admin-mp-kind').value = kind;
+    document.getElementById('admin-mp-id-a').value = a;
+    document.getElementById('admin-mp-id-b').value = b || '';
+
+    const titleEl = document.getElementById('admin-mp-title');
+    if (titleEl) titleEl.textContent = 'أسعار: ' + (item.nameAr || 'المنتج');
+
+    const basePrice = Number(item.priceLYD) || 0;
+    const baseInput = document.getElementById('admin-mp-base-price');
+    if (baseInput) baseInput.value = basePrice.toFixed(2);
+
+    const prices = item.prices || {};
+    const hasCustomPrices = Object.keys(prices).length > 0;
+
+    const methods = [
+        { id: 'lypay', checkEl: 'admin-mp-enable-lypay', priceEl: 'admin-mp-price-lypay' },
+        { id: 'bank_transfer', checkEl: 'admin-mp-enable-bank', priceEl: 'admin-mp-price-bank' },
+        { id: 'onepay', checkEl: 'admin-mp-enable-onepay', priceEl: 'admin-mp-price-onepay' },
+        { id: 'telecom_libyana', checkEl: 'admin-mp-enable-telecom', priceEl: 'admin-mp-price-telecom' }
+    ];
+
+    methods.forEach(m => {
+        const cEl = document.getElementById(m.checkEl);
+        const pEl = document.getElementById(m.priceEl);
+        if (!cEl || !pEl) return;
+
+        if (hasCustomPrices) {
+            const val = prices[m.id];
+            if (val !== undefined && val !== null && Number(val) > 0) {
+                cEl.checked = true;
+                pEl.value = Number(val).toFixed(2);
+            } else {
+                cEl.checked = false;
+                pEl.value = '';
+            }
+        } else {
+            cEl.checked = true;
+            pEl.value = basePrice ? basePrice.toFixed(2) : '';
+        }
+    });
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+function handleAdminMultiPriceSubmit(e) {
+    e.preventDefault();
+    const kind = document.getElementById('admin-mp-kind').value;
+    const a = document.getElementById('admin-mp-id-a').value;
+    const b = document.getElementById('admin-mp-id-b').value;
+    const item = adminFind(kind, a, b);
+    if (!item) return;
+
+    const basePriceVal = parseFloat(document.getElementById('admin-mp-base-price').value);
+    if (!isFinite(basePriceVal) || basePriceVal <= 0) {
+        showToast('يرجى إدخال سعر أساسي صحيح أكبر من صفر', 'fa-triangle-exclamation');
+        return;
+    }
+    item.priceLYD = Math.round(basePriceVal * 100) / 100;
+
+    const methods = [
+        { id: 'lypay', checkEl: 'admin-mp-enable-lypay', priceEl: 'admin-mp-price-lypay' },
+        { id: 'bank_transfer', checkEl: 'admin-mp-enable-bank', priceEl: 'admin-mp-price-bank' },
+        { id: 'onepay', checkEl: 'admin-mp-enable-onepay', priceEl: 'admin-mp-price-onepay' },
+        { id: 'telecom_libyana', checkEl: 'admin-mp-enable-telecom', priceEl: 'admin-mp-price-telecom' }
+    ];
+
+    const newPrices = {};
+    let anyCustom = false;
+
+    methods.forEach(m => {
+        const cEl = document.getElementById(m.checkEl);
+        const pEl = document.getElementById(m.priceEl);
+        if (cEl && cEl.checked) {
+            const priceVal = parseFloat(pEl ? pEl.value : '');
+            const finalP = (isFinite(priceVal) && priceVal > 0) ? Math.round(priceVal * 100) / 100 : item.priceLYD;
+            newPrices[m.id] = finalP;
+            if (finalP !== item.priceLYD) anyCustom = true;
+        } else {
+            anyCustom = true;
+        }
+    });
+
+    if (anyCustom) {
+        item.prices = newPrices;
+    } else {
+        delete item.prices;
+    }
+
+    saveAppData(APP_DATA);
+    closeModal('admin-multi-price-modal');
+    renderAdminPanel();
+    showToast('تم حفظ أسعار طرق الدفع لـ ' + item.nameAr + ' بنجاح! 💰', 'fa-circle-check');
 }
 
 function renderAdminPanel(){
@@ -410,10 +513,27 @@ function handleAdminAddItem(e){
         showToast('يرجى إدخال اسم صحيح وسعر بالدينار الليبي','fa-triangle-exclamation'); return;
     }
 
+    const pLy = parseFloat(document.getElementById('admin-add-price-lypay')?.value);
+    const pBank = parseFloat(document.getElementById('admin-add-price-bank')?.value);
+    const pOne = parseFloat(document.getElementById('admin-add-price-onepay')?.value);
+    const pTel = parseFloat(document.getElementById('admin-add-price-telecom')?.value);
+
+    const initialPrices = {};
+    if (isFinite(pLy) && pLy > 0) initialPrices.lypay = Math.round(pLy * 100) / 100;
+    if (isFinite(pBank) && pBank > 0) initialPrices.bank_transfer = Math.round(pBank * 100) / 100;
+    if (isFinite(pOne) && pOne > 0) initialPrices.onepay = Math.round(pOne * 100) / 100;
+    if (isFinite(pTel) && pTel > 0) initialPrices.telecom_libyana = Math.round(pTel * 100) / 100;
+    const pricesObj = Object.keys(initialPrices).length > 0 ? initialPrices : undefined;
+
     if(type==='game_package'){
         const gameId=document.getElementById('admin-target-game').value;
         const game=APP_DATA.games.find(g=>g.id===gameId);
-        if(game){ const newId=gameId+'_pkg_'+Date.now(); game.packages.push({ id:newId, nameAr:name, priceLYD:price, popular:!!badge, icon:'💎', image:image }); }
+        if(game){
+            const newId=gameId+'_pkg_'+Date.now();
+            const pkgObj = { id:newId, nameAr:name, priceLYD:price, popular:!!badge, icon:'💎', image:image };
+            if (pricesObj) pkgObj.prices = pricesObj;
+            game.packages.push(pkgObj);
+        }
     } else if(type==='gift_card'){
         const newId='card_'+Date.now(); let finalBrand=category;
         if(name.includes('نتفليكس')||name.toLowerCase().includes('netflix')) finalBrand='netflix';
@@ -424,15 +544,19 @@ function handleAdminAddItem(e){
         else if(name.toLowerCase().includes('claude')||name.includes('كلود')) finalBrand='claude';
         else if(name.includes('آبل')||name.includes('ايتونز')||name.includes('آيتونز')||name.toLowerCase().includes('apple')||name.toLowerCase().includes('itunes')) finalBrand='apple';
         else if(name.includes('تيليجرام')||name.toLowerCase().includes('telegram')) finalBrand='telegram';
-        APP_DATA.giftCards.push({ id:newId, brand:finalBrand, nameAr:name, nominal:name, priceLYD:price, category:category, badge:badge||'جديد ✨', image:image, instructionsAr: instructions||'يتم تسليم الكود وتفعيله فوراً بعد تأكيد الطلب بالدينار الليبي.' });
+        const cardObj = { id:newId, brand:finalBrand, nameAr:name, nominal:name, priceLYD:price, category:category, badge:badge||'جديد ✨', image:image, instructionsAr: instructions||'يتم تسليم الكود وتفعيله فوراً بعد تأكيد الطلب بالدينار الليبي.' };
+        if (pricesObj) cardObj.prices = pricesObj;
+        APP_DATA.giftCards.push(cardObj);
     } else if(type==='new_game'){
         const newGameId='game_'+Date.now();
         const section=document.getElementById('admin-new-game-section')?.value==='chat' ? 'chat' : 'games';
         const method=document.getElementById('admin-delivery-method')?.value || 'id';
+        const pkgObj = { id:newGameId+'_1', nameAr: section==='chat' ? ('شحن بقيمة '+price+' د.ل') : 'باقة 1', priceLYD:price, popular:true, icon:'💎' };
+        if (pricesObj) pkgObj.prices = pricesObj;
         APP_DATA.games.push({ id:newGameId, category:section, deliveryMethod:method, nameAr:name, nameEn:name, badge:badge||'جديد 🔥', image:image,
             idLabelAr: method==='id' ? ('معرّف حسابك (ID) في '+name+':') : undefined,
             deliveryNoteAr: method==='qr' ? 'بعد إرسال الطلب أرسل لنا صورة رمز QR عبر واتساب لنشحن مباشرة.' : (method==='login' ? 'بعد إرسال الطلب يتواصل معك فريقنا عبر واتساب الرسمي لإتمام الشحن بتسجيل الدخول. لا تُحفظ بيانات حسابك في الموقع.' : undefined),
-            packages:[{ id:newGameId+'_1', nameAr: section==='chat' ? ('شحن بقيمة '+price+' د.ل') : 'باقة 1', priceLYD:price, popular:true, icon:'💎' }] });
+            packages:[pkgObj] });
     }
     saveAppData(APP_DATA);
     renderAdminPanel();
