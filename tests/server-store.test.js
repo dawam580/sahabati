@@ -41,11 +41,16 @@ test('server prices orders from its own catalog and hides codes until paid', () 
     assert.ok(/^US-\d$/.test(after.orders[0].vouchers[0].voucherCode));
 });
 
-test('server rejects bad phones, unknown items, missing player IDs, missing or reused cards and floods', () => {
+test('server rejects bad phones, unknown items, missing account IDs for ID cards, missing or reused cards and floods', () => {
     const store = freshStore();
     assert.equal(store.createOrder(goodOrder({ phone: '123' }), 'a').status, 400);
     assert.equal(store.createOrder(goodOrder({ items: [{ type: 'giftcard', cardId: 'nope', quantity: 1 }] }), 'b').status, 400);
-    assert.equal(store.createOrder(goodOrder({ items: [{ type: 'game', gameId: 'freefire', packageId: 'ff_100', quantity: 1 }] }), 'c').status, 400);
+    const cat = store.publicCatalog();
+    cat.giftCards.find(c => c.id === 'apple_itunes_10_us').deliveryMethod = 'id';
+    store.saveCatalog(cat);
+    assert.equal(store.createOrder(goodOrder({ items: [{ type: 'giftcard', cardId: 'apple_itunes_10_us', quantity: 1 }] }), 'c').status, 400);
+    cat.giftCards.find(c => c.id === 'apple_itunes_10_us').deliveryMethod = 'code';
+    store.saveCatalog(cat);
     assert.equal(store.createOrder(goodOrder({ website: 'bot' }), 'd').status, 400);
     assert.equal(store.createOrder(goodOrder({ cardCode13: '' }), 'g').status, 400, 'Libyana card is required');
     assert.equal(store.createOrder(goodOrder({ cardCode13: '4829175036418' }), 'e').status, 201);
@@ -86,9 +91,9 @@ test('catalog: entertainment section, chat apps, Libyana only, no telecom/PSN/St
     assert.deepEqual(Object.keys(cat.settings.paymentMethodsInfo).sort(), ['bank_transfer', 'lypay', 'onepay', 'telecom_libyana'].sort());
     const chat = cat.games.filter(g => g.category === 'chat');
     assert.equal(chat.length, 23, 'only chat apps with an icon are listed');
-    assert.ok(chat.every(g => g.deliveryMethod === 'id' && g.image));
+    assert.ok(chat.every(g => g.deliveryMethod === 'manual' && g.image));
     const method = id => cat.games.find(g => g.id === id).deliveryMethod;
-    assert.deepEqual(['pubg', 'freefire', 'tiktok_coins', 'roblox', 'clashofclans'].map(method), ['id', 'id', 'qr', 'login', 'login']);
+    assert.deepEqual(['pubg', 'freefire', 'tiktok_coins', 'roblox', 'clashofclans'].map(method), ['manual', 'manual', 'qr', 'login', 'login']);
     const r = store.createOrder(goodOrder({ paymentMethod: 'telecom_madar' }), 'z');
     assert.equal(r.order.paymentMethod, 'telecom_libyana');
     const rLy = store.createOrder(goodOrder({ paymentMethod: 'lypay', cardCode13: '', transferRef: '0912223344' }), 'z1');
@@ -119,13 +124,12 @@ test('catalog: entertainment section, chat apps, Libyana only, no telecom/PSN/St
     assert.equal(rShahidOne.order.items[0].priceLYD, 31, 'Shahid OnePay price is 31 LYD');
 });
 
-test('delivery methods: PUBG and chat apps need an ID, TikTok by QR, Roblox by login; hidden items cannot be ordered', () => {
+test('delivery methods: games and chat avoid ID fields, TikTok by QR, Roblox by login; hidden items cannot be ordered', () => {
     const store = freshStore();
     const game = (gameId, packageId, playerId) => goodOrder({ items: [{ type: 'game', gameId, packageId, quantity: 1, playerId }] });
-    assert.equal(store.createOrder(game('pubg', 'pubg_60', ''), 'a1').status, 400);
-    assert.equal(store.createOrder(game('pubg', 'pubg_60', '5123456789'), 'a2').order.items[0].meta, 'Player ID: 5123456789');
-    assert.equal(store.createOrder(game('chat_001', 'chat_001_v10', ''), 'a3').status, 400);
-    assert.equal(store.createOrder(game('chat_001', 'chat_001_v10', '12345678'), 'a4').status, 201);
+    assert.equal(store.createOrder(game('pubg', 'pubg_60', ''), 'a1').order.items[0].meta, 'تسليم يدوي');
+    assert.equal(store.createOrder(game('freefire', 'ff_100', ''), 'a2').order.items[0].meta, 'تسليم يدوي');
+    assert.equal(store.createOrder(game('chat_001', 'chat_001_v10', ''), 'a3').order.items[0].meta, 'تسليم يدوي');
     assert.equal(store.createOrder(game('tiktok_coins', 'tt_100', ''), 'a5').order.items[0].meta, 'الشحن عبر رمز QR');
     assert.equal(store.createOrder(game('roblox', 'rb_80', ''), 'a6').order.items[0].meta, 'الشحن عبر تسجيل الدخول');
 
@@ -150,7 +154,7 @@ test('v5: similar chat app names are hidden, Turkish iTunes added, and a saved v
     process.env.ADMIN_PIN = 'secret-pin-1';
     delete require.cache[require.resolve('../store')];
     const cat = require('../store').createStore().publicCatalog();
-    assert.equal(cat.catalogVersion, 8);
+    assert.equal(cat.catalogVersion, 9);
     assert.equal(cat.giftCards.find(c => c.id === 'watchit_1m').priceLYD, 33, 'admin price kept');
     assert.ok(cat.giftCards.some(c => c.id === 'apple_itunes_tr_100' && c.category === 'gift_cards'));
     const names = cat.games.filter(g => g.category === 'chat').map(g => g.nameAr);
@@ -193,7 +197,7 @@ test('v6: chat app icons and corrected names, applied to a saved v5 catalog with
     delete require.cache[require.resolve('../store')];
     const cat = require('../store').createStore().publicCatalog();
     const byId = id => cat.games.find(g => g.id === id);
-    assert.equal(cat.catalogVersion, 8);
+    assert.equal(cat.catalogVersion, 9);
     assert.equal(byId('chat_039').nameAr, 'ديتو لايف');
     assert.equal(byId('chat_002').image, 'images/chat/chat_002.webp');
     assert.equal(byId('chat_001').image, 'https://example.com/admin-choice.png', 'admin image kept');
@@ -288,7 +292,9 @@ test('v8: manual-delivery badge on PUBG, Free Fire, TikTok, Snapchat and Telegra
     const cat = store.publicCatalog();
     const all = cat.games.concat(cat.giftCards);
     const manual = all.filter(i => i.manual).map(i => i.id).sort();
-    assert.deepEqual(manual, ['freefire', 'pubg', 'snapchat_plus_3m', 'snapchat_plus_6m', 'telegram_premium_3m', 'tiktok_coins'].sort());
+    for (const id of ['freefire', 'pubg', 'efootball', 'chat_001', 'snapchat_plus_3m', 'snapchat_plus_6m', 'telegram_premium_3m', 'tiktok_coins']) {
+        assert.ok(manual.includes(id), id + ' should show manual badge');
+    }
     // admin turned the badge off for PUBG and saved; it must stay off
     cat.games.find(g => g.id === 'pubg').manual = false;
     store.saveCatalog(cat);

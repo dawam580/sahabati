@@ -18,12 +18,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Readex+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <!-- Tailwind CSS CDN -->
-    <link rel="stylesheet" href="css/tailwind.css?v=3.6">
+    <link rel="stylesheet" href="css/tailwind.css?v=3.8">
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="vendor/fontawesome/css/all.min.css">
     <!-- Custom Styles -->
-    <link rel="stylesheet" href="css/style.css?v=3.6">
-    <link rel="stylesheet" href="css/mobile-app.css?v=3.6">
+    <link rel="stylesheet" href="css/style.css?v=3.8">
+    <link rel="stylesheet" href="css/mobile-app.css?v=3.8">
 </head>
 <body class="antialiased selection:bg-emerald-500 selection:text-white" dir="rtl">
     <!-- خلفية سماء متحركة (زخرفية فقط) -->
@@ -114,20 +114,6 @@
             <!-- Promo Carousel (بنرات قابلة للسحب) -->
             <div class="promo-carousel" id="promo-carousel" aria-label="العروض">
                 <div class="promo-track" id="promo-track">
-                    <div class="promo-slide promo-img">
-                        <img id="hero-banner-img" src="sahabati_banner_hero.jpg" alt="سحّابتي - خدماتك الرقمية في مكان واحد" loading="eager">
-                        <div class="promo-overlay">
-                            <span class="promo-chip"><i class="fa-solid fa-bolt"></i> تسليم فوري 🇱🇾</span>
-                            <h1>كل شحناتك الرقمية في مكان واحد</h1>
-                            <button type="button" onclick="navigateTo('games')" class="promo-cta">اشحن الآن <i class="fa-solid fa-arrow-left"></i></button>
-                        </div>
-                    </div>
-                    <div class="promo-slide promo-img" onclick="navigateTo('games')">
-                        <img src="header_hero.jpg" alt="عالم سحّابتي: ببجي، كلاش، روبلوكس، تيك توك وآيتونز" loading="lazy">
-                        <div class="promo-overlay">
-                            <span class="promo-cta">☁️ اكتشف عالم سحّابتي <i class="fa-solid fa-arrow-left"></i></span>
-                        </div>
-                    </div>
                     <div class="promo-slide promo-netflix" onclick="navigateTo('giftcards'); filterGiftCards('netflix');">
                         <div class="promo-content">
                             <span class="promo-chip">📺 شاشات وهواتف</span>
@@ -256,26 +242,6 @@
                     </div>
                 </div>
 
-                <!-- Player ID Verification Input Card -->
-                <div class="p-5 sm:p-6 bg-white/80 backdrop-blur-md space-y-3">
-                    <label id="player-id-label" class="font-extrabold text-slate-900 text-sm block">أدخل معرّف اللاعب (Player ID):</label>
-                    <div class="flex flex-col sm:flex-row gap-2">
-                        <div class="relative flex-1">
-                            <input type="text" id="player-id-input" inputmode="numeric" autocomplete="off" maxlength="20" placeholder="مثال: 5123456789" class="glass-input w-full rounded-2xl py-3 px-4 font-bold text-slate-900 text-sm">
-                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
-                                <i class="fa-solid fa-id-card"></i>
-                            </span>
-                        </div>
-                        <button onclick="verifyPlayerId()" class="px-6 py-3 rounded-2xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs transition shadow-md flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-circle-check"></i>
-                            <span>تأكيد المعرّف</span>
-                        </button>
-                    </div>
-
-                    <!-- Verification Status Box -->
-                    <div id="player-id-status"></div>
-                    <p id="player-id-hint" class="text-[11px] text-slate-500 font-bold"><i class="fa-solid fa-circle-info text-sky-600"></i> تأكد من المعرّف جيداً — الشحن لمعرّف خاطئ لا يمكن استرجاعه.</p>
-                </div>
             </div>
 
             <div id="delivery-note" class="delivery-note hidden" role="note"></div>
@@ -310,7 +276,7 @@
         <section id="page-chat" class="view-page hidden space-y-4">
             <div class="chat-head">
                 <h2 class="section-title"><i class="fa-solid fa-microphone-lines text-fuchsia-300"></i> تطبيقات الشات والصوتية</h2>
-                <p class="chat-sub">اختر التطبيق ثم أدخل معرّف حسابك (ID) والمبلغ.</p>
+                <p class="chat-sub">اختر التطبيق والمبلغ، ثم أرسل الطلب عبر واتساب.</p>
                 <div class="chat-search">
                     <i class="fa-solid fa-magnifying-glass"></i>
                     <input type="search" id="chat-search-input" placeholder="ابحث عن تطبيقك..." autocomplete="off" maxlength="40" oninput="renderChatApps(this.value)">
@@ -735,12 +701,12 @@
     <div id="toast-container"></div>
 
     <!-- Scripts -->
-    <script src="js/assets.js?v=3.6"></script>
-    <script src="js/data.js?v=3.6"></script>
-    <script src="js/database.js?v=3.6"></script>
-    <script src="js/security.js?v=3.6"></script>
-    <script src="js/brand-icons.js?v=3.6"></script>
-    <script src="js/app.js?v=3.6"></script>
+    <script src="js/assets.js?v=3.8"></script>
+    <script src="js/data.js?v=3.8"></script>
+    <script src="js/database.js?v=3.8"></script>
+    <script src="js/security.js?v=3.8"></script>
+    <script src="js/brand-icons.js?v=3.8"></script>
+    <script src="js/app.js?v=3.8"></script>
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {

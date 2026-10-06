@@ -12,7 +12,7 @@ const DEFAULT_STORE_SETTINGS = {
     adminPin: 'admin2026',           // Admin dashboard access PIN
     storeNameAr: 'سحّابتي',
     storeNameEn: 'Sahabati My Cloud',
-    heroImage: 'sahabati_banner_hero.jpg',
+    heroImage: '',
     currency: {
         code: 'LYD',
         symbol: 'د.ل',
@@ -56,7 +56,7 @@ const DEFAULT_STORE_SETTINGS = {
     }
 };
 
-// ================= تطبيقات الشات والصوتية (الشحن بالـ ID) =================
+// ================= تطبيقات الشات والصوتية (تسليم يدوي عبر واتساب) =================
 // المعرّف ثابت حسب الترتيب: أضف التطبيقات الجديدة في آخر القائمة فقط.
 const CHAT_APP_NAMES = [
     'اب لايف',
@@ -182,13 +182,12 @@ function buildChatApps() {
         return {
             id: id,
             category: 'chat',
-            deliveryMethod: 'id',
+            deliveryMethod: 'manual',
             hidden: CHAT_APP_HIDDEN.includes(name),
             image: CHAT_APP_IMAGES.includes(id) ? 'images/chat/' + id + '.webp' : undefined,
             nameAr: name,
             nameEn: name,
-            idLabelAr: 'معرّف حسابك (ID) في ' + name + ':',
-            idPlaceholder: 'مثال: 12345678',
+            deliveryNoteAr: 'اختر التطبيق والمبلغ، ثم أرسل الطلب عبر واتساب لإتمام التسليم يدوياً.',
             packages: CHAT_APP_PACKAGES.map(p => ({ id: id + '_' + p.suffix, nameAr: p.nameAr, priceLYD: p.priceLYD, icon: p.icon, popular: !!p.popular, bestValue: !!p.bestValue }))
         };
     // نعرض فقط التطبيقات التي لها أيقونة (قرار المالك). القائمة الكاملة تبقى أعلاه حتى لا تتغير المعرّفات.
@@ -210,10 +209,10 @@ const TR_ITUNES_CARD = {
 const DEFAULT_APP_DATA = {
     settings: DEFAULT_STORE_SETTINGS,
     // رقم إصدار الكتالوج: عند تغييره يُهمل أي كتالوج قديم محفوظ في المتصفح أو على الخادم
-    catalogVersion: 8,
+    catalogVersion: 9,
     categories: [
         { id: 'games', titleAr: 'شحن ألعاب الفيديو', shortAr: 'الألعاب', icon: 'fa-gamepad', badge: 'شحن فوري ⚡' },
-        { id: 'chat', titleAr: 'تطبيقات الشات والصوتية', shortAr: 'الشات والصوتية', icon: 'fa-microphone-lines', badge: 'شحن بالـ ID 🎙️' },
+        { id: 'chat', titleAr: 'تطبيقات الشات والصوتية', shortAr: 'الشات والصوتية', icon: 'fa-microphone-lines', badge: 'تسليم يدوي 🎙️' },
         { id: 'entertainment', titleAr: 'الترفيه والمشاهدة', shortAr: 'الترفيه', icon: 'fa-film', brand: 'netflix', badge: 'نتفليكس · شاهد · ديزني 🎬' },
         { id: 'social', titleAr: 'سوشيال ميديا', shortAr: 'سوشيال', icon: 'fa-coins', badge: 'سناب · تيليجرام 🔥' },
         { id: 'ai_cards', titleAr: 'اشتراكات ChatGPT و Claude', shortAr: 'ChatGPT و Claude', icon: 'fa-robot', badge: 'ذكاء اصطناعي 🤖' },
@@ -222,14 +221,13 @@ const DEFAULT_APP_DATA = {
     games: [
         {
             id: 'pubg',
-            deliveryMethod: 'id', // id | qr | login
+            deliveryMethod: 'manual', // manual | qr | login
             nameAr: 'ببجي موبايل (PUBG Mobile UC)',
             nameEn: 'PUBG Mobile',
-            badge: 'شحن بالـ ID ⚡',
+            badge: 'كود شدات ببجي ⚡',
             icon: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/pubg.png',
             logoSvg: '<span class="text-amber-400 font-black text-xs tracking-wider">PUBG</span>',
-            idLabelAr: 'أدخل معرّف اللاعب (Player ID):',
-            idPlaceholder: 'مثال: 5123456789',
+            deliveryNoteAr: 'اختر باقة الشدات وأرسل الطلب عبر واتساب. لا تحتاج لإدخال معرف داخل الموقع.',
             packages: [
                 { id: 'pubg_60', nameAr: '60 شدة (60 UC)', priceLYD: 10.00, popular: false, icon: 'UC' },
                 { id: 'pubg_120', nameAr: '120 شدة (120 UC)', priceLYD: 20.00, popular: false, icon: 'UC' },
@@ -247,14 +245,13 @@ const DEFAULT_APP_DATA = {
         },
         {
             id: 'freefire',
-            deliveryMethod: 'id',
+            deliveryMethod: 'manual',
             nameAr: 'فري فاير (Free Fire Diamonds)',
             nameEn: 'Free Fire',
-            badge: 'شحن فوري ⚡',
+            badge: 'تسليم يدوي ⚡',
             icon: '01_photo_5809670474982690366_y.jpg',
             logoSvg: '<span class="text-orange-400 font-black text-xs">FREE FIRE</span>',
-            idLabelAr: 'معرف الحساب (Player ID):',
-            idPlaceholder: 'مثال: 987654321',
+            deliveryNoteAr: 'اختر باقة الجواهر وأرسل الطلب عبر واتساب. لا تحتاج لإدخال معرف داخل الموقع.',
             packages: [
                 { id: 'ff_100', nameAr: '100 جوهرة (100 💎)', priceLYD: 10.00, icon: '💎' },
                 { id: 'ff_210', nameAr: '210 جوهرة (210 💎)', priceLYD: 20.00, icon: '💎' },
@@ -303,14 +300,13 @@ const DEFAULT_APP_DATA = {
         },
         {
             id: 'efootball',
-            deliveryMethod: 'id',
+            deliveryMethod: 'manual',
             nameAr: 'إي فوتبول بيس (eFootball™ Coins)',
             nameEn: 'eFootball PES',
-            badge: 'كوينز بيس ⚽',
+            badge: 'تسليم يدوي ⚽',
             icon: 'https://upload.wikimedia.org/wikipedia/commons/e/e0/EFootball_Logo.svg',
             logoSvg: '<span class="text-blue-400 font-black text-xs">eFootball</span>',
-            idLabelAr: 'معرف كونامي / ID اللعبة:',
-            idPlaceholder: 'مثال: efootball_player_123',
+            deliveryNoteAr: 'اختر باقة الكوينز وأرسل الطلب عبر واتساب. لا تحتاج لإدخال ID داخل الموقع.',
             packages: [
                 { id: 'ef_130', nameAr: '130 كوينز بيس (Coins)', priceLYD: 10.00, icon: '🪙' },
                 { id: 'ef_550', nameAr: '550 كوينز بيس (Coins)', priceLYD: 35.00, popular: true, icon: '🪙' },
@@ -485,7 +481,7 @@ function migrateCatalog(data) {
             const newName = CHAT_APP_RENAMES[g.nameAr];
             if (newName) {
                 g.nameAr = newName; g.nameEn = newName;
-                g.idLabelAr = 'معرّف حسابك (ID) في ' + newName + ':';
+                g.deliveryNoteAr = 'اختر التطبيق والمبلغ، ثم أرسل الطلب عبر واتساب لإتمام التسليم يدوياً.';
             }
             if (g.nameAr === 'دي دي') g.hidden = true;
             if (!g.image && CHAT_APP_IMAGES.includes(g.id)) g.image = 'images/chat/' + g.id + '.webp';
@@ -504,6 +500,20 @@ function migrateCatalog(data) {
         });
         data.catalogVersion = 8;
     }
+    if (data.catalogVersion === 8) {
+        (data.games || []).forEach(game => {
+            if (game.deliveryMethod === 'id') {
+                game.deliveryMethod = 'manual';
+                game.deliveryNoteAr = game.category === 'chat'
+                    ? 'اختر التطبيق والمبلغ، ثم أرسل الطلب عبر واتساب لإتمام التسليم يدوياً.'
+                    : 'اختر الباقة وأرسل الطلب عبر واتساب. لا تحتاج لإدخال ID داخل الموقع.';
+                delete game.idLabelAr;
+                delete game.idPlaceholder;
+            }
+            if (game.deliveryMethod === 'manual' && game.manual === undefined) game.manual = true;
+        });
+        data.catalogVersion = 9;
+    }
 
     return data;
 }
@@ -511,7 +521,7 @@ function migrateCatalog(data) {
 // منتجات تُشحن يدوياً (يظهر عليها شارة «يدوي» للعميل). يمكن تغييرها من لوحة الإدارة.
 const MANUAL_PRODUCT_IDS = ['pubg', 'freefire', 'tiktok_coins', 'snapchat_plus_3m', 'snapchat_plus_6m', 'telegram_premium_3m'];
 DEFAULT_APP_DATA.games.concat(DEFAULT_APP_DATA.giftCards).forEach(item => {
-    if (MANUAL_PRODUCT_IDS.includes(item.id)) item.manual = true;
+    if (MANUAL_PRODUCT_IDS.includes(item.id) || item.deliveryMethod === 'manual') item.manual = true;
 });
 
 // LocalStorage Persistence Layer

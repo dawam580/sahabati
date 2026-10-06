@@ -575,7 +575,7 @@ function renderGameDetail(gameId) {
 
     const idLabelEl = document.getElementById('player-id-label');
     if (idLabelEl) {
-        idLabelEl.textContent = game.idLabelAr || 'أدخل معرّف اللاعب (Player ID):';
+        idLabelEl.textContent = game.idLabelAr || 'بيانات التسليم:';
     }
 
     const idInput = document.getElementById('player-id-input');
@@ -622,17 +622,17 @@ function renderGameDetail(gameId) {
 
 // طريقة الشحن لكل لعبة: id (معرّف اللاعب) | qr (رمز QR) | login (تسجيل الدخول عبر واتساب)
 function deliveryMethodOf(game) {
-    return (game && game.deliveryMethod) || 'id';
+    return (game && game.deliveryMethod) || 'manual';
 }
 function gameNeedsPlayerId(gameId) {
-    return deliveryMethodOf(APP_DATA.games.find(g => g.id === gameId)) === 'id';
+    return false;
 }
 function deliveryMeta(game, playerId) {
     const method = deliveryMethodOf(game);
     if (method === 'qr') return 'الشحن عبر رمز QR';
     if (method === 'login') return 'الشحن عبر تسجيل الدخول';
     if (method === 'manual') return 'تسليم يدوي';
-    return 'Player ID: ' + playerId;
+    return game && game.id === 'pubg' ? 'كود شدات ببجي' : 'باقة شحن';
 }
 
 function selectPackage(gameId, pkgId) {
@@ -668,7 +668,7 @@ function buySelectedPackage() {
     if (addSelectedPackageToCart()) navigateTo('checkout');
 }
 
-// Confirm Player ID (format check only - we never show a fake "verified" account name)
+// Legacy account-id validation kept for old saved catalogs only.
 function verifyPlayerId() {
     const input = document.getElementById('player-id-input');
     const statusBox = document.getElementById('player-id-status');
@@ -876,7 +876,7 @@ function openCardDetailsModal(cardId) {
                 availableForCard.map(m => {
                     const mPrice = FraudGuard.getProductPrice(card, APP_DATA, m.id);
                     const isSel = m.id === activeMethod;
-                    return '<div onclick="selectCardModalMethod('' + escapeAttr(card.id) + '', '' + m.id + '')" id="card-method-pill-' + m.id + '" class="card-modal-method-pill cursor-pointer p-2 rounded-xl border text-center transition ' + (isSel ? 'border-emerald-500 bg-emerald-50/90 ring-2 ring-emerald-400 font-black' : 'border-slate-200 bg-white hover:bg-slate-50 font-bold') + '">' +
+                    return '<div onclick="selectCardModalMethod(\'' + escapeAttr(card.id) + '\', \'' + escapeAttr(m.id) + '\')" id="card-method-pill-' + escapeAttr(m.id) + '" class="card-modal-method-pill cursor-pointer p-2 rounded-xl border text-center transition ' + (isSel ? 'border-emerald-500 bg-emerald-50/90 ring-2 ring-emerald-400 font-black' : 'border-slate-200 bg-white hover:bg-slate-50 font-bold') + '">' +
                         '<span class="text-[11px] text-slate-800 block"><i class="' + m.icon + ' text-sky-600 ml-1"></i> ' + m.name + '</span>' +
                         '<span class="text-xs font-mono font-black text-emerald-700 block mt-0.5">' + formatPrice(mPrice) + '</span>' +
                     '</div>';
@@ -904,10 +904,10 @@ function openCardDetailsModal(cardId) {
     '</div>' +
     deliveryHtml +
     '<div class="flex gap-2">' +
-        '<button onclick="if (addGiftCardToCart('' + escapeAttr(card.id) + '', (document.getElementById('card-account-input') || {}).value) !== false) closeModal('card-detail-modal');" class="flex-1 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-lg shadow-emerald-600/30">' +
+        '<button onclick="if (addGiftCardToCart(\'' + escapeAttr(card.id) + '\', (document.getElementById(\'card-account-input\') || {}).value) !== false) closeModal(\'card-detail-modal\');" class="flex-1 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-lg shadow-emerald-600/30">' +
             'إضافة إلى السلة' +
         '</button>' +
-        '<button onclick="closeModal('card-detail-modal')" class="px-5 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm">' +
+        '<button onclick="closeModal(\'card-detail-modal\')" class="px-5 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm">' +
             'إغلاق' +
         '</button>' +
     '</div>';
@@ -1164,14 +1164,14 @@ function renderCheckout() {
             '</div>' +
             '<div class="flex items-center gap-2.5">' +
                 '<div class="flex items-center border border-slate-200 rounded-lg bg-white overflow-hidden text-xs">' +
-                    '<button onclick="updateCartQuantity('' + item.cartItemId + '', -1)" class="px-2 py-1 hover:bg-slate-100 text-slate-600 font-bold">-</button>' +
+                    '<button onclick="updateCartQuantity(\'' + escapeAttr(item.cartItemId) + '\', -1)" class="px-2 py-1 hover:bg-slate-100 text-slate-600 font-bold">-</button>' +
                     '<span class="px-2 py-1 font-bold text-slate-800">' + item.quantity + '</span>' +
-                    '<button onclick="updateCartQuantity('' + item.cartItemId + '', 1)" class="px-2 py-1 hover:bg-slate-100 text-slate-600 font-bold">+</button>' +
+                    '<button onclick="updateCartQuantity(\'' + escapeAttr(item.cartItemId) + '\', 1)" class="px-2 py-1 hover:bg-slate-100 text-slate-600 font-bold">+</button>' +
                 '</div>' +
                 '<div class="text-right">' +
                     '<span class="font-bold text-emerald-700 text-xs sm:text-sm block">' + formatPrice(itemTotalLYD) + '</span>' +
                 '</div>' +
-                '<button onclick="removeFromCart('' + item.cartItemId + '')" class="text-rose-500 hover:text-rose-700 text-xs p-1">' +
+                '<button onclick="removeFromCart(\'' + escapeAttr(item.cartItemId) + '\')" class="text-rose-500 hover:text-rose-700 text-xs p-1">' +
                     '<i class="fa-solid fa-trash-can"></i>' +
                 '</button>' +
             '</div>' +
@@ -1480,66 +1480,30 @@ const PAYMENT_METHOD_NAMES = {
     'telecom_libyana': 'كروت شحن ليبيانا (13 رقم)'
 };
 
+function orderDateParts(date) {
+    const d = date instanceof Date ? date : new Date();
+    const pad = n => String(n).padStart(2, '0');
+    return {
+        date: pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + d.getFullYear(),
+        time: pad(d.getHours()) + ':' + pad(d.getMinutes())
+    };
+}
+
 function buildOrderWhatsAppUrl(order, extra) {
-    const methodName = PAYMENT_METHOD_NAMES[order.paymentMethod] || order.paymentMethod;
-
-    const itemsListText = (order.items || []).map(item => {
-        const uPrice = item.priceLYD || item.unitPrice || 0;
-        const lineTotal = uPrice * item.quantity;
-        return '• ' + item.quantity + 'x ' + (item.titleAr || item.productName || 'منتج') + 
-               (item.meta ? ' (' + item.meta + ')' : '') +
-               ' - سعر الوحدة: ' + formatPrice(uPrice) +
-               ' - الإجمالي: ' + formatPrice(lineTotal);
-    }).join('\n');
-
-    let paymentDetails = '';
-    if (order.paymentMethod === 'telecom_libyana') {
-        if (extra.cardCode13) {
-            paymentDetails = '🎟️ *كود كارت التعبئة (13 رقم):* `' + extra.cardCode13 + '`\n🏢 *الشركة:* ليبيانا (Libyana)\n';
-        }
-    } else if (order.paymentMethod === 'lypay') {
-        const totalNum = (order.items || []).reduce((s, i) => s + (i.priceLYD || i.unitPrice || 0) * i.quantity, 0);
-        const ussdCode = '*122*920541749*' + Math.round(totalNum * 1000) + '#';
-        paymentDetails = '📱 *وسيلة الدفع:* رصيد ليبيانا (LibyanaLY)\n' +
-            '📞 *رقم المتجر المحول إليه:* `0920541749`\n' +
-            '🔢 *كود التحويل المستخدم:* `' + ussdCode + '`\n' +
-            (extra.transferRef ? '🔖 *رقم الهاتف المحول منه / الإشعار:* `' + extra.transferRef + '`\n' : '');
-    } else if (order.paymentMethod === 'bank_transfer') {
-        paymentDetails = '🏦 *وسيلة الدفع:* تحويل مصرفي\n' +
-            '🏛️ *المصرف:* مصرف التجارة والتنمية\n' +
-            '👤 *اسم المستفيد:* عطيه موسى عطيه مفتاح\n' +
-            '🔢 *رقم الحساب:* `0041609456001`\n' +
-            '🌐 *IBAN:* `LY65010041000041609456001`\n' +
-            (extra.transferRef ? '🔖 *بيانات التحويل / الإشعار:* `' + extra.transferRef + '`\n' : '');
-    } else if (order.paymentMethod === 'bank_transfer') {
-        cardBanner = '<div class="p-3 rounded-2xl bg-blue-50 border border-blue-300 text-blue-950 text-xs mb-3 space-y-1 text-right">' +
-            '<div class="flex items-center justify-between font-bold">' +
-                '<span>🏛️ وسيلة الدفع: التحويل المصرفي (مصرف التجارة والتنمية)</span>' +
-                '<span class="font-mono text-blue-800 font-black">0041609456001</span>' +
-            '</div>' +
-            (order.transferRef ? '<div class="text-[11px] text-blue-800 font-medium">🔖 بيانات التحويل / الإشعار: <strong class="font-mono font-bold">' + escapeHtml(order.transferRef) + '</strong></div>' : '') +
-            '<div class="text-[10px] text-blue-700">سيتم تفعيل طلبك فور مطابقة إشعار التحويل في مصرف التجارة والتنمية.</div>' +
-        '</div>';
-    } else if (order.paymentMethod === 'onepay') {
-        paymentDetails = '💳 *وسيلة الدفع:* دفع إلكتروني فوري (OnePay)\n' +
-            '📲 *رقم حساب المتجر المحول إليه:* `0920541749`\n' +
-            (extra.transferRef ? '🔖 *رقم العملية / حساب المحول:* `' + extra.transferRef + '`\n' : '');
-    }
+    const parts = orderDateParts();
+    const items = order.items || [];
+    const itemsText = items.length === 1
+        ? 'المنتج: ' + (items[0].titleAr || items[0].productName || 'منتج') + '\n' +
+          'الكمية: ' + (items[0].quantity || 1)
+        : 'المنتجات:\n' + items.map(item => '- ' + (item.titleAr || item.productName || 'منتج') + ' | الكمية: ' + (item.quantity || 1)).join('\n');
 
     const waMessage =
-'🌟 *طلب جديد من منصة سحّابتي (Sahabati My Cloud)* 🌟\n' +
-'-----------------------------------\n' +
-'📋 *رقم الطلب:* #' + order.id + '\n' +
-'📅 *التاريخ:* ' + order.date + '\n' +
-(extra.customerName ? '👤 *الاسم:* ' + extra.customerName + '\n' : '') +
-'📱 *رقم هاتف الزبون:* ' + order.customerPhone + '\n' +
-'💳 *وسيلة الدفع المختارة:* ' + methodName + '\n' +
-paymentDetails +
-'💰 *المبلغ الإجمالي المطلوب للدفع:* ' + order.totalFormatted + '\n\n' +
-'🎮 *العناصر المطلوبة:*\n' + itemsListText + '\n\n' +
-'📝 *ملاحظات إضافية:*\n' + (extra.customerNotes || 'طلب عبر متجر سحّابتي') + '\n' +
-'-----------------------------------\n' +
-'يرجى تأكيد استلام الطلب وتزويدي بكود الشحن أو بيانات الحساب وشكراً! ✨';
+'طلب جديد | سحّابتي ☁️\n' +
+(extra.customerName ? 'العميل: ' + extra.customerName + '\n' : '') +
+'الهاتف: ' + (order.customerPhone || extra.customerPhone || '') + '\n' +
+itemsText + '\n' +
+'التاريخ: ' + parts.date + '\n' +
+'الوقت: ' + parts.time;
 
     const cleanPhone = (APP_DATA.settings?.whatsappNumber || '218920541749').replace(/[^0-9]/g, '');
     return 'https://api.whatsapp.com/send?phone=' + cleanPhone + '&text=' + encodeURIComponent(waMessage);
@@ -1554,7 +1518,7 @@ function submitOrderToServer(input) {
     const payload = {
         items: input.cartItems.map(i => ({
             type: i.type, gameId: i.gameId, packageId: i.packageId, cardId: i.cardId, quantity: i.quantity,
-            playerId: /^(Player ID|ID): /.test(i.meta || '') ? i.meta.replace(/^(Player ID|ID): /, '') : ''
+            playerId: ''
         })),
         phone: input.customerPhone,
         name: input.customerName,
