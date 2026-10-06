@@ -11,6 +11,7 @@
         maxQtyPerItem: 5,          // أقصى كمية للمنتج الواحد في الطلب
         maxCartLines: 10,          // أقصى عدد منتجات مختلفة في السلة
         maxOrderLYD: 2000,         // أقصى قيمة للطلب الواحد
+        maxLibyanaTransferLYD: 50,  // أقصى تحويل رصيد ليبيانا مباشر للطلب الواحد
         orderCooldownMs: 60 * 1000,          // دقيقة بين كل طلبين
         maxOrdersPerWindow: 3,               // 3 طلبات كحد أقصى...
         ordersWindowMs: 15 * 60 * 1000,      // ...خلال 15 دقيقة

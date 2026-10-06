@@ -29,7 +29,7 @@ const DEFAULT_STORE_SETTINGS = {
             id: 'lypay',
             title: 'رصيد ليبيانا (LY)',
             accountInfo: 'رقم هاتف المتجر: 0920541749',
-            instructions: 'تحويل رصيد ليبيانا فوري لرقم المتجر 0920541749 عبر كود التحويل المباشر.'
+            instructions: 'تحويل رصيد ليبيانا فوري لرقم المتجر 0920541749 عبر كود التحويل المباشر، بحد أقصى 50 د.ل للطلب الواحد.'
         },
         bank_transfer: {
             id: 'bank_transfer',

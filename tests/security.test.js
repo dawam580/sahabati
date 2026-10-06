@@ -128,7 +128,9 @@ test('multi-pricing: getProductPrice respects payment method and drops unsupport
     assert.equal(bankCart[0].priceLYD, 48);
 });
 
-test('multi-pricing: Libyana USSD transfer code formula matches requirement', () => {
+test('multi-pricing: Libyana USSD transfer code formula matches requirement', async () => {
+    const g = await guardContext();
+    assert.equal(g.LIMITS.maxLibyanaTransferLYD, 50);
     // 35 LYD -> *122*920541749*35000#
     const price1 = 35;
     assert.equal(`*122*920541749*${Math.round(price1 * 1000)}#`, '*122*920541749*35000#');
@@ -137,7 +139,7 @@ test('multi-pricing: Libyana USSD transfer code formula matches requirement', ()
     const price2 = 25;
     assert.equal(`*122*920541749*${Math.round(price2 * 1000)}#`, '*122*920541749*25000#');
 
-    // Multi-quantity total e.g. 2 x 35 LYD = 70 LYD -> *122*920541749*70000#
-    const total = 35 * 2;
-    assert.equal(`*122*920541749*${Math.round(total * 1000)}#`, '*122*920541749*70000#');
+    // Multi-quantity total at the allowed ceiling e.g. 2 x 25 LYD = 50 LYD
+    const total = 25 * 2;
+    assert.equal(`*122*920541749*${Math.round(total * 1000)}#`, '*122*920541749*50000#');
 });

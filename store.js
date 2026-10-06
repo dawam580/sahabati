@@ -283,6 +283,10 @@ function createStore() {
         const total = guard.cartTotal(cart);
         const maxOrder = Number(catalog.settings && catalog.settings.maxOrderLYD) || guard.LIMITS.maxOrderLYD;
         if (total > maxOrder) return { status: 400, error: 'الحد الأقصى للطلب الواحد ' + maxOrder.toFixed(2) + ' د.ل' };
+        const maxLyPay = Number(guard.LIMITS.maxLibyanaTransferLYD) || 50;
+        if (method === 'lypay' && total > maxLyPay) {
+            return { status: 400, error: 'تحويل رصيد ليبيانا متاح حتى ' + maxLyPay.toFixed(2) + ' د.ل فقط. اختر التحويل المصرفي أو OnePay أو كروت ليبيانا.' };
+        }
 
         let card = '';
         if (method === 'telecom_libyana') {

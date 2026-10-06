@@ -1024,21 +1024,43 @@ function sanitizeStoredCart(method) {
 }
 
 const ALL_PAYMENT_METHODS = [
-    { id: 'lypay', nameAr: 'رصيد LY', sub: 'دفع إلكتروني فوري', icon: 'fa-solid fa-mobile-screen-button', color: 'sky' },
+    { id: 'lypay', nameAr: 'رصيد LY', sub: 'حتى 50 د.ل', icon: 'fa-solid fa-mobile-screen-button', color: 'sky' },
     { id: 'bank_transfer', nameAr: 'تحويل مصرفي', sub: 'التجارة والتنمية', icon: 'fa-solid fa-building-columns', color: 'blue' },
     { id: 'onepay', nameAr: 'OnePay', sub: 'دفع إلكتروني فوري', icon: 'fa-solid fa-money-bill-transfer', color: 'emerald' },
     { id: 'telecom_libyana', nameAr: 'كروت ليبيانا', sub: 'كود 13 رقماً', icon: 'fa-solid fa-sim-card', color: 'amber' }
 ];
 
+function paymentMethodLimit(method) {
+    return method === 'lypay' ? guardLimit('maxLibyanaTransferLYD', 50) : Infinity;
+}
+
+function cartTotalForMethod(method) {
+    return (state.cart || []).reduce((sum, item) => {
+        const p = (typeof FraudGuard !== 'undefined' && FraudGuard.getProductPrice)
+            ? (FraudGuard.getProductPrice(item, APP_DATA, method) || item.priceLYD)
+            : item.priceLYD;
+        return sum + p * item.quantity;
+    }, 0);
+}
+
+function paymentLimitProblem(method, total) {
+    const limit = paymentMethodLimit(method);
+    if (isFinite(limit) && total > limit) {
+        return 'تحويل رصيد ليبيانا متاح حتى ' + formatPrice(limit) + ' فقط. للطلبات الأكبر اختر التحويل المصرفي أو OnePay أو كروت ليبيانا.';
+    }
+    return '';
+}
+
 function getAvailablePaymentMethods() {
     if (!state.cart || state.cart.length === 0) return ALL_PAYMENT_METHODS;
     return ALL_PAYMENT_METHODS.filter(m => {
-        return state.cart.every(item => {
+        const supportsAllItems = state.cart.every(item => {
             const p = (typeof FraudGuard !== 'undefined' && FraudGuard.getProductPrice)
                 ? FraudGuard.getProductPrice(item, APP_DATA, m.id)
                 : item.priceLYD;
             return p !== null && p > 0;
         });
+        return supportsAllItems && !paymentLimitProblem(m.id, cartTotalForMethod(m.id));
     });
 }
 
@@ -1053,12 +1075,7 @@ function renderPaymentOptions() {
 
     grid.innerHTML = available.map(m => {
         const isSelected = state.paymentMethod === m.id;
-        const mTotal = state.cart.reduce((sum, item) => {
-            const p = (typeof FraudGuard !== 'undefined' && FraudGuard.getProductPrice)
-                ? (FraudGuard.getProductPrice(item, APP_DATA, m.id) || item.priceLYD)
-                : item.priceLYD;
-            return sum + p * item.quantity;
-        }, 0);
+        const mTotal = cartTotalForMethod(m.id);
 
         const activeClasses = isSelected
             ? 'border-emerald-500 bg-emerald-50/90 ring-2 ring-emerald-400 font-black shadow-md'
@@ -1077,6 +1094,14 @@ function renderPaymentOptions() {
             '</div>' +
         '</div>';
     }).join('');
+
+    const lyTotal = cartTotalForMethod('lypay');
+    if (paymentLimitProblem('lypay', lyTotal)) {
+        grid.innerHTML += '<div class="sm:col-span-2 lg:col-span-4 p-3 rounded-2xl bg-sky-50 border border-sky-200 text-sky-900 text-[11px] font-bold flex items-center gap-2">' +
+            '<i class="fa-solid fa-circle-info text-sky-700"></i>' +
+            '<span>تحويل رصيد ليبيانا متاح حتى 50.00 د.ل فقط. إجمالي طلبك الحالي ' + formatPrice(lyTotal) + '، اختر طريقة دفع أخرى للمتابعة.</span>' +
+        '</div>';
+    }
 }
 
 function renderOrderSummary() {
@@ -1192,9 +1217,16 @@ function renderCheckout() {
 
 // Select Payment Method & Update Prices Dynamically
 function selectPaymentMethod(method) {
+    const total = cartTotalForMethod(method);
+    const limitProblem = paymentLimitProblem(method, total);
+    if (limitProblem) {
+        showToast(limitProblem, 'fa-circle-info');
+        return false;
+    }
     state.paymentMethod = method;
     sanitizeStoredCart(method);
     renderCheckout();
+    return true;
 }
 
 function updatePaymentInputContainers() {
@@ -1598,6 +1630,8 @@ function processPayment() {
     if (totalLYD > maxOrder) {
         return checkoutFail('الحد الأقصى للطلب الواحد ' + formatPrice(maxOrder) + '. للطلبات الأكبر تواصل معنا عبر واتساب');
     }
+    const limitProblem = paymentLimitProblem(state.paymentMethod || 'lypay', totalLYD);
+    if (limitProblem) return checkoutFail(limitProblem);
 
     // 4) Libyan phone number (required)
     const phoneInput = document.getElementById('whatsapp-phone-input');

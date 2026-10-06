@@ -96,7 +96,10 @@ test('catalog: entertainment section, chat apps, Libyana only, no telecom/PSN/St
     assert.deepEqual(['pubg', 'freefire', 'tiktok_coins', 'roblox', 'clashofclans'].map(method), ['manual', 'manual', 'qr', 'login', 'login']);
     const r = store.createOrder(goodOrder({ paymentMethod: 'telecom_madar' }), 'z');
     assert.equal(r.order.paymentMethod, 'telecom_libyana');
-    const rLy = store.createOrder(goodOrder({ paymentMethod: 'lypay', cardCode13: '', transferRef: '0912223344' }), 'z1');
+    const rLyOver = store.createOrder(goodOrder({ paymentMethod: 'lypay', cardCode13: '', transferRef: '0912223344' }), 'z1-over');
+    assert.equal(rLyOver.status, 400);
+    assert.match(rLyOver.error, /50/);
+    const rLy = store.createOrder(goodOrder({ items: [{ type: 'giftcard', cardId: 'shahid_vip_full', quantity: 1 }], paymentMethod: 'lypay', cardCode13: '', transferRef: '0912223344' }), 'z1');
     assert.equal(rLy.status, 201);
     assert.equal(rLy.order.paymentMethod, 'lypay');
     assert.equal(rLy.order.transferRef, '0912223344');
