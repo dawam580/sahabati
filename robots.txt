@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /admin.html
 Disallow: /admin
-Sitemap: /sitemap.xml
+Sitemap: https://sahabati.net/sitemap.xml
