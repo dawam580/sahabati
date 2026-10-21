@@ -199,7 +199,7 @@ async function handleApi(req, res, url, headers) {
         if (url === '/api/health' && m === 'GET') return sendJSON(res, 200, headers, { ok: true });
         if (url === '/api/catalog' && m === 'GET') return sendJSON(res, 200, headers, store.publicCatalog());
         if (url === '/api/orders' && m === 'POST') {
-            const r = store.createOrder(await readJSONBody(req, 64 * 1024), clientIp(req));
+            const r = store.createOrder(await readJSONBody(req, 4 * 1024 * 1024), clientIp(req));
             return sendJSON(res, r.status, headers, r.error ? { error: r.error } : r.order);
         }
         if (url === '/api/orders/status' && m === 'POST') {

@@ -474,6 +474,7 @@
                 paymentMethod: orderData.paymentMethod || 'telecom_libyana',
                 cardCode13: orderData.cardCode13 || '',
                 transferRef: orderData.transferRef || '',
+                proofImage: orderData.proofImage || undefined,
                 customerNotes: orderData.customerNotes || '',
                 totalFormatted: orderData.totalFormatted || '0.00 د.ل',
                 status: 'pending_payment', // pending_payment | paid | cancelled

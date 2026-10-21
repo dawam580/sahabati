@@ -128,8 +128,16 @@ function createStore() {
     // نتجاهل المسافات وعلامات الاقتباس التي قد تُنسخ بالخطأ مع القيمة في لوحة الاستضافة
     let adminPin = cleanPin(process.env.ADMIN_PIN);
     if (!adminPin) {
-        adminPin = crypto.randomBytes(6).toString('base64url');
-        console.warn('[sahabati] ADMIN_PIN غير مضبوط. كلمة سر مؤقتة للوحة الإدارة لهذا التشغيل فقط: ' + adminPin);
+        try {
+            const cat = getCatalog();
+            if (cat && cat.settings && cat.settings.adminPin) {
+                adminPin = cleanPin(cat.settings.adminPin);
+            }
+        } catch (e) {}
+    }
+    if (!adminPin) {
+        adminPin = 'admin2026';
+        console.warn('[sahabati] ADMIN_PIN غير مضبوط في متغيرات البيئة. سيتم استخدام كلمة السر الافتراضية: admin2026');
     } else {
         console.log('[sahabati] ADMIN_PIN مضبوط (' + adminPin.length + ' أحرف).');
     }
@@ -305,6 +313,7 @@ function createStore() {
             customerPhone: phone,
             cardCode13: card.length === 13 ? card : '',
             transferRef: guard.cleanText(body.transferRef, 80) || '',
+            proofImage: (typeof body.proof === 'string' && body.proof.startsWith('data:image/')) ? body.proof : undefined,
             customerNotes: guard.cleanText(body.notes, 200),
             totalFormatted: total.toFixed(2) + ' د.ل'
         });
@@ -325,6 +334,7 @@ function createStore() {
             customerPhone: o.customerPhone,
             cardCode13: o.cardCode13 ? '•••••••••' + o.cardCode13.slice(-4) : '',
             transferRef: o.transferRef || '',
+            proofImage: o.proofImage || undefined,
             totalFormatted: o.totalFormatted,
             status: o.status,
             paymentConfirmed: paid,

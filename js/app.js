@@ -603,6 +603,19 @@ function renderGameDetail(gameId) {
         note.classList.toggle('hidden', needsId);
     }
 
+    const curCatalogMethod = state.catalogPaymentMethod || state.paymentMethod || 'lypay';
+    const lyBtn = document.getElementById('cat-toggle-lypay');
+    const onepayBtn = document.getElementById('cat-toggle-onepay');
+    if (lyBtn && onepayBtn) {
+        if (curCatalogMethod === 'onepay') {
+            onepayBtn.className = 'px-3 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-1.5 bg-emerald-600 text-white shadow-sm';
+            lyBtn.className = 'px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 text-slate-700 hover:text-slate-900';
+        } else {
+            lyBtn.className = 'px-3 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-1.5 bg-sky-600 text-white shadow-sm';
+            onepayBtn.className = 'px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 text-slate-700 hover:text-slate-900';
+        }
+    }
+
     state.selectedPackage = null;
     updateBuyBar();
 
@@ -610,14 +623,42 @@ function renderGameDetail(gameId) {
     if (packagesContainer) {
         packagesContainer.innerHTML = game.packages.filter(isAvailable).map(pkg => {
             const tag = pkg.popular ? '<span class="pkg-tag hot">الأكثر طلباً</span>' : (pkg.bestValue ? '<span class="pkg-tag value">أفضل قيمة</span>' : '');
+            
+            const lyPrice = (typeof FraudGuard !== 'undefined' && FraudGuard.getProductPrice)
+                ? (FraudGuard.getProductPrice(pkg, APP_DATA, 'lypay') || pkg.priceLYD)
+                : pkg.priceLYD;
+            const onepayPrice = (typeof FraudGuard !== 'undefined' && FraudGuard.getProductPrice)
+                ? (FraudGuard.getProductPrice(pkg, APP_DATA, 'onepay') || pkg.priceLYD)
+                : pkg.priceLYD;
+            const activePrice = curCatalogMethod === 'onepay' ? onepayPrice : lyPrice;
+
+            let priceDisplay = '<span class="pkg-price">' + formatPrice(activePrice) + '</span>';
+            if (lyPrice !== onepayPrice) {
+                priceDisplay = '<div class="pkg-price-dual flex flex-col items-center mt-1">' +
+                    '<span class="pkg-price text-sm font-black text-emerald-700">' + formatPrice(activePrice) + '</span>' +
+                    '<span class="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md mt-0.5">' +
+                        (curCatalogMethod === 'onepay' ? '📱 ليبيانا: ' + formatPrice(lyPrice) : '💳 OnePay: ' + formatPrice(onepayPrice)) +
+                    '</span>' +
+                '</div>';
+            }
+
             return '<button type="button" class="pkg-tile" data-pkg="' + escapeAttr(pkg.id) + '" onclick="selectPackage(\'' + escapeAttr(game.id) + '\', \'' + escapeAttr(pkg.id) + '\')">' +
                 tag +
                 '<span class="pkg-icon">' + escapeHtml(pkg.icon || '💎') + '</span>' +
                 '<span class="pkg-name">' + escapeHtml(pkg.nameAr) + '</span>' +
-                '<span class="pkg-price">' + formatPrice(pkg.priceLYD) + '</span>' +
+                priceDisplay +
             '</button>';
         }).join('');
     }
+}
+
+function setCatalogPaymentMethod(method) {
+    state.catalogPaymentMethod = method;
+    state.paymentMethod = method;
+    if (state.selectedGame) {
+        renderGameDetail(state.selectedGame);
+    }
+    updateBuyBar();
 }
 
 // طريقة الشحن لكل لعبة: id (معرّف اللاعب) | qr (رمز QR) | login (تسجيل الدخول عبر واتساب)
@@ -652,10 +693,14 @@ function updateBuyBar() {
     const pkg = game && game.packages.find(p => p.id === sel.pkgId);
     bar.classList.toggle('hidden', !pkg || state.currentTab !== 'games');
     if (!pkg) return;
+    const curCatalogMethod = state.catalogPaymentMethod || state.paymentMethod || 'lypay';
+    const pkgPrice = (typeof FraudGuard !== 'undefined' && FraudGuard.getProductPrice)
+        ? (FraudGuard.getProductPrice(pkg, APP_DATA, curCatalogMethod) || pkg.priceLYD)
+        : pkg.priceLYD;
     const nameEl = document.getElementById('buy-bar-name');
     const priceEl = document.getElementById('buy-bar-price');
     if (nameEl) nameEl.textContent = shortName(game.nameAr) + ' · ' + pkg.nameAr;
-    if (priceEl) priceEl.textContent = formatPrice(pkg.priceLYD);
+    if (priceEl) priceEl.textContent = formatPrice(pkgPrice);
 }
 
 function addSelectedPackageToCart() {
@@ -747,8 +792,25 @@ function renderGiftCards(filter) {
         cards = cards.filter(c => c.category === filter);
     }
 
+    const curCatalogMethod = state.catalogPaymentMethod || state.paymentMethod || 'lypay';
     container.innerHTML = cards.map(card => {
         const look = brandLook(card.brand);
+        const lyPrice = (typeof FraudGuard !== 'undefined' && FraudGuard.getProductPrice)
+            ? (FraudGuard.getProductPrice(card, APP_DATA, 'lypay') || card.priceLYD)
+            : card.priceLYD;
+        const onepayPrice = (typeof FraudGuard !== 'undefined' && FraudGuard.getProductPrice)
+            ? (FraudGuard.getProductPrice(card, APP_DATA, 'onepay') || card.priceLYD)
+            : card.priceLYD;
+        const activePrice = curCatalogMethod === 'onepay' ? onepayPrice : lyPrice;
+
+        let priceDisplay = '<strong>' + formatPrice(activePrice) + '</strong>';
+        if (lyPrice !== onepayPrice) {
+            priceDisplay = '<div class="flex flex-col">' +
+                '<strong class="text-emerald-700 text-xs sm:text-sm">' + formatPrice(activePrice) + '</strong>' +
+                '<small class="text-[9px] text-slate-500 font-bold">' + (curCatalogMethod === 'onepay' ? '📱 ليبيانا: ' + formatPrice(lyPrice) : '💳 OnePay: ' + formatPrice(onepayPrice)) + '</small>' +
+            '</div>';
+        }
+
         return '<div class="gc-tile">' +
             '<button type="button" class="gc-art ' + look.cls + '" onclick="openCardDetailsModal(\'' + escapeAttr(card.id) + '\')" aria-label="تفاصيل ' + escapeAttr(card.nameAr) + '">' + manualBadge(card) +
                 '<span class="gc-mark">' + look.mark + '</span>' +
@@ -758,7 +820,7 @@ function renderGiftCards(filter) {
             '<div class="gc-body">' +
                 '<h4>' + escapeHtml(shortName(card.nameAr)) + '</h4>' +
                 '<div class="gc-foot">' +
-                    '<strong>' + formatPrice(card.priceLYD) + '</strong>' +
+                    priceDisplay +
                     '<button type="button" onclick="addGiftCardToCart(\'' + escapeAttr(card.id) + '\')" class="gc-add" aria-label="أضف للسلة"><i class="fa-solid fa-plus"></i></button>' +
                 '</div>' +
             '</div>' +
@@ -1229,6 +1291,58 @@ function selectPaymentMethod(method) {
     return true;
 }
 
+let paymentProof = null;
+let paymentProofReading = false;
+
+function clearPaymentProof() {
+    paymentProofReading = false;
+    paymentProof = null;
+    const input = document.getElementById('payment-proof-input');
+    const preview = document.getElementById('payment-proof-preview');
+    const img = document.getElementById('payment-proof-image');
+    const status = document.getElementById('payment-proof-status');
+    if (input) input.value = '';
+    if (preview) preview.classList.add('hidden');
+    if (img) img.removeAttribute('src');
+    if (status) status.textContent = 'JPG، PNG أو WebP · حتى 5 ميجابايت';
+}
+
+async function selectPaymentProof(input) {
+    if (!input || !input.files || !input.files[0]) { clearPaymentProof(); return; }
+    const file = input.files[0];
+    const status = document.getElementById('payment-proof-status');
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 5 * 1024 * 1024 || !file.size) {
+        input.value = '';
+        if (status) status.textContent = 'اختر صورة JPG أو PNG أو WebP بحجم لا يتجاوز 5 ميجابايت.';
+        showToast('يرجى اختيار صورة بحجم لا يتجاوز 5 ميجابايت', 'fa-triangle-exclamation');
+        return;
+    }
+    paymentProofReading = true;
+    if (status) status.textContent = 'جاري تجهيز الصورة…';
+    try {
+        const data = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+        paymentProof = { data: data, name: file.name };
+        const preview = document.getElementById('payment-proof-preview');
+        const img = document.getElementById('payment-proof-image');
+        const nameEl = document.getElementById('payment-proof-name');
+        if (img) img.src = data;
+        if (nameEl) nameEl.textContent = file.name;
+        if (preview) preview.classList.remove('hidden');
+        if (status) status.textContent = 'تم إرفاق السكرين شوت بنجاح وستُرسل مع طلبك ✅';
+        showToast('تم إرفاق سكرين شوت التحويل بنجاح 📸', 'fa-image');
+    } catch (err) {
+        clearPaymentProof();
+        if (status) status.textContent = 'تعذر قراءة الصورة، حاول مجدداً.';
+    } finally {
+        paymentProofReading = false;
+    }
+}
+
 function updatePaymentInputContainers() {
     const method = state.paymentMethod || 'lypay';
     const voucherContainer = document.getElementById('voucher-card-field-container');
@@ -1237,26 +1351,31 @@ function updatePaymentInputContainers() {
     const bankTransferLabel = document.getElementById('bank-transfer-label-text');
     const bankTransferInput = document.getElementById('bank-transfer-ref-input');
     const bankTransferHint = document.getElementById('bank-transfer-hint-text');
+    const proofContainer = document.getElementById('payment-proof-container');
 
     if (method === 'telecom_libyana') {
         if (voucherContainer) voucherContainer.classList.remove('hidden');
         if (bankTransferContainer) bankTransferContainer.classList.add('hidden');
+        if (proofContainer) proofContainer.classList.add('hidden');
         if (voucherInput) handleVoucherCardInput(voucherInput);
     } else {
         if (voucherContainer) voucherContainer.classList.add('hidden');
         if (bankTransferContainer) bankTransferContainer.classList.remove('hidden');
         if (method === 'lypay') {
-            if (bankTransferLabel) bankTransferLabel.innerHTML = '<i class="fa-solid fa-receipt text-sky-700 text-sm"></i> <span>رقم الهاتف المحول منه أو رقم العملية (رصيد ليبيانا):</span>';
+            if (proofContainer) proofContainer.classList.add('hidden');
+            if (bankTransferLabel) bankTransferLabel.innerHTML = '<i class="fa-solid fa-receipt text-sky-700 text-sm"></i> <span>رقم الهاتف المحول منه رصيد ليبيانا (أو كود العملية):</span>';
             if (bankTransferInput) bankTransferInput.placeholder = 'مثال: 092XXXXXXX أو رقم رسالة التحويل';
-            if (bankTransferHint) bankTransferHint.textContent = 'قم بالتحويل عبر الكود المباشر أعلاه لرقم المتجر 0920541749، واكتب رقم هاتفك أو الإشعار لتأكيد الشحن فوراً.';
+            if (bankTransferHint) bankTransferHint.textContent = 'قم بالتحويل عبر الكود المباشر أعلاه لرقم المتجر 0920541749، واكتب رقم هاتفك لتأكيد الشحن فوراً.';
+        } else if (method === 'onepay') {
+            if (proofContainer) proofContainer.classList.remove('hidden');
+            if (bankTransferLabel) bankTransferLabel.innerHTML = '<i class="fa-solid fa-money-bill-transfer text-emerald-700 text-sm"></i> <span>رقم حساب/هاتف المحوّل في OnePay (أو رقم العملية):</span>';
+            if (bankTransferInput) bankTransferInput.placeholder = 'مثال: رقم حسابك في ون باي أو كود الإشعار';
+            if (bankTransferHint) bankTransferHint.textContent = 'قم بالتحويل عبر تطبيق OnePay لحساب المتجر 0920541749 (عطيه موسى عطيه مفتاح)، وأرفق صورة السكرين بالأسفل لتأكيد الشحن فوراً.';
         } else if (method === 'bank_transfer') {
+            if (proofContainer) proofContainer.classList.remove('hidden');
             if (bankTransferLabel) bankTransferLabel.innerHTML = '<i class="fa-solid fa-building-columns text-blue-700 text-sm"></i> <span>اسم المحوّل / رقم الحساب / إشعار التحويل (مصرف التجارة والتنمية):</span>';
             if (bankTransferInput) bankTransferInput.placeholder = 'مثال: اسمك في المصرف أو رقم الحساب أو كود الإشعار';
-            if (bankTransferHint) bankTransferHint.textContent = 'تم التحويل لحساب المتجر 0041609456001 (عطيه موسى عطيه مفتاح). اكتب بياناتك لتأكيد الشحن.';
-        } else if (method === 'onepay') {
-            if (bankTransferLabel) bankTransferLabel.innerHTML = '<i class="fa-solid fa-money-bill-transfer text-emerald-700 text-sm"></i> <span>رقم حساب/هاتف أو كود العملية (OnePay):</span>';
-            if (bankTransferInput) bankTransferInput.placeholder = 'مثال: رقم حسابك في ون باي أو كود الإشعار';
-            if (bankTransferHint) bankTransferHint.textContent = 'قم بالتحويل عبر تطبيق OnePay لحساب المتجر 0920541749، واكتب رقم هاتفك أو الإشعار لتأكيد الشحن فوراً.';
+            if (bankTransferHint) bankTransferHint.textContent = 'تم التحويل لحساب المتجر 0041609456001 (عطيه موسى عطيه مفتاح). اكتب بياناتك وأرفق الوصل لتأكيد الشحن.';
         }
     }
 }
@@ -1350,33 +1469,45 @@ function renderPaymentInstructions() {
                 '</div>' +
             '</div>' +
 
-            '<div class="p-3 bg-white/95 rounded-2xl border-2 border-sky-300 space-y-2">' +
-                '<div class="flex items-center justify-between">' +
-                    '<span class="text-xs font-black text-sky-950 flex items-center gap-1.5">' +
-                        '<i class="fa-solid fa-bolt text-amber-500"></i>' +
-                        '<span>كود تحويل الرصيد المباشر (جاهز لمبلغ ' + formatPrice(totalLYD) + '):</span>' +
-                    '</span>' +
-                    '<span class="text-[10px] font-mono font-bold bg-sky-100 text-sky-800 px-2 py-0.5 rounded">' +
-                        'القيمة: ' + amountThousands +
-                    '</span>' +
+            '<div class="p-3 bg-white/95 rounded-2xl border-2 border-sky-300 space-y-2.5">' +
+                '<div class="flex items-center justify-between p-2 rounded-xl bg-sky-50 border border-sky-200">' +
+                    '<div>' +
+                        '<span class="text-[10px] text-slate-500 block">رقم هاتف المتجر ليبيانا:</span>' +
+                        '<span class="font-mono font-black text-slate-900 text-sm dir-ltr">0920541749</span>' +
+                    '</div>' +
+                    '<button type="button" onclick="copyToClipboard(\'0920541749\', \'رقم هاتف ليبيانا\')" class="px-2.5 py-1 rounded-lg bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs shadow-sm transition flex items-center gap-1">' +
+                        '<i class="fa-solid fa-copy"></i> <span>نسخ الرقم</span>' +
+                    '</button>' +
                 '</div>' +
-                '<div class="flex flex-col sm:flex-row items-center gap-2">' +
-                    '<code class="flex-1 w-full text-center py-2.5 px-3 rounded-xl bg-slate-900 text-emerald-400 font-mono font-black text-base tracking-wider dir-ltr select-all">' +
-                        ussdCode +
-                    '</code>' +
-                    '<div class="flex items-center gap-2 w-full sm:w-auto">' +
-                        '<button type="button" onclick="copyToClipboard(\'' + ussdCode + '\', \'كود تحويل الرصيد\')" class="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs shadow-sm transition flex items-center justify-center gap-1.5">' +
-                            '<i class="fa-solid fa-copy"></i>' +
-                            '<span>نسخ الكود</span>' +
-                        '</button>' +
-                        '<a href="' + dialUrl + '" class="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition flex items-center justify-center gap-1.5">' +
-                            '<i class="fa-solid fa-phone"></i>' +
-                            '<span>اتصال فوري</span>' +
-                        '</a>' +
+
+                '<div class="space-y-1.5">' +
+                    '<div class="flex items-center justify-between">' +
+                        '<span class="text-xs font-black text-sky-950 flex items-center gap-1.5">' +
+                            '<i class="fa-solid fa-bolt text-amber-500"></i>' +
+                            '<span>كود تحويل الرصيد المباشر (جاهز لمبلغ ' + formatPrice(totalLYD) + '):</span>' +
+                        '</span>' +
+                        '<span class="text-[10px] font-mono font-bold bg-sky-100 text-sky-800 px-2 py-0.5 rounded">' +
+                            'القيمة: ' + amountThousands +
+                        '</span>' +
+                    '</div>' +
+                    '<div class="flex flex-col sm:flex-row items-center gap-2">' +
+                        '<code class="flex-1 w-full text-center py-2.5 px-3 rounded-xl bg-slate-900 text-emerald-400 font-mono font-black text-base tracking-wider dir-ltr select-all">' +
+                            ussdCode +
+                        '</code>' +
+                        '<div class="flex items-center gap-2 w-full sm:w-auto">' +
+                            '<button type="button" onclick="copyToClipboard(\'' + ussdCode + '\', \'كود تحويل الرصيد\')" class="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs shadow-sm transition flex items-center justify-center gap-1.5">' +
+                                '<i class="fa-solid fa-copy"></i>' +
+                                '<span>نسخ الكود</span>' +
+                            '</button>' +
+                            '<a href="' + dialUrl + '" class="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition flex items-center justify-center gap-1.5">' +
+                                '<i class="fa-solid fa-phone"></i>' +
+                                '<span>اتصال فوري</span>' +
+                            '</a>' +
+                        '</div>' +
                     '</div>' +
                 '</div>' +
                 '<p class="text-[11px] text-slate-600 font-medium pt-0.5">' +
-                    '* اضغط «اتصال فوري» أو انسخ الكود ونفّذه من هاتفك لتحويل الرصيد مباشرة لحساب المتجر <strong>0920541749</strong>.' +
+                    '* اضغط «اتصال فوري» أو انسخ الكود ونفّذه من هاتفك لتحويل الرصيد مباشرة لرقم المتجر <strong>0920541749</strong> وسيصلنا المبلغ فوراً.' +
                 '</p>' +
             '</div>' +
         '</div>';
@@ -1442,7 +1573,7 @@ function renderPaymentInstructions() {
                     '</button>' +
                 '</div>' +
                 '<p class="text-[11px] text-slate-600 font-medium pt-1">' +
-                    '* بعد إتمام التحويل، اكتب اسمك في المصرف أو رقم الإشعار في الخانة بالأسفل لتأكيد الشحن فوراً.' +
+                    '* بعد إتمام التحويل، اكتب اسمك في المصرف أو رقم الإشعار وأرفق صورة الوصل بالأسفل لتأكيد الشحن فوراً.' +
                 '</p>' +
             '</div>' +
         '</div>';
@@ -1459,23 +1590,34 @@ function renderPaymentInstructions() {
                     '</div>' +
                 '</div>' +
                 '<div class="text-left">' +
-                    '<span class="text-[10px] text-emerald-700 font-bold block">المبلغ المطلوب دفعه عبر OnePay:</span>' +
+                    '<span class="text-[10px] text-emerald-700 font-bold block">المبلغ المطلوب تحويله:</span>' +
                     '<span class="text-base font-black font-mono text-emerald-950">' + formatPrice(totalLYD) + '</span>' +
                 '</div>' +
             '</div>' +
 
-            '<div class="p-3 bg-white/95 rounded-2xl border-2 border-emerald-300 space-y-2">' +
+            '<div class="p-3 bg-white/95 rounded-2xl border-2 border-emerald-300 space-y-2.5 text-xs">' +
                 '<div class="flex items-center justify-between p-2 rounded-xl bg-emerald-50 border border-emerald-200">' +
                     '<div>' +
-                        '<span class="text-[10px] text-slate-600 block">رقم حساب المتجر في OnePay:</span>' +
+                        '<span class="text-[10px] text-slate-500 block">اسم صاحب الحساب:</span>' +
+                        '<span class="font-black text-slate-900 text-sm">عطيه موسى عطيه مفتاح</span>' +
+                    '</div>' +
+                    '<button type="button" onclick="copyToClipboard(\'عطيه موسى عطيه مفتاح\', \'اسم صاحب الحساب\')" class="px-2.5 py-1 rounded-lg bg-white hover:bg-emerald-100 text-emerald-800 font-bold text-xs border border-emerald-300 transition flex items-center gap-1">' +
+                        '<i class="fa-solid fa-copy"></i> <span>نسخ الاسم</span>' +
+                    '</button>' +
+                '</div>' +
+
+                '<div class="flex items-center justify-between p-2 rounded-xl bg-emerald-50 border border-emerald-200">' +
+                    '<div>' +
+                        '<span class="text-[10px] text-slate-500 block">رقم حساب OnePay:</span>' +
                         '<span class="font-mono font-black text-slate-900 text-base dir-ltr">0920541749</span>' +
                     '</div>' +
                     '<button type="button" onclick="copyToClipboard(\'0920541749\', \'رقم حساب OnePay\')" class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition flex items-center gap-1">' +
                         '<i class="fa-solid fa-copy"></i> <span>نسخ الحساب</span>' +
                     '</button>' +
                 '</div>' +
-                '<p class="text-[11px] text-slate-600 font-medium">' +
-                    '* حوّل المبلغ المطلوب (' + formatPrice(totalLYD) + ') لحساب المتجر أعلاه، ثم اكتب رقم الإشعار بالأسفل لتأكيد الشحن فوراً.' +
+
+                '<p class="text-[11px] text-slate-600 font-medium pt-1">' +
+                    '* حوّل المبلغ المطلوب (' + formatPrice(totalLYD) + ') لحساب المتجر أعلاه (عطيه موسى عطيه مفتاح)، ثم أرفق سكرين شوت (صورة إشعار الدفع) بالأسفل لتأكيد الشحن فوراً.' +
                 '</p>' +
             '</div>' +
         '</div>';
@@ -1529,11 +1671,18 @@ function buildOrderWhatsAppUrl(order, extra) {
           'الكمية: ' + (items[0].quantity || 1)
         : 'المنتجات:\n' + items.map(item => '- ' + (item.titleAr || item.productName || 'منتج') + ' | الكمية: ' + (item.quantity || 1)).join('\n');
 
+    const hasProof = (paymentProof && paymentProof.data) || order.proofImage;
+    const proofText = hasProof ? '\n📎 تم إرفاق سكرين شوت إيصال الدفع في الموقع' : '';
+
     const waMessage =
 'طلب جديد | سحّابتي ☁️\n' +
-(extra.customerName ? 'العميل: ' + extra.customerName + '\n' : '') +
-'الهاتف: ' + (order.customerPhone || extra.customerPhone || '') + '\n' +
+(extra && extra.customerName ? 'العميل: ' + extra.customerName + '\n' : '') +
+'الهاتف: ' + (order.customerPhone || (extra && extra.customerPhone) || '') + '\n' +
 itemsText + '\n' +
+'وسيلة الدفع: ' + (PAYMENT_METHOD_NAMES[order.paymentMethod] || order.paymentMethod || '') +
+(order.transferRef ? '\nمرجع/هاتف التحويل: ' + order.transferRef : '') +
+(order.cardCode13 ? '\nكود كارت ليبيانا: ' + order.cardCode13 : '') +
+proofText + '\n' +
 'التاريخ: ' + parts.date + '\n' +
 'الوقت: ' + parts.time;
 
@@ -1559,6 +1708,7 @@ function submitOrderToServer(input) {
         paymentMethod: input.method,
         cardCode13: input.cardCode13,
         transferRef: input.transferRef,
+        proof: (paymentProof && paymentProof.data) ? paymentProof.data : undefined,
         website: input.honeypot
     };
     return apiFetch('/api/orders', { method: 'POST', body: JSON.stringify(payload) }).then(order => {
@@ -1575,6 +1725,7 @@ function submitOrderToServer(input) {
         state.checkoutOpenedAt = 0;
         saveCart();
         updateCartUI();
+        clearPaymentProof();
         if (input.voucherInput) { input.voucherInput.value = ''; handleVoucherCardInput(input.voucherInput); }
         const bankInput = document.getElementById('bank-transfer-ref-input');
         if (bankInput) bankInput.value = '';
@@ -1686,6 +1837,7 @@ function processPayment() {
         const totalAmountText = formatPrice(totalLYD);
         const cardCode13 = method === 'telecom_libyana' ? cleanCardDigits : '';
 
+        const proofData = (paymentProof && paymentProof.data) ? paymentProof.data : undefined;
         let newOrder;
         if (typeof SahabatiDB !== 'undefined' && SahabatiDB.createOrder) {
             newOrder = SahabatiDB.createOrder({
@@ -1698,6 +1850,7 @@ function processPayment() {
                 customerPhone: customerPhone,
                 cardCode13: cardCode13,
                 transferRef: transferRef,
+                proofImage: proofData,
                 customerNotes: customerNotes,
                 totalFormatted: totalAmountText
             });
@@ -1705,7 +1858,7 @@ function processPayment() {
             newOrder = {
                 id: orderId, userId: customer ? customer.id : 'guest', date: orderDate, items: cartItems, vouchers: [],
                 paymentMethod: method, customerPhone: customerPhone, cardCode13: cardCode13,
-                transferRef: transferRef, customerNotes: customerNotes, totalFormatted: totalAmountText, status: 'pending_payment'
+                transferRef: transferRef, proofImage: proofData, customerNotes: customerNotes, totalFormatted: totalAmountText, status: 'pending_payment'
             };
         }
 
@@ -1725,6 +1878,7 @@ function processPayment() {
         state.checkoutOpenedAt = 0;
         saveCart();
         updateCartUI();
+        clearPaymentProof();
         if (voucherInput) { voucherInput.value = ''; handleVoucherCardInput(voucherInput); }
 
         showSuccessModal(newOrder);

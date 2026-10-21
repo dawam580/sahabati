@@ -206,35 +206,43 @@
                             </div>
                         </div>
 
-                        <!-- Multi-Pricing Section -->
-                        <div class="p-3.5 rounded-2xl bg-sky-50/70 border border-sky-200 space-y-2">
-                            <div class="flex items-center justify-between">
-                                <label class="text-xs font-black text-sky-950 flex items-center gap-1.5">
-                                    <i class="fa-solid fa-tags text-sky-600"></i>
-                                    <span>أسعار المنتج حسب طرق الدفع (اختياري):</span>
+                        <!-- Dual Pricing Section (سعران لكل منتج: رصيد ليبيانا vs الخدمات المصرفية) -->
+                        <div class="p-4 rounded-2xl bg-gradient-to-r from-sky-50 to-emerald-50 border-2 border-indigo-200 space-y-3">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 border-b border-indigo-100 pb-2">
+                                <label class="text-xs font-black text-slate-900 flex items-center gap-2">
+                                    <i class="fa-solid fa-tags text-indigo-600"></i>
+                                    <span>تسعير الصنف بطريقتين (رصيد ليبيانا vs الخدمات المصرفية):</span>
                                 </label>
-                                <span class="text-[10px] text-sky-700 font-bold bg-sky-100 px-2 py-0.5 rounded-md">
-                                    إن تُرِكَت فارغة يُعتمد السعر الأساسي أعلاه
+                                <span class="text-[11px] text-emerald-800 font-extrabold bg-emerald-100 px-2.5 py-0.5 rounded-lg self-start sm:self-auto">
+                                    سعر الخدمات المصرفية يكون أرخص للزبون 💳
                                 </span>
                             </div>
-                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                                <div>
-                                    <label class="text-[11px] font-bold text-slate-700 block mb-1">رصيد ليبيانا (LY):</label>
-                                    <input type="number" step="0.5" id="admin-add-price-lypay" placeholder="35.00" class="glass-input w-full rounded-xl py-1.5 px-2 text-xs font-mono font-bold text-slate-800">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div class="p-3 bg-white/95 rounded-2xl border border-sky-300 shadow-sm space-y-1">
+                                    <label class="text-xs font-black text-sky-950 flex items-center gap-1.5">
+                                        <i class="fa-solid fa-mobile-screen-button text-sky-600"></i>
+                                        <span>1. سعر رصيد ليبيانا (د.ل):</span>
+                                    </label>
+                                    <div class="relative">
+                                        <input type="number" step="0.5" id="admin-add-price-lypay" placeholder="مثال: 35.00" class="glass-input w-full rounded-xl py-2 px-3 text-xs font-mono font-black text-sky-950 border border-sky-200">
+                                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">د.ل</span>
+                                    </div>
+                                    <span class="text-[10px] text-slate-500 font-medium block">يتحول بالرصيد عبر كود *122*...# المباشر</span>
                                 </div>
-                                <div>
-                                    <label class="text-[11px] font-bold text-slate-700 block mb-1">التحويل المصرفي:</label>
-                                    <input type="number" step="0.5" id="admin-add-price-bank" placeholder="30.00" class="glass-input w-full rounded-xl py-1.5 px-2 text-xs font-mono font-bold text-slate-800">
-                                </div>
-                                <div>
-                                    <label class="text-[11px] font-bold text-slate-700 block mb-1">OnePay:</label>
-                                    <input type="number" step="0.5" id="admin-add-price-onepay" placeholder="31.00" class="glass-input w-full rounded-xl py-1.5 px-2 text-xs font-mono font-bold text-slate-800">
-                                </div>
-                                <div>
-                                    <label class="text-[11px] font-bold text-slate-700 block mb-1">كروت ليبيانا (13 رقم):</label>
-                                    <input type="number" step="0.5" id="admin-add-price-telecom" placeholder="35.00" class="glass-input w-full rounded-xl py-1.5 px-2 text-xs font-mono font-bold text-slate-800">
+                                <div class="p-3 bg-white/95 rounded-2xl border border-emerald-300 shadow-sm space-y-1">
+                                    <label class="text-xs font-black text-emerald-950 flex items-center gap-1.5">
+                                        <i class="fa-solid fa-building-columns text-emerald-600"></i>
+                                        <span>2. سعر الخدمات المصرفية OnePay / المصرفي (د.ل):</span>
+                                    </label>
+                                    <div class="relative">
+                                        <input type="number" step="0.5" id="admin-add-price-onepay" placeholder="مثال: 30.00" class="glass-input w-full rounded-xl py-2 px-3 text-xs font-mono font-black text-emerald-950 border border-emerald-200">
+                                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">د.ل</span>
+                                    </div>
+                                    <span class="text-[10px] text-emerald-700 font-bold block">سعر OnePay والمصرفي (أرخص من الرصيد)</span>
                                 </div>
                             </div>
+                            <input type="hidden" id="admin-add-price-bank">
+                            <input type="hidden" id="admin-add-price-telecom">
                         </div>
                         <div id="admin-new-game-group" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                             <div>
@@ -765,6 +773,31 @@
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Modal: معاينة سكرين شوت إيصال الدفع للطلب -->
+    <div id="admin-proof-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-50 hidden items-center justify-center p-3 sm:p-4">
+        <div class="glass-panel bg-white/95 rounded-3xl max-w-xl w-full p-5 sm:p-6 shadow-2xl border-2 border-teal-400 animate-toastIn relative space-y-3 text-center">
+            <button onclick="closeModal('admin-proof-modal')" class="absolute top-4 left-4 text-slate-400 hover:text-slate-600 w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-sm transition" title="إغلاق">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="flex items-center justify-center gap-2 text-teal-800 font-black text-base border-b border-slate-100 pb-2">
+                <i class="fa-solid fa-receipt text-teal-600 text-lg"></i>
+                <span id="admin-proof-title">إيصال الدفع للطلب</span>
+            </div>
+            <div class="max-h-[70vh] overflow-auto rounded-2xl border border-slate-200 bg-slate-900/5 p-2 flex items-center justify-center">
+                <img id="admin-proof-image" src="" alt="إيصال الدفع" class="max-w-full max-h-[65vh] rounded-xl object-contain shadow-md">
+            </div>
+            <div class="flex items-center justify-between gap-2 pt-1 text-xs">
+                <a id="admin-proof-link" href="#" target="_blank" class="px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold transition flex items-center gap-1.5 shadow-sm">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                    <span>فتح الصورة بالحجم الكامل</span>
+                </a>
+                <button type="button" onclick="closeModal('admin-proof-modal')" class="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold transition">
+                    إغلاق
+                </button>
+            </div>
         </div>
     </div>
 

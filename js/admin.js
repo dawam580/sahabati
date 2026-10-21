@@ -409,10 +409,19 @@ function renderAdminPanel(){
                     adminRowActions('game', g.id, '', !!g.hidden)+
                 '</div>'+
                 '<div class="adm-rows">'+
-                    g.packages.map(p=>'<div class="adm-row'+(p.hidden?' is-hidden':'')+'">'+
-                        '<div class="adm-row-name"><span>'+escapeHtml(p.nameAr)+'</span><small>مبيع: '+(sales.idx['p:'+p.id]||0)+(p.hidden?' · مخفي':'')+'</small></div>'+
-                        '<div class="adm-row-tools">'+adminPriceInput('pkg', g.id, p.id, p.priceLYD)+adminRowActions('pkg', g.id, p.id, !!p.hidden)+'</div>'+
-                    '</div>').join('')+
+                    g.packages.map(p=>{
+                        let dualPricesHtml = '';
+                        if(p.prices && (p.prices.lypay || p.prices.onepay)){
+                            dualPricesHtml = '<div class="flex items-center gap-1.5 mt-0.5 flex-wrap">' +
+                                (p.prices.lypay ? '<span class="text-[10px] font-bold text-sky-800 bg-sky-100/90 px-1.5 py-0.5 rounded border border-sky-200">📱 ليبيانا: ' + formatPrice(p.prices.lypay) + '</span>' : '') +
+                                (p.prices.onepay ? '<span class="text-[10px] font-black text-emerald-800 bg-emerald-100/90 px-1.5 py-0.5 rounded border border-emerald-200">💳 OnePay: ' + formatPrice(p.prices.onepay) + '</span>' : '') +
+                            '</div>';
+                        }
+                        return '<div class="adm-row'+(p.hidden?' is-hidden':'')+'">'+
+                            '<div class="adm-row-name"><span>'+escapeHtml(p.nameAr)+'</span><small>مبيع: '+(sales.idx['p:'+p.id]||0)+(p.hidden?' · مخفي':'')+'</small>' + dualPricesHtml + '</div>'+
+                            '<div class="adm-row-tools">'+adminPriceInput('pkg', g.id, p.id, p.priceLYD)+adminRowActions('pkg', g.id, p.id, !!p.hidden)+'</div>'+
+                        '</div>';
+                    }).join('')+
                 '</div>'+
             '</details>';
         }).join('');
@@ -420,10 +429,19 @@ function renderAdminPanel(){
     }
     if(cards.length){
         html+='<div class="adm-group-title"><i class="fa-solid fa-gift"></i> الاشتراكات والبطاقات ('+cards.length+')</div><div class="adm-rows">';
-        html+=cards.map(c=>'<div class="adm-row'+(c.hidden?' is-hidden':'')+'">'+
-            '<div class="adm-row-name"><span>'+escapeHtml(c.nameAr)+'</span><small>'+escapeHtml(ADMIN_SECTION_NAMES[c.category]||c.category||'')+' · مبيع: '+(sales.idx['c:'+c.id]||0)+(c.hidden?' · مخفي':'')+'</small></div>'+
-            '<div class="adm-row-tools">'+adminMethodSelect('card', c.id, c.deliveryMethod||'code', ADMIN_CARD_METHODS)+adminPriceInput('card', c.id, '', c.priceLYD)+adminRowActions('card', c.id, '', !!c.hidden)+'</div>'+
-        '</div>').join('')+'</div>';
+        html+=cards.map(c=>{
+            let dualPricesHtml = '';
+            if(c.prices && (c.prices.lypay || c.prices.onepay)){
+                dualPricesHtml = '<div class="flex items-center gap-1.5 mt-0.5 flex-wrap">' +
+                    (c.prices.lypay ? '<span class="text-[10px] font-bold text-sky-800 bg-sky-100/90 px-1.5 py-0.5 rounded border border-sky-200">📱 ليبيانا: ' + formatPrice(c.prices.lypay) + '</span>' : '') +
+                    (c.prices.onepay ? '<span class="text-[10px] font-black text-emerald-800 bg-emerald-100/90 px-1.5 py-0.5 rounded border border-emerald-200">💳 OnePay: ' + formatPrice(c.prices.onepay) + '</span>' : '') +
+                '</div>';
+            }
+            return '<div class="adm-row'+(c.hidden?' is-hidden':'')+'">'+
+                '<div class="adm-row-name"><span>'+escapeHtml(c.nameAr)+'</span><small>'+escapeHtml(ADMIN_SECTION_NAMES[c.category]||c.category||'')+' · مبيع: '+(sales.idx['c:'+c.id]||0)+(c.hidden?' · مخفي':'')+'</small>' + dualPricesHtml + '</div>'+
+                '<div class="adm-row-tools">'+adminMethodSelect('card', c.id, c.deliveryMethod||'code', ADMIN_CARD_METHODS)+adminPriceInput('card', c.id, '', c.priceLYD)+adminRowActions('card', c.id, '', !!c.hidden)+'</div>'+
+            '</div>';
+        }).join('')+'</div>';
     }
     box.innerHTML=html||'<p class="adm-note">لا توجد منتجات مطابقة للبحث.</p>';
 }
@@ -509,14 +527,18 @@ function handleAdminAddItem(e){
     const instructions=document.getElementById('admin-item-instructions').value.trim();
     const image=(document.getElementById('admin-item-image')?.value||'').trim();
 
-    if(!name || isNaN(price) || price<=0){
+    const pLy = parseFloat(document.getElementById('admin-add-price-lypay')?.value);
+    const pOne = parseFloat(document.getElementById('admin-add-price-onepay')?.value);
+    let pBank = parseFloat(document.getElementById('admin-add-price-bank')?.value);
+    if (!isFinite(pBank) && isFinite(pOne)) pBank = pOne;
+    let pTel = parseFloat(document.getElementById('admin-add-price-telecom')?.value);
+    if (!isFinite(pTel) && isFinite(pLy)) pTel = pLy;
+
+    const finalBasePrice = (isFinite(price) && price > 0) ? price : (isFinite(pOne) && pOne > 0 ? pOne : (isFinite(pLy) && pLy > 0 ? pLy : 0));
+
+    if(!name || finalBasePrice <= 0){
         showToast('يرجى إدخال اسم صحيح وسعر بالدينار الليبي','fa-triangle-exclamation'); return;
     }
-
-    const pLy = parseFloat(document.getElementById('admin-add-price-lypay')?.value);
-    const pBank = parseFloat(document.getElementById('admin-add-price-bank')?.value);
-    const pOne = parseFloat(document.getElementById('admin-add-price-onepay')?.value);
-    const pTel = parseFloat(document.getElementById('admin-add-price-telecom')?.value);
 
     const initialPrices = {};
     if (isFinite(pLy) && pLy > 0) initialPrices.lypay = Math.round(pLy * 100) / 100;
@@ -1065,6 +1087,26 @@ function renderOrdersAdminTable() {
                     '<button onclick="copyToClipboard(\'' + escapeAttr(order.cardCode13) + '\')" class="px-2.5 py-1 rounded bg-amber-200 hover:bg-amber-300 text-amber-900 text-xs font-bold">نسخ</button>' +
                 '</div>' : '') +
 
+            (order.proofImage ? 
+                '<div class="p-3 rounded-2xl bg-teal-50 border border-teal-300 flex items-center justify-between gap-3 shadow-sm">' +
+                    '<div class="flex items-center gap-2.5">' +
+                        '<img src="' + escapeAttr(order.proofImage) + '" alt="إيصال الدفع" class="w-12 h-12 object-cover rounded-xl border border-teal-400 shadow-sm cursor-pointer hover:opacity-90" onclick="viewAdminProofImage(\'' + escapeAttr(order.id) + '\')">' +
+                        '<div>' +
+                            '<span class="font-black text-xs text-teal-950 flex items-center gap-1.5"><i class="fa-solid fa-receipt text-teal-600"></i> سكرين شوت إيصال الدفع</span>' +
+                            '<span class="text-[10px] text-teal-700 font-medium">أرفقه الزبون لتأكيد عملية التحويل</span>' +
+                        '</div>' +
+                    '</div>' +
+                    '<button type="button" onclick="viewAdminProofImage(\'' + escapeAttr(order.id) + '\')" class="px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs shadow-sm transition flex items-center gap-1.5">' +
+                        '<i class="fa-solid fa-eye"></i> <span>معاينة الإيصال</span>' +
+                    '</button>' +
+                '</div>' : '') +
+
+            (order.transferRef ? 
+                '<div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-800 flex items-center justify-between">' +
+                    '<span>🔖 مرجع/هاتف التحويل: <strong class="font-mono text-slate-900 select-all">' + escapeHtml(order.transferRef) + '</strong></span>' +
+                    '<button onclick="copyToClipboard(\'' + escapeAttr(order.transferRef) + '\')" class="px-2 py-0.5 rounded bg-slate-200 hover:bg-slate-300 text-slate-700 text-[11px] font-bold">نسخ</button>' +
+                '</div>' : '') +
+
             '<div class="space-y-1.5 text-xs">' +
                 '<span class="font-bold text-slate-600 block text-[11px]">المنتجات والأكواد المخصصة:</span>' +
                 (order.vouchers || []).map(v => {
@@ -1237,5 +1279,30 @@ function adminCancelOrder(orderId) {
         showToast('تم إلغاء الطلب بنجاح', 'fa-ban');
     } catch(err) {
         showToast(err.message, 'fa-triangle-exclamation');
+    }
+}
+
+function viewAdminProofImage(orderId) {
+    let order = null;
+    if (typeof SahabatiDB !== 'undefined' && SahabatiDB.getAllOrders) {
+        order = SahabatiDB.getAllOrders().find(o => o.id === orderId);
+    }
+    if (!order && adminState.orders) {
+        order = adminState.orders.find(o => o.id === orderId);
+    }
+    if (!order || !order.proofImage) {
+        showToast('لا توجد صورة إيصال لهذا الطلب', 'fa-triangle-exclamation');
+        return;
+    }
+    const modal = document.getElementById('admin-proof-modal');
+    const img = document.getElementById('admin-proof-image');
+    const title = document.getElementById('admin-proof-title');
+    const link = document.getElementById('admin-proof-link');
+    if (img) img.src = order.proofImage;
+    if (title) title.textContent = 'إيصال الدفع للطلب #' + order.id + ' (' + (order.customerName || 'عميل سحّابتي') + ')';
+    if (link) link.href = order.proofImage;
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
     }
 }
