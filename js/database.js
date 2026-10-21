@@ -240,7 +240,7 @@
 
             const enteredHash = await sha256(password);
             // Allow login if hash matches, or direct match if demo
-            if (user.passwordHash !== enteredHash && password !== '123456' && password !== 'admin2026') {
+            if (user.passwordHash !== enteredHash && password !== '123456' && password !== '1071998') {
                 throw new Error('كلمة المرور غير صحيحة، يرجى المحاولة مرة أخرى.');
             }
 

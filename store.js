@@ -136,8 +136,8 @@ function createStore() {
         } catch (e) {}
     }
     if (!adminPin) {
-        adminPin = 'admin2026';
-        console.warn('[sahabati] ADMIN_PIN غير مضبوط في متغيرات البيئة. سيتم استخدام كلمة السر الافتراضية: admin2026');
+        adminPin = '1071998';
+        console.warn('[sahabati] ADMIN_PIN غير مضبوط في متغيرات البيئة. سيتم استخدام كلمة السر الافتراضية: 1071998');
     } else {
         console.log('[sahabati] ADMIN_PIN مضبوط (' + adminPin.length + ' أحرف).');
     }
