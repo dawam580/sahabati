@@ -1286,6 +1286,16 @@ function selectPaymentMethod(method) {
         return false;
     }
     state.paymentMethod = method;
+    if (Array.isArray(state.cart) && typeof FraudGuard !== 'undefined') {
+        state.cart.forEach(item => {
+            const p = FraudGuard.getProductPrice(item, APP_DATA, method);
+            if (p !== null && isFinite(p) && p > 0) {
+                item.priceLYD = p;
+                item.unitPrice = p;
+            }
+        });
+        saveCart();
+    }
     sanitizeStoredCart(method);
     renderCheckout();
     return true;

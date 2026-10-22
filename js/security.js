@@ -1,4 +1,4 @@
-// ==========================================
+﻿// ==========================================
 // Sahabati Fraud Guard (قيود منع الغش والاحتيال)
 // يعمل في المتصفح قبل إرسال الطلب. لا يغني عن التحقق اليدوي من الدفع في لوحة الإدارة،
 // لكنه يمنع التلاعب الشائع: تعديل الأسعار في السلة، الطلبات المتكررة، الكروت المكررة أو الوهمية.
@@ -124,7 +124,7 @@
     // ---------- سلامة السلة والأسعار (دعم تعدد الأسعار حسب طريقة الدفع) ----------
     // السلة محفوظة في localStorage ويمكن لأي شخص تعديل سعرها من المتصفح،
     // لذلك نعيد تسعير كل عنصر من الكتالوج الرسمي حسب طريقة الدفع ونحذف أي عنصر غير معروف أو طريقة غير مسموحة.
-    function getProductPrice(item, data, paymentMethod) {
+function getProductPrice(item, data, paymentMethod) {
         if (!item || !data) return null;
         let target = null;
         if (item.type === 'game') {
@@ -133,19 +133,36 @@
             target = (game.packages || []).find(p => p.id === item.packageId);
         } else if (item.type === 'giftcard') {
             target = (data.giftCards || []).find(c => c.id === item.cardId);
+        } else if (item.prices !== undefined || item.priceLYD !== undefined) {
+            // كائن مباشر مُمرر من واجهة العرض (pkg أو card)
+            target = item;
         }
         if (!target || target.hidden) return null;
 
-        // إذا تم تحديد طريقة الدفع وكان للمنتج أسعار مخصصة
+        // دعم السعر المخصص لطريقة الدفع المحددة
         if (paymentMethod && target.prices && typeof target.prices === 'object') {
+            // فحص الطريقة المطلوبة أولاً
             if (target.prices[paymentMethod] !== undefined && target.prices[paymentMethod] !== null) {
                 const num = Number(target.prices[paymentMethod]);
-                return (isFinite(num) && num > 0) ? num : null; // صفر أو قيمة غير موجبة = طريقة معطلة
+                return (isFinite(num) && num > 0) ? num : null;
             }
-            // إذا كانت هناك طرق دفع محددة في prices، وهذه الطريقة لم تُذكر = غير متاحة لهذا المنتج
+
+            // التوافق الذكي بين وسائل الدفع الشقيقة إذا لم يكن هناك سعر صريح مسجل باسمها
+            let sibling = null;
+            if (paymentMethod === 'telecom_libyana') sibling = 'lypay';
+            else if (paymentMethod === 'lypay') sibling = 'telecom_libyana';
+            else if (paymentMethod === 'onepay') sibling = 'bank_transfer';
+            else if (paymentMethod === 'bank_transfer') sibling = 'onepay';
+
+            if (sibling && target.prices[sibling] !== undefined && target.prices[sibling] !== null) {
+                const num = Number(target.prices[sibling]);
+                if (isFinite(num) && num > 0) return num;
+            }
+
+            // إذا وُضعت أسعار لطرق أخرى فقط في prices، فإن الطريقة غير المحددة = غير مدعومة لهذا الصنف
             const configured = Object.keys(target.prices).filter(k => target.prices[k] !== undefined && target.prices[k] !== null && Number(target.prices[k]) > 0);
             if (configured.length > 0) {
-                return null; // طريقة الدفع غير مدعومة لهذا المنتج
+                return null; // الصنف غير مدعوم بهذه الطريقة
             }
         }
         const defaultPrice = Number(target.priceLYD);
