@@ -607,3 +607,10 @@ body { background: transparent !important; }
 .manual-badge i { font-size: 9px; }
 /* cards already carry a badge at the top: put «يدوي» in the free bottom corner */
 .gc-art .manual-badge, .mini-card-art .manual-badge { top: auto; left: auto; bottom: 6px; right: 6px; }
+
+/* Enhanced Authentic Brand Visuals */
+.b-disney .brand-svg { color: #ffffff; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.45)); width: 55%; max-width: 68px; }
+.b-shahid .brand-svg { color: #34d399; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.35)); width: 50%; max-width: 62px; }
+.b-chatgpt .brand-svg { color: #2dd4bf; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.35)); width: 48%; max-width: 58px; }
+.b-netflix .brand-svg { color: #e50914; filter: drop-shadow(0 3px 12px rgba(229,9,20,0.4)); width: 50%; max-width: 64px; }
+.b-apple .brand-svg { color: #ffffff; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.3)); width: 44%; max-width: 54px; }

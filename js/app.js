@@ -1086,10 +1086,10 @@ function sanitizeStoredCart(method) {
 }
 
 const ALL_PAYMENT_METHODS = [
-    { id: 'lypay', nameAr: 'رصيد LY', sub: 'حتى 50 د.ل', icon: 'fa-solid fa-mobile-screen-button', color: 'sky' },
-    { id: 'bank_transfer', nameAr: 'تحويل مصرفي', sub: 'التجارة والتنمية', icon: 'fa-solid fa-building-columns', color: 'blue' },
-    { id: 'onepay', nameAr: 'OnePay', sub: 'دفع إلكتروني فوري', icon: 'fa-solid fa-money-bill-transfer', color: 'emerald' },
-    { id: 'telecom_libyana', nameAr: 'كروت ليبيانا', sub: 'كود 13 رقماً', icon: 'fa-solid fa-sim-card', color: 'amber' }
+    { id: 'telecom_libyana', nameAr: 'رصيد ليبيانا', sub: 'تحويل رصيد مباشر *123*', icon: 'fa-solid fa-sim-card', color: 'amber' },
+    { id: 'onepay', nameAr: 'خدمات المصرف (OnePay)', sub: 'ون باي ومصرف التجارة', icon: 'fa-solid fa-money-bill-transfer', color: 'emerald' },
+    { id: 'lypay', nameAr: 'رصيد ليبيانا (LY Pay)', sub: 'تحويل رصيد حتى 50 د.ل', icon: 'fa-solid fa-mobile-screen-button', color: 'sky' },
+    { id: 'bank_transfer', nameAr: 'تحويل مصرفي مباشر', sub: 'حساب مصرف التجارة والتنمية', icon: 'fa-solid fa-building-columns', color: 'blue' }
 ];
 
 function paymentMethodLimit(method) {
