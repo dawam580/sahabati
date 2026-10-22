@@ -9,7 +9,7 @@ const DEFAULT_STORE_SETTINGS = {
     whatsappNumber: '218920541749', // رقم واتساب المتجر 0920541749
     telegramChannel: 'A_98_A20',
     telegramUrl: 'https://t.me/A_98_A20',
-    adminPin: 'Sahabati@2026!',           // Admin dashboard access PIN
+    adminPin: 'Atiaieh',           // Admin dashboard access PIN
     storeNameAr: 'سحّابتي',
     storeNameEn: 'Sahabati My Cloud',
     heroImage: '',
@@ -552,4 +552,5 @@ function saveAppData(data) {
 }
 
 let APP_DATA = loadAppData();
+
 

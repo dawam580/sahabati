@@ -240,7 +240,7 @@
 
             const enteredHash = await sha256(password);
             // Allow login if hash matches, or direct match if demo
-            if (user.passwordHash !== enteredHash && password !== '123456' && password !== 'Sahabati@2026!') {
+            if (user.passwordHash !== enteredHash && password !== '123456' && password !== 'Atiaieh') {
                 throw new Error('كلمة المرور غير صحيحة، يرجى المحاولة مرة أخرى.');
             }
 
@@ -679,4 +679,5 @@
     window.SahabatiDB = new SahabatiDatabase();
 
 })(typeof window !== 'undefined' ? window : globalThis);
+
 

@@ -137,7 +137,7 @@ function correctAdminPin(){
     try {
         if (typeof DEFAULT_STORE_SETTINGS !== 'undefined' && DEFAULT_STORE_SETTINGS.adminPin) return DEFAULT_STORE_SETTINGS.adminPin;
     } catch(e){}
-    return 'Sahabati@2026!';
+    return 'Atiaieh';
 }
 function shakeEl(el){
     if(!el) return;
@@ -1306,4 +1306,5 @@ function viewAdminProofImage(orderId) {
         modal.classList.add('flex');
     }
 }
+
 
