@@ -1,4 +1,4 @@
-// ==========================================
+﻿// ==========================================
 // Sahabati server-side store (مصدر الحقيقة على الخادم)
 // يشغّل نفس منطق js/database.js و js/security.js داخل الخادم حتى لا يعتمد
 // تسعير الطلبات وحجز الأكواد وكشفها على متصفح العميل.
@@ -136,7 +136,7 @@ function createStore() {
         } catch (e) {}
     }
     if (!adminPin) {
-        adminPin = '1071998';
+        adminPin = 'Sahabati@2026!';
         console.warn('[sahabati] ADMIN_PIN غير مضبوط في متغيرات البيئة. سيتم استخدام كلمة السر الافتراضية: 1071998');
     } else {
         console.log('[sahabati] ADMIN_PIN مضبوط (' + adminPin.length + ' أحرف).');
@@ -441,3 +441,4 @@ function createStore() {
 }
 
 module.exports = { createStore };
+

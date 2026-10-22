@@ -1,4 +1,4 @@
-// ==========================================
+﻿// ==========================================
 // Sahabati Store Application Engine
 // Platform: سحّابتي (Sahabati)
 // Currency: Libyan Dinar (LYD / د.ل) Strictly
@@ -2957,7 +2957,7 @@ function populateSettingsForm() {
     const bankInput = document.getElementById('setting-bank-info');
 
     if (waInput) waInput.value = s.whatsappNumber || '218920541749';
-    if (pinInput) pinInput.value = s.adminPin || '1071998';
+    if (pinInput) pinInput.value = s.adminPin || 'Sahabati@2026!';
     if (onePayInput) onePayInput.value = s.paymentMethodsInfo?.one_pay?.accountInfo || '';
     if (libyanaInput) libyanaInput.value = s.paymentMethodsInfo?.telecom_libyana?.accountInfo || '';
     if (madarInput) madarInput.value = s.paymentMethodsInfo?.telecom_madar?.accountInfo || '';
@@ -2968,7 +2968,7 @@ function saveStoreSettings() {
     if (!APP_DATA.settings) APP_DATA.settings = DEFAULT_STORE_SETTINGS;
 
     const wa = document.getElementById('setting-whatsapp-number')?.value.trim() || '218920541749';
-    const pin = document.getElementById('setting-admin-pin')?.value.trim() || '1071998';
+    const pin = document.getElementById('setting-admin-pin')?.value.trim() || 'Sahabati@2026!';
 
     APP_DATA.settings.whatsappNumber = wa.replace(/[^0-9]/g, '');
     APP_DATA.settings.adminPin = pin;
@@ -3086,3 +3086,4 @@ function bindEvents() {
         });
     }
 }
+

@@ -1,4 +1,4 @@
-// ==========================================
+﻿// ==========================================
 // Sahabati Admin - Super Admin Engine
 // ==========================================
 
@@ -137,7 +137,7 @@ function correctAdminPin(){
     try {
         if (typeof DEFAULT_STORE_SETTINGS !== 'undefined' && DEFAULT_STORE_SETTINGS.adminPin) return DEFAULT_STORE_SETTINGS.adminPin;
     } catch(e){}
-    return '1071998';
+    return 'Sahabati@2026!';
 }
 function shakeEl(el){
     if(!el) return;
@@ -1306,3 +1306,4 @@ function viewAdminProofImage(orderId) {
         modal.classList.add('flex');
     }
 }
+

@@ -1,4 +1,4 @@
-// ==========================================
+﻿// ==========================================
 // Sahabati Integrated Database Engine (قاعدة بيانات منصة سحّابتي)
 // Platform: سحّابتي (Sahabati My Cloud)
 // Collections: users, voucher_codes, orders, products, settings
@@ -240,7 +240,7 @@
 
             const enteredHash = await sha256(password);
             // Allow login if hash matches, or direct match if demo
-            if (user.passwordHash !== enteredHash && password !== '123456' && password !== '1071998') {
+            if (user.passwordHash !== enteredHash && password !== '123456' && password !== 'Sahabati@2026!') {
                 throw new Error('كلمة المرور غير صحيحة، يرجى المحاولة مرة أخرى.');
             }
 
@@ -679,3 +679,4 @@
     window.SahabatiDB = new SahabatiDatabase();
 
 })(typeof window !== 'undefined' ? window : globalThis);
+
