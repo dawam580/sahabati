@@ -611,23 +611,10 @@ function renderGameDetail(gameId) {
         packagesContainer.innerHTML = game.packages.filter(isAvailable).map(pkg => {
             const tag = pkg.popular ? '<span class="pkg-tag hot">الأكثر طلباً</span>' : (pkg.bestValue ? '<span class="pkg-tag value">أفضل قيمة</span>' : '');
             
-            const lyPrice = (typeof FraudGuard !== 'undefined' && FraudGuard.getProductPrice)
-                ? (FraudGuard.getProductPrice(pkg, APP_DATA, 'telecom_libyana') || pkg.priceLYD)
+            const activePrice = (typeof FraudGuard !== 'undefined' && FraudGuard.getProductPrice)
+                ? (FraudGuard.getProductPrice(pkg, APP_DATA, state.paymentMethod || 'telecom_libyana') || pkg.priceLYD)
                 : pkg.priceLYD;
-            const onepayPrice = (typeof FraudGuard !== 'undefined' && FraudGuard.getProductPrice)
-                ? (FraudGuard.getProductPrice(pkg, APP_DATA, 'onepay') || pkg.priceLYD)
-                : pkg.priceLYD;
-            const activePrice = curCatalogMethod === 'onepay' ? onepayPrice : lyPrice;
-
-            let priceDisplay = '<span class="pkg-price">' + formatPrice(activePrice) + '</span>';
-            if (lyPrice !== onepayPrice) {
-                priceDisplay = '<div class="pkg-price-dual flex flex-col items-center mt-1">' +
-                    '<span class="pkg-price text-sm font-black text-emerald-700">' + formatPrice(activePrice) + '</span>' +
-                    '<span class="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md mt-0.5">' +
-                        (curCatalogMethod === 'onepay' ? '📱 ليبيانا: ' + formatPrice(lyPrice) : '💳 OnePay: ' + formatPrice(onepayPrice)) +
-                    '</span>' +
-                '</div>';
-            }
+            const priceDisplay = '<span class="pkg-price">' + formatPrice(activePrice) + '</span>';
 
             return '<button type="button" class="pkg-tile" data-pkg="' + escapeAttr(pkg.id) + '" onclick="selectPackage(\'' + escapeAttr(game.id) + '\', \'' + escapeAttr(pkg.id) + '\')">' +
                 tag +
@@ -782,21 +769,10 @@ function renderGiftCards(filter) {
     const curCatalogMethod = state.catalogPaymentMethod || state.paymentMethod || 'telecom_libyana';
     container.innerHTML = cards.map(card => {
         const look = brandLook(card.brand);
-        const lyPrice = (typeof FraudGuard !== 'undefined' && FraudGuard.getProductPrice)
-            ? (FraudGuard.getProductPrice(card, APP_DATA, 'telecom_libyana') || card.priceLYD)
+        const activePrice = (typeof FraudGuard !== 'undefined' && FraudGuard.getProductPrice)
+            ? (FraudGuard.getProductPrice(card, APP_DATA, state.paymentMethod || 'telecom_libyana') || card.priceLYD)
             : card.priceLYD;
-        const onepayPrice = (typeof FraudGuard !== 'undefined' && FraudGuard.getProductPrice)
-            ? (FraudGuard.getProductPrice(card, APP_DATA, 'onepay') || card.priceLYD)
-            : card.priceLYD;
-        const activePrice = curCatalogMethod === 'onepay' ? onepayPrice : lyPrice;
-
-        let priceDisplay = '<strong>' + formatPrice(activePrice) + '</strong>';
-        if (lyPrice !== onepayPrice) {
-            priceDisplay = '<div class="flex flex-col">' +
-                '<strong class="text-emerald-700 text-xs sm:text-sm">' + formatPrice(activePrice) + '</strong>' +
-                '<small class="text-[9px] text-slate-500 font-bold">' + (curCatalogMethod === 'onepay' ? '📱 ليبيانا: ' + formatPrice(lyPrice) : '💳 OnePay: ' + formatPrice(onepayPrice)) + '</small>' +
-            '</div>';
-        }
+        const priceDisplay = '<strong>' + formatPrice(activePrice) + '</strong>';
 
         return '<div class="gc-tile">' +
             '<button type="button" class="gc-art ' + look.cls + '" onclick="openCardDetailsModal(\'' + escapeAttr(card.id) + '\')" aria-label="تفاصيل ' + escapeAttr(card.nameAr) + '">' + manualBadge(card) +
