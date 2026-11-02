@@ -1,3 +1,4 @@
+﻿// Deploy timestamp: 2026-11-02 06:49
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -23,7 +24,7 @@ const MIME_TYPES = {
     '.md': 'text/markdown; charset=utf-8'
 };
 
-// ملفات ومجلدات محظورة - لا يجب كشفها للمتصفح
+// ظ…ظ„ظپط§طھ ظˆظ…ط¬ظ„ط¯ط§طھ ظ…ط­ط¸ظˆط±ط© - ظ„ط§ ظٹط¬ط¨ ظƒط´ظپظ‡ط§ ظ„ظ„ظ…طھطµظپط­
 const BLOCKED_PATTERNS = [
     /^\.git(\/|\\|$)/,
     /^node_modules(\/|\\|$)/,
@@ -39,8 +40,8 @@ const WRITE_WINDOW_MS = 60 * 1000;
 const MAX_WRITES_PER_WINDOW = 30;
 const writeLog = new Map();
 
-// عنوان الزائر: لا نثق بترويسة X-Forwarded-For إلا خلف بروكسي معروف (مثل Render)
-// TRUST_PROXY = عدد البروكسيات الموثوقة أمام الخادم (0 افتراضياً)
+// ط¹ظ†ظˆط§ظ† ط§ظ„ط²ط§ط¦ط±: ظ„ط§ ظ†ط«ظ‚ ط¨طھط±ظˆظٹط³ط© X-Forwarded-For ط¥ظ„ط§ ط®ظ„ظپ ط¨ط±ظˆظƒط³ظٹ ظ…ط¹ط±ظˆظپ (ظ…ط«ظ„ Render)
+// TRUST_PROXY = ط¹ط¯ط¯ ط§ظ„ط¨ط±ظˆظƒط³ظٹط§طھ ط§ظ„ظ…ظˆط«ظˆظ‚ط© ط£ظ…ط§ظ… ط§ظ„ط®ط§ط¯ظ… (0 ط§ظپطھط±ط§ط¶ظٹط§ظ‹)
 const TRUST_PROXY = Math.max(0, parseInt(process.env.TRUST_PROXY || '0', 10) || 0);
 function clientIp(req) {
     if (TRUST_PROXY > 0) {
@@ -66,14 +67,14 @@ function isPathBlocked(relativePath) {
 }
 
 const server = http.createServer(async (req, res) => {
-    // Security headers - تطبق على كل الردود
+    // Security headers - طھط·ط¨ظ‚ ط¹ظ„ظ‰ ظƒظ„ ط§ظ„ط±ط¯ظˆط¯
     const securityHeaders = {
         'X-Content-Type-Options': 'nosniff',
         'X-Frame-Options': 'DENY',
-        'X-XSS-Protection': '0', // نعتمد على CSP بدلاً منه
+        'X-XSS-Protection': '0', // ظ†ط¹طھظ…ط¯ ط¹ظ„ظ‰ CSP ط¨ط¯ظ„ط§ظ‹ ظ…ظ†ظ‡
         'Referrer-Policy': 'strict-origin-when-cross-origin',
         'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
-        // CSP يسمح بالـ inline الحالي مع التمهيد لنقله لاحقاً لـ nonce
+        // CSP ظٹط³ظ…ط­ ط¨ط§ظ„ظ€ inline ط§ظ„ط­ط§ظ„ظٹ ظ…ط¹ ط§ظ„طھظ…ظ‡ظٹط¯ ظ„ظ†ظ‚ظ„ظ‡ ظ„ط§ط­ظ‚ط§ظ‹ ظ„ظ€ nonce
         'Content-Security-Policy': "default-src 'self'; script-src 'self' https://cdn.tailwindcss.com https://cdnjs.cloudflare.com https://fonts.googleapis.com 'unsafe-inline'; style-src 'self' https://cdn.tailwindcss.com https://cdnjs.cloudflare.com https://fonts.googleapis.com 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: https:; connect-src 'self' https://wa.me https://api.whatsapp.com",
         'Cross-Origin-Opener-Policy': 'same-origin',
         'Cross-Origin-Resource-Policy': 'same-origin'
@@ -97,7 +98,7 @@ const server = http.createServer(async (req, res) => {
         return;
     }
 
-    // فقط GET/HEAD مسموح للملفات الثابتة
+    // ظپظ‚ط· GET/HEAD ظ…ط³ظ…ظˆط­ ظ„ظ„ظ…ظ„ظپط§طھ ط§ظ„ط«ط§ط¨طھط©
     if (req.method !== 'GET' && req.method !== 'HEAD') {
         res.writeHead(405, { ...securityHeaders, 'Content-Type': 'text/plain; charset=utf-8', 'Allow': 'GET, HEAD, OPTIONS' });
         res.end('405 Method Not Allowed');
@@ -115,7 +116,7 @@ const server = http.createServer(async (req, res) => {
 
     if (reqUrl === '/' || reqUrl === '') reqUrl = '/index.html';
 
-    // منع Path Traversal: حل المسار وتأكد أنه داخل __dirname
+    // ظ…ظ†ط¹ Path Traversal: ط­ظ„ ط§ظ„ظ…ط³ط§ط± ظˆطھط£ظƒط¯ ط£ظ†ظ‡ ط¯ط§ط®ظ„ __dirname
     const safeJoined = path.join(__dirname, reqUrl);
     const resolved = path.resolve(safeJoined);
     const rootResolved = path.resolve(__dirname);
@@ -127,14 +128,14 @@ const server = http.createServer(async (req, res) => {
     }
 
     const relative = path.relative(__dirname, resolved);
-    // حجب الملفات الحساسة
+    // ط­ط¬ط¨ ط§ظ„ظ…ظ„ظپط§طھ ط§ظ„ط­ط³ط§ط³ط©
     if (isPathBlocked(relative)) {
         res.writeHead(404, { ...securityHeaders, 'Content-Type': 'text/plain; charset=utf-8' });
         res.end('404 Not Found');
         return;
     }
 
-    // منع كشف الملفات المخفية (dotfiles)
+    // ظ…ظ†ط¹ ظƒط´ظپ ط§ظ„ظ…ظ„ظپط§طھ ط§ظ„ظ…ط®ظپظٹط© (dotfiles)
     if (relative.split(/[\\/]/).some(part => part.startsWith('.')) || ['server.js', 'store.js'].includes(relative)) {
         res.writeHead(404, { ...securityHeaders, 'Content-Type': 'text/plain; charset=utf-8' });
         res.end('404 Not Found');
@@ -161,8 +162,8 @@ const server = http.createServer(async (req, res) => {
             'X-Content-Type-Options': 'nosniff',
             ...(isAdminPage ? { 'X-Robots-Tag': 'noindex, nofollow, noarchive', 'Cache-Control': 'no-store, no-cache, must-revalidate, private' } : {})
         };
-        // CORS محدود - فقط للصور/الخطوط إذا لزم
-        // لا نفتح Access-Control-Allow-Origin: * لكل شيء
+        // CORS ظ…ط­ط¯ظˆط¯ - ظپظ‚ط· ظ„ظ„طµظˆط±/ط§ظ„ط®ط·ظˆط· ط¥ط°ط§ ظ„ط²ظ…
+        // ظ„ط§ ظ†ظپطھط­ Access-Control-Allow-Origin: * ظ„ظƒظ„ ط´ظٹط،
         if (['.png','.jpg','.jpeg','.webp','.svg','.woff','.woff2'].includes(ext)) {
             headers['Access-Control-Allow-Origin'] = '*';
         }
@@ -207,10 +208,10 @@ async function handleApi(req, res, url, headers) {
             return sendJSON(res, r.status, headers, r.error ? { error: r.error } : { orders: r.orders, missing: r.missing || [] });
         }
         if (url === '/api/admin/login' && m === 'POST') {
-            if (isRateLimited(req)) return sendJSON(res, 429, headers, { error: 'محاولات كثيرة، حاول بعد دقيقة' });
+            if (isRateLimited(req)) return sendJSON(res, 429, headers, { error: 'ظ…ط­ط§ظˆظ„ط§طھ ظƒط«ظٹط±ط©طŒ ط­ط§ظˆظ„ ط¨ط¹ط¯ ط¯ظ‚ظٹظ‚ط©' });
             const body = await readJSONBody(req, 4 * 1024);
             const token = store.adminLogin(body.pin);
-            return token ? sendJSON(res, 200, headers, { token }) : sendJSON(res, 401, headers, { error: 'كلمة السر غير صحيحة' });
+            return token ? sendJSON(res, 200, headers, { token }) : sendJSON(res, 401, headers, { error: 'ظƒظ„ظ…ط© ط§ظ„ط³ط± ط؛ظٹط± طµط­ظٹط­ط©' });
         }
 
         // ----- admin only -----
@@ -242,3 +243,4 @@ async function handleApi(req, res, url, headers) {
 server.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running at http://localhost:${PORT} [secured]`);
 });
+
