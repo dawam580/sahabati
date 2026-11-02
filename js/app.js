@@ -1,4 +1,4 @@
-﻿// ==========================================
+﻿﻿﻿﻿// ==========================================
 // Sahabati Store Application Engine
 // Platform: سحّابتي (Sahabati)
 // Currency: Libyan Dinar (LYD / د.ل) Strictly
@@ -1256,6 +1256,7 @@ function selectPaymentMethod(method) {
         return false;
     }
     state.paymentMethod = method;
+    renderPaymentInstructions(); // تحديث واجهة الدفع فوراً عند تغيير الطريقة
     if (Array.isArray(state.cart) && typeof FraudGuard !== 'undefined') {
         state.cart.forEach(item => {
             const p = FraudGuard.getProductPrice(item, APP_DATA, method);
@@ -1677,35 +1678,60 @@ function renderPaymentInstructions() {
             '</div>' +
         '</div>';
     } else if (method === 'telecom_libyana') {
-        box.innerHTML = '<div class="space-y-3">' +
-            '<div class="flex items-center justify-between border-b border-amber-200 pb-2">' +
-                '<div class="flex items-center gap-2.5">' +
-                    '<div class="w-10 h-10 rounded-xl bg-amber-600 text-white flex items-center justify-center text-xl shadow-md flex-shrink-0">' +
-                        '<i class="fa-solid fa-sim-card"></i>' +
-                    '</div>' +
-                    '<div>' +
-                        '<h4 class="font-black text-amber-950 text-sm">كروت شحن ليبيانا</h4>' +
-                        '<p class="text-xs text-amber-800 font-bold">كرت تعبئة 13 رقماً</p>' +
-                    '</div>' +
-                '</div>' +
-                '<div class="text-left">' +
-                    '<span class="text-[10px] text-amber-700 font-bold block">المبلغ المطلوب بكروت الشحن:</span>' +
-                    '<span class="text-base font-black font-mono text-amber-950">' + formatPrice(totalLYD) + '</span>' +
-                '</div>' +
-            '</div>' +
-            '<div class="p-3 bg-white/95 rounded-2xl border-2 border-amber-200 text-xs text-slate-700">' +
-                '<p class="font-medium">' +
-                    '* اشترِ كرت تعبئة ليبيانا بقيمة طلبك (' + formatPrice(totalLYD) + ')، ثم أدخل كود الكرت المكون من 13 رقماً في الخانة بالأسفل.' +
-                '</p>' +
-            '</div>' +
-        '</div>';
-    }
+        // تحويل رصيد ليبيانا الفوري عبر USSD
+        const batches = buildLibyanaBatches(totalLYD);
+        const isMulti = batches.length > 1;
+        const totalCalls = batches.reduce(function(s, b) { return s + b.times; }, 0);
+
+        var ussdHtml = '<div class="space-y-3">';
+        ussdHtml += '<div class="flex items-center justify-between border-b border-sky-200 pb-2">';
+        ussdHtml +=   '<div class="flex items-center gap-2.5">';
+        ussdHtml +=     '<div class="w-10 h-10 rounded-xl bg-sky-600 text-white flex items-center justify-center text-xl shadow-md flex-shrink-0"><i class="fa-solid fa-sim-card"></i></div>';
+        ussdHtml +=     '<div><h4 class="font-black text-sky-950 text-sm">تحويل رصيد ليبيانا الفوري</h4>';
+        ussdHtml +=     '<p class="text-xs text-sky-800 font-bold">USSD مباشر — اضغط اتصال فوري</p></div>';
+        ussdHtml +=   '</div>';
+        ussdHtml +=   '<div class="text-left"><span class="text-[10px] text-sky-700 font-bold block">المبلغ الكلي:</span>';
+        ussdHtml +=   '<span class="text-base font-black font-mono text-sky-950">' + formatPrice(totalLYD) + '</span></div>';
+        ussdHtml += '</div>';
+
+        if (isMulti) {
+            ussdHtml += '<div class="flex items-center gap-2 text-xs font-black text-amber-900 p-2 bg-amber-50 rounded-xl border border-amber-200">';
+            ussdHtml +=   '<i class="fa-solid fa-bolt text-amber-500"></i>';
+            ussdHtml +=   '<span>المبلغ يُقسَّم على ' + totalCalls + ' مكالمة منفصلة</span>';
+            ussdHtml += '</div>';
+        }
+
+        batches.forEach(function(batch, idx) {
+            var ussd = buildUssdCode(batch.amount);
+            var telLink = buildTelLink(ussd);
+            var stepLabel = isMulti
+                ? ('خطوة ' + (idx + 1) + (batch.times > 1 ? ' — كرِّر ' + batch.times + ' مرات (' + batch.amount + ' × ' + batch.times + ' = ' + (batch.amount * batch.times) + ' LYD)' : ' (' + batch.amount + ' LYD)'))
+                : '';
+
+            ussdHtml += '<div class="rounded-xl border-2 border-sky-300 bg-sky-50 p-3 space-y-2">';
+            if (stepLabel) {
+                ussdHtml += '<p class="text-xs font-black text-sky-900">' + stepLabel + '</p>';
+            }
+            ussdHtml += '<div class="flex flex-col sm:flex-row items-center gap-2">';
+            ussdHtml +=   '<code class="flex-1 w-full text-center py-2.5 px-3 rounded-xl bg-slate-900 text-emerald-400 font-mono font-black text-sm tracking-wider dir-ltr select-all">' + escapeHtml(ussd) + '</code>';
+            ussdHtml +=   '<div class="flex items-center gap-2 w-full sm:w-auto">';
+            ussdHtml +=     '<button type="button" onclick="copyToClipboard(\'' + escapeAttr(ussd) + '\', \'كود التحويل\')" class="flex-1 sm:flex-none px-3 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs shadow-sm transition flex items-center justify-center gap-1.5"><i class="fa-solid fa-copy"></i><span>نسخ</span></button>';
+            ussdHtml +=     '<a href="' + telLink + '" class="flex-1 sm:flex-none px-3 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition flex items-center justify-center gap-1.5"><i class="fa-solid fa-phone"></i><span>اتصال فوري</span></a>';
+            ussdHtml +=   '</div>';
+            ussdHtml += '</div>';
+            ussdHtml += '</div>';
+        });
+
+        ussdHtml += '<p class="text-[11px] text-slate-600 font-medium">';
+        ussdHtml += '* اضغط «اتصال فوري» لينتقل الرصيد مباشرة لرقم المتجر <strong>0920541749</strong>. بعد التحويل، أرفق سكرين شوت لإتمام الطلب.';
+        ussdHtml += '</p></div>';
+
+        box.innerHTML = ussdHtml;
 }
 
 const PAYMENT_METHOD_NAMES = {
-   'bank_transfer': 'تحويل مصرفي (مصرف التجارة والتنمية)',
-    'onepay': 'OnePay (دفع إلكتروني فوري)',
-    'telecom_libyana': 'كروت شحن ليبيانا (13 رقم)'
+    'bank_transfer': 'تحويل مصرفي (مصرف التجارة والتنمية)',
+    'telecom_libyana': 'تحويل رصيد ليبيانا (USSD فوري)'
 };
 
 function orderDateParts(date) {
@@ -1749,7 +1775,7 @@ function submitOrderToServer(input) {
     const customer = getActiveCustomer();
     // نفتح النافذة الآن (مع ضغطة الزر) حتى لا يحجبها المتصفح، ثم نوجهها لواتساب بعد الحفظ
     let waWindow = null;
-    try { waWindow = window.open('', '_blank'); } catch (e) {}
+    // نفتح واتساب بعد نجاح الطلب مباشرة (بدون نافذة فارغة)
     const payload = {
         items: input.cartItems.map(i => ({
             type: i.type, gameId: i.gameId, packageId: i.packageId, cardId: i.cardId, quantity: i.quantity,
@@ -1768,7 +1794,7 @@ function submitOrderToServer(input) {
     return apiFetch('/api/orders', { method: 'POST', body: JSON.stringify(payload) }).then(order => {
         order.userId = customer ? customer.id : (order.userId || 'guest');
         order.waUrl = buildOrderWhatsAppUrl(order, input);
-        if (waWindow) { try { waWindow.location.href = order.waUrl; } catch (e) {} }
+        try { window.open(order.waUrl, '_blank', 'noopener'); } catch (e) { window.location.href = order.waUrl; }
 
         state.orders.unshift(order);
         saveLocalOrders();
