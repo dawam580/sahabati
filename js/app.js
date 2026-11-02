@@ -1,4 +1,4 @@
-﻿// ==========================================
+// ==========================================
 // Sahabati Store Application Engine
 // Platform: سحّابتي (Sahabati)
 // Currency: Libyan Dinar (LYD / د.ل) Strictly
@@ -1086,14 +1086,12 @@ function sanitizeStoredCart(method) {
 }
 
 const ALL_PAYMENT_METHODS = [
-    { id: 'telecom_libyana', nameAr: 'رصيد ليبيانا', sub: 'تحويل رصيد مباشر *123*', icon: 'fa-solid fa-sim-card', color: 'amber' },
-    { id: 'onepay', nameAr: 'خدمات المصرف (OnePay)', sub: 'ون باي ومصرف التجارة', icon: 'fa-solid fa-money-bill-transfer', color: 'emerald' },
-    { id: 'lypay', nameAr: 'رصيد ليبيانا (LY Pay)', sub: 'تحويل رصيد حتى 50 د.ل', icon: 'fa-solid fa-mobile-screen-button', color: 'sky' },
-    { id: 'bank_transfer', nameAr: 'تحويل مصرفي مباشر', sub: 'حساب مصرف التجارة والتنمية', icon: 'fa-solid fa-building-columns', color: 'blue' }
+    { id: 'telecom_libyana', nameAr: 'رصيد ليبيانا', sub: 'تحويل رصيد ليبيانا مباشر', icon: 'fa-solid fa-sim-card', color: 'amber' },
+    { id: 'bank_transfer', nameAr: 'خدمات مصرفية', sub: 'OnePay / مصرف التجارة والتنمية', icon: 'fa-solid fa-building-columns', color: 'blue' }
 ];
 
 function paymentMethodLimit(method) {
-    return method === 'lypay' ? guardLimit('maxLibyanaTransferLYD', 50) : Infinity;
+    return Infinity; // No transfer limits - both methods (telecom_libyana, bank_transfer) are unrestricted
 }
 
 function cartTotalForMethod(method) {
@@ -1156,14 +1154,7 @@ function renderPaymentOptions() {
             '</div>' +
         '</div>';
     }).join('');
-
-    const lyTotal = cartTotalForMethod('lypay');
-    if (paymentLimitProblem('lypay', lyTotal)) {
-        grid.innerHTML += '<div class="sm:col-span-2 lg:col-span-4 p-3 rounded-2xl bg-sky-50 border border-sky-200 text-sky-900 text-[11px] font-bold flex items-center gap-2">' +
-            '<i class="fa-solid fa-circle-info text-sky-700"></i>' +
-            '<span>تحويل رصيد ليبيانا متاح حتى 50.00 د.ل فقط. إجمالي طلبك الحالي ' + formatPrice(lyTotal) + '، اختر طريقة دفع أخرى للمتابعة.</span>' +
-        '</div>';
-    }
+
 }
 
 function renderOrderSummary() {
@@ -1362,31 +1353,28 @@ function updatePaymentInputContainers() {
     const bankTransferInput = document.getElementById('bank-transfer-ref-input');
     const bankTransferHint = document.getElementById('bank-transfer-hint-text');
     const proofContainer = document.getElementById('payment-proof-container');
+    const proofLabel = document.getElementById('payment-proof-label-text');
 
     if (method === 'telecom_libyana') {
-        if (voucherContainer) voucherContainer.classList.remove('hidden');
+        // رصيد ليبيانا: إخفاء حقل المصرف، إظهار السكرين شوت فقط
+        if (voucherContainer) voucherContainer.classList.add('hidden');
         if (bankTransferContainer) bankTransferContainer.classList.add('hidden');
-        if (proofContainer) proofContainer.classList.add('hidden');
-        if (voucherInput) handleVoucherCardInput(voucherInput);
-    } else {
+        if (proofContainer) proofContainer.classList.remove('hidden');
+        if (proofLabel) proofLabel.textContent = 'أرفق سكرين شوت إيصال تحويل رصيد ليبيانا:';
+    } else if (method === 'bank_transfer') {
+        // خدمات مصرفية: إظهار حقل المصرف + السكرين شوت
         if (voucherContainer) voucherContainer.classList.add('hidden');
         if (bankTransferContainer) bankTransferContainer.classList.remove('hidden');
-        if (method === 'lypay') {
-            if (proofContainer) proofContainer.classList.add('hidden');
-            if (bankTransferLabel) bankTransferLabel.innerHTML = '<i class="fa-solid fa-receipt text-sky-700 text-sm"></i> <span>رقم الهاتف المحول منه رصيد ليبيانا (أو كود العملية):</span>';
-            if (bankTransferInput) bankTransferInput.placeholder = 'مثال: 092XXXXXXX أو رقم رسالة التحويل';
-            if (bankTransferHint) bankTransferHint.textContent = 'قم بالتحويل عبر الكود المباشر أعلاه لرقم المتجر 0920541749، واكتب رقم هاتفك لتأكيد الشحن فوراً.';
-        } else if (method === 'onepay') {
-            if (proofContainer) proofContainer.classList.remove('hidden');
-            if (bankTransferLabel) bankTransferLabel.innerHTML = '<i class="fa-solid fa-money-bill-transfer text-emerald-700 text-sm"></i> <span>رقم حساب/هاتف المحوّل في OnePay (أو رقم العملية):</span>';
-            if (bankTransferInput) bankTransferInput.placeholder = 'مثال: رقم حسابك في ون باي أو كود الإشعار';
-            if (bankTransferHint) bankTransferHint.textContent = 'قم بالتحويل عبر تطبيق OnePay لحساب المتجر 0920541749 (عطيه موسى عطيه مفتاح)، وأرفق صورة السكرين بالأسفل لتأكيد الشحن فوراً.';
-        } else if (method === 'bank_transfer') {
-            if (proofContainer) proofContainer.classList.remove('hidden');
-            if (bankTransferLabel) bankTransferLabel.innerHTML = '<i class="fa-solid fa-building-columns text-blue-700 text-sm"></i> <span>اسم المحوّل / رقم الحساب / إشعار التحويل (مصرف التجارة والتنمية):</span>';
-            if (bankTransferInput) bankTransferInput.placeholder = 'مثال: اسمك في المصرف أو رقم الحساب أو كود الإشعار';
-            if (bankTransferHint) bankTransferHint.textContent = 'تم التحويل لحساب المتجر 0041609456001 (عطيه موسى عطيه مفتاح). اكتب بياناتك وأرفق الوصل لتأكيد الشحن.';
-        }
+        if (proofContainer) proofContainer.classList.remove('hidden');
+        if (proofLabel) proofLabel.textContent = 'أرفق سكرين شوت إيصال التحويل المصرفي (OnePay / LyPay):';
+        if (bankTransferLabel) bankTransferLabel.innerHTML = '<i class="fa-solid fa-building-columns text-blue-700 text-sm"></i> <span>اسم المحوّل أو رقم حساب الإرسال أو كود العملية:</span>';
+        if (bankTransferInput) bankTransferInput.placeholder = 'مثال: اسمك في المصرف، رقم حسابك، أو كود إشعار التحويل';
+        if (bankTransferHint) bankTransferHint.textContent = 'حوّل لحساب المتجر عبر OnePay (0920541749) أو LyPay - مصرف التجارة والتنمية (0041609456001)، ثم أرفق صورة الإيصال أدناه لتأكيد طلبك فوراً.';
+    } else {
+        // fallback
+        if (voucherContainer) voucherContainer.classList.add('hidden');
+        if (bankTransferContainer) bankTransferContainer.classList.remove('hidden');
+        if (proofContainer) proofContainer.classList.remove('hidden');
     }
 }
 

@@ -137,7 +137,7 @@ function createStore() {
     }
     if (!adminPin) {
         adminPin = 'Atiaieh';
-        console.warn('[sahabati] ADMIN_PIN غير مضبوط في متغيرات البيئة. سيتم استخدام كلمة السر الافتراضية: 1071998');
+        console.warn('[sahabati] ADMIN_PIN not set in environment. Using default fallback value.');
     } else {
         console.log('[sahabati] ADMIN_PIN مضبوط (' + adminPin.length + ' أحرف).');
     }
