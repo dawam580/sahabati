@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿// ==========================================
+﻿﻿﻿﻿﻿﻿// ==========================================
 // Sahabati Store Application Engine
 // Platform: سحّابتي (Sahabati)
 // Currency: Libyan Dinar (LYD / د.ل) Strictly
@@ -1977,7 +1977,7 @@ function showSuccessModal(order) {
     let cardBanner = '';
     if (order.paymentMethod === 'telecom_libyana' && order.cardCode13) {
         cardBanner = '<div class="p-2.5 rounded-xl bg-amber-100 text-amber-950 text-xs font-bold mb-3 font-mono flex items-center justify-between border border-amber-300">' +
-            '<span>🎟️ كود كارت التعبئة (13 رقم):</span>' +
+            '<span>🎟️ كودات USSD المُستخدمة:</span>' +
             '<span class="font-black text-amber-900 tracking-wider">' + escapeHtml(order.cardCode13) + '</span>' +
         '</div>';
     } else if (order.paymentMethod === 'telecom_libyana') {
@@ -2602,7 +2602,7 @@ function renderOrders() {
                         '<span>🏦 دفع إلكتروني فوري (OnePay):</span><span class="font-mono text-teal-800 font-black">' + escapeHtml(order.transferRef || 'حساب 0920541749') + '</span></div>';
                 } else if (order.cardCode13) {
                     paymentBox = '<div class="p-2.5 bg-amber-50 rounded-xl text-amber-950 text-xs font-mono font-bold mb-2.5 border border-amber-200 flex items-center justify-between">' +
-                        '<span>🎟️ كود كارت التعبئة (13 رقم):</span><span class="tracking-wider">' + escapeHtml(order.cardCode13) + '</span></div>';
+                        '<span>🎟️ كودات USSD المُستخدمة:</span><span class="tracking-wider">' + escapeHtml(order.cardCode13) + '</span></div>';
                 }
 
                 return '<div class="glass-card rounded-3xl p-4 sm:p-5 border border-white/80 shadow-md transition hover:shadow-lg">' +
