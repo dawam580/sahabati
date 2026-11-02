@@ -5,20 +5,7 @@
 // Compatible with: شاشات - هواتف - جميع الأجهزة
 // ==========================================
 
-let state = {
-    lang: 'ar',
-    currency: 'LYD',
-    currentTab: 'home',
-    selectedGame: 'pubg',
-    verifiedPlayerId: '',
-    verifiedPlayerName: '',
-    selectedPackage: null,
-    cart: (typeof localStorage !== 'undefined' ? JSON.parse(localStorage.getItem('sahabati_cart') || '[]') : []),
-    orders: (typeof localStorage !== 'undefined' ? JSON.parse(localStorage.getItem('sahabati_orders') || '[]') : []),
-    appliedPromo: null,
-    paymentMethod: 'lypay',
-    isAdminAuth: (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('sahabati_admin_auth') === 'true' : false)
-};
+let state = {\r\n    'telecom_libyana': 'رصيد ليبيانا (تحويل فوري USSD)',\r\n    'bank_transfer': 'خدمات مصرفية (OnePay / مصرف التجارة)'\r\n};
 
 // Cart limits come from js/security.js; fall back to safe defaults if it failed to load
 function guardLimit(name, fallback) {
@@ -603,9 +590,9 @@ function renderGameDetail(gameId) {
         note.classList.toggle('hidden', needsId);
     }
 
-    const curCatalogMethod = state.catalogPaymentMethod || state.paymentMethod || 'lypay';
-    const lyBtn = document.getElementById('cat-toggle-lypay');
-    const onepayBtn = document.getElementById('cat-toggle-onepay');
+    const curCatalogMethod = state.catalogPaymentMethod || state.paymentMethod || 'telecom_libyana';
+    const lyBtn = null;
+    const onepayBtn = null;
     if (lyBtn && onepayBtn) {
         if (curCatalogMethod === 'onepay') {
             onepayBtn.className = 'px-3 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-1.5 bg-emerald-600 text-white shadow-sm';
@@ -625,7 +612,7 @@ function renderGameDetail(gameId) {
             const tag = pkg.popular ? '<span class="pkg-tag hot">الأكثر طلباً</span>' : (pkg.bestValue ? '<span class="pkg-tag value">أفضل قيمة</span>' : '');
             
             const lyPrice = (typeof FraudGuard !== 'undefined' && FraudGuard.getProductPrice)
-                ? (FraudGuard.getProductPrice(pkg, APP_DATA, 'lypay') || pkg.priceLYD)
+                ? (FraudGuard.getProductPrice(pkg, APP_DATA, 'telecom_libyana') || pkg.priceLYD)
                 : pkg.priceLYD;
             const onepayPrice = (typeof FraudGuard !== 'undefined' && FraudGuard.getProductPrice)
                 ? (FraudGuard.getProductPrice(pkg, APP_DATA, 'onepay') || pkg.priceLYD)
@@ -693,7 +680,7 @@ function updateBuyBar() {
     const pkg = game && game.packages.find(p => p.id === sel.pkgId);
     bar.classList.toggle('hidden', !pkg || state.currentTab !== 'games');
     if (!pkg) return;
-    const curCatalogMethod = state.catalogPaymentMethod || state.paymentMethod || 'lypay';
+    const curCatalogMethod = state.catalogPaymentMethod || state.paymentMethod || 'telecom_libyana';
     const pkgPrice = (typeof FraudGuard !== 'undefined' && FraudGuard.getProductPrice)
         ? (FraudGuard.getProductPrice(pkg, APP_DATA, curCatalogMethod) || pkg.priceLYD)
         : pkg.priceLYD;
@@ -792,11 +779,11 @@ function renderGiftCards(filter) {
         cards = cards.filter(c => c.category === filter);
     }
 
-    const curCatalogMethod = state.catalogPaymentMethod || state.paymentMethod || 'lypay';
+    const curCatalogMethod = state.catalogPaymentMethod || state.paymentMethod || 'telecom_libyana';
     container.innerHTML = cards.map(card => {
         const look = brandLook(card.brand);
         const lyPrice = (typeof FraudGuard !== 'undefined' && FraudGuard.getProductPrice)
-            ? (FraudGuard.getProductPrice(card, APP_DATA, 'lypay') || card.priceLYD)
+            ? (FraudGuard.getProductPrice(card, APP_DATA, 'telecom_libyana') || card.priceLYD)
             : card.priceLYD;
         const onepayPrice = (typeof FraudGuard !== 'undefined' && FraudGuard.getProductPrice)
             ? (FraudGuard.getProductPrice(card, APP_DATA, 'onepay') || card.priceLYD)
@@ -907,10 +894,8 @@ function openCardDetailsModal(cardId) {
             : '');
 
     const methodsList = [
-        { id: 'lypay', name: 'رصيد LY', icon: 'fa-solid fa-mobile-screen-button' },
-        { id: 'bank_transfer', name: 'تحويل مصرفي', icon: 'fa-solid fa-building-columns' },
-        { id: 'onepay', name: 'OnePay', icon: 'fa-solid fa-money-bill-transfer' },
-        { id: 'telecom_libyana', name: 'كروت ليبيانا', icon: 'fa-solid fa-sim-card' }
+        { id: 'telecom_libyana', name: 'رصيد ليبيانا', icon: 'fa-solid fa-sim-card' },
+        { id: 'bank_transfer', name: 'خدمات مصرفية', icon: 'fa-solid fa-building-columns' }
     ];
 
     const availableForCard = methodsList.filter(m => {
@@ -922,7 +907,7 @@ function openCardDetailsModal(cardId) {
 
     const activeMethod = (state.paymentMethod && availableForCard.some(m => m.id === state.paymentMethod))
         ? state.paymentMethod
-        : (availableForCard[0]?.id || 'lypay');
+        : (availableForCard[0]?.id || 'telecom_libyana');
 
     const currentPrice = (typeof FraudGuard !== 'undefined' && FraudGuard.getProductPrice)
         ? (FraudGuard.getProductPrice(card, APP_DATA, activeMethod) || card.priceLYD)
@@ -1522,12 +1507,12 @@ function renderPaymentInstructions() {
     const box = document.getElementById('payment-instructions-box');
     if (!box) return;
 
-    const method = state.paymentMethod || 'lypay';
+    const method = state.paymentMethod || 'telecom_libyana';
     const totalLYD = (typeof FraudGuard !== 'undefined' && FraudGuard.cartTotal)
         ? FraudGuard.cartTotal(state.cart)
         : state.cart.reduce((s, i) => s + i.priceLYD * i.quantity, 0);
 
-    if (method === 'lypay') {
+    if (false) { // removed lypay
         const amountThousands = Math.round(totalLYD * 1000);
         const ussdCode = '*122*920541749*' + amountThousands + '#';
         const dialUrl = 'tel:*122*920541749*' + amountThousands + '%23';
@@ -1728,8 +1713,7 @@ function renderPaymentInstructions() {
 }
 
 const PAYMENT_METHOD_NAMES = {
-    'lypay': 'رصيد ليبيانا (LibyanaLY)',
-    'bank_transfer': 'تحويل مصرفي (مصرف التجارة والتنمية)',
+   'bank_transfer': 'تحويل مصرفي (مصرف التجارة والتنمية)',
     'onepay': 'OnePay (دفع إلكتروني فوري)',
     'telecom_libyana': 'كروت شحن ليبيانا (13 رقم)'
 };
@@ -1860,7 +1844,7 @@ function processPayment() {
     if (totalLYD > maxOrder) {
         return checkoutFail('الحد الأقصى للطلب الواحد ' + formatPrice(maxOrder) + '. للطلبات الأكبر تواصل معنا عبر واتساب');
     }
-    const limitProblem = paymentLimitProblem(state.paymentMethod || 'lypay', totalLYD);
+    const limitProblem = paymentLimitProblem(state.paymentMethod || 'telecom_libyana', totalLYD);
     if (limitProblem) return checkoutFail(limitProblem);
 
     // 4) Libyan phone number (required)
@@ -1977,7 +1961,7 @@ function showSuccessModal(order) {
             '<span>🎟️ كود كارت التعبئة (13 رقم):</span>' +
             '<span class="font-black text-amber-900 tracking-wider">' + escapeHtml(order.cardCode13) + '</span>' +
         '</div>';
-    } else if (order.paymentMethod === 'lypay') {
+    } else if (order.paymentMethod === 'telecom_libyana') {
         cardBanner = '<div class="p-3 rounded-2xl bg-sky-50 border border-sky-300 text-sky-950 text-xs mb-3 space-y-1 text-right">' +
             '<div class="flex items-center justify-between font-bold">' +
                 '<span>🏦 وسيلة الدفع: LibyanaLY (دفع إلكتروني فوري)</span>' +
@@ -2582,7 +2566,7 @@ function renderOrders() {
                 }
 
                 let paymentBadge = '';
-                if (order.paymentMethod === 'lypay') {
+                if (order.paymentMethod === 'telecom_libyana') {
                     paymentBadge = '<span class="px-2 py-0.5 rounded-lg text-[10px] font-black bg-sky-100 text-sky-800 border border-sky-300">🏦 LibyanaLY</span>';
                 } else if (order.paymentMethod === 'onepay') {
                     paymentBadge = '<span class="px-2 py-0.5 rounded-lg text-[10px] font-black bg-teal-100 text-teal-800 border border-teal-300">🏦 OnePay</span>';
@@ -2591,7 +2575,7 @@ function renderOrders() {
                 }
 
                 let paymentBox = '';
-                if (order.paymentMethod === 'lypay') {
+                if (order.paymentMethod === 'telecom_libyana') {
                     paymentBox = '<div class="p-2.5 bg-sky-50 rounded-xl text-sky-950 text-xs font-bold mb-2.5 border border-sky-200 flex items-center justify-between">' +
                         '<span>🏦 دفع إلكتروني فوري (LibyanaLY):</span><span class="font-mono text-sky-800 font-black">' + escapeHtml(order.transferRef || 'حساب 0920541749') + '</span></div>';
                 } else if (order.paymentMethod === 'onepay') {
