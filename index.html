@@ -392,35 +392,36 @@
                                 <input type="text" id="checkout-website-field" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" class="hp-field">
                             </div>
 
-                            <!-- Dedicated 13-Digit Voucher Card Code Input (Applies to Libyana) -->
-                            <div id="voucher-card-field-container" class="space-y-1.5 p-3.5 rounded-2xl bg-amber-50/90 border-2 border-amber-300 transition-all">
+                            <!-- تحويل ليبيانا الفوري عبر الكود المباشر USSD -->
+                            <div id="libyana-ussd-container" class="hidden space-y-3 p-4 rounded-2xl bg-amber-50/95 border-2 border-amber-400 transition-all shadow-sm">
                                 <div class="flex items-center justify-between">
-                                    <label for="voucher-card-input" class="text-xs font-black text-amber-950 flex items-center gap-1.5">
-                                        <i class="fa-solid fa-barcode text-amber-700 text-sm"></i>
-                                        <span id="voucher-card-label-text">كود كارت التعبئة (13 رقم بالضبط):</span>
-                                    </label>
-                                    <span id="voucher-digits-counter" class="text-[11px] font-mono font-black text-amber-900 bg-amber-200/90 px-2.5 py-0.5 rounded-md">
-                                        0 / 13 رقم
-                                    </span>
+                                    <div class="flex items-center gap-2">
+                                        <i class="fa-solid fa-mobile-screen-button text-amber-600 text-base"></i>
+                                        <span class="text-sm font-black text-amber-950">تحويل رصيد ليبيانا الفوري</span>
+                                    </div>
+                                    <span class="text-[10px] font-black text-amber-800 bg-amber-200 px-2 py-0.5 rounded-md border border-amber-300">*1# مباشر</span>
                                 </div>
-                                
-                                <div class="relative">
-                                    <input type="tel" id="voucher-card-input" maxlength="13" inputmode="numeric" placeholder="أدخل 13 رقماً من كرت التعبئة (مثال: 1234567890123)"
-                                           oninput="handleVoucherCardInput(this)"
-                                           class="glass-input w-full rounded-xl py-2.5 px-3 text-sm font-mono font-black text-center tracking-widest text-slate-900 border-2 border-amber-300 focus:border-amber-600 shadow-inner">
-                                    <span id="voucher-status-icon" class="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">
-                                        <i class="fa-solid fa-sim-card"></i>
-                                    </span>
+                                <p class="text-[11px] text-amber-900 font-bold bg-amber-100 rounded-xl p-2.5 border border-amber-200">
+                                    <i class="fa-solid fa-circle-info text-amber-600 ml-1"></i>
+                                    اتصل بالكود التالي من هاتفك ليبيانا مباشرةً لإتمام الدفع. المبلغ يتغير تلقائياً حسب سلتك.
+                                </p>
+                                <div id="libyana-ussd-steps" class="space-y-2">
                                 </div>
-
-                                <!-- Live Validation Message -->
-                                <div id="voucher-validation-feedback" class="text-[11px] font-bold text-amber-900 flex items-center gap-1.5 pt-0.5">
-                                    <i class="fa-solid fa-circle-info text-amber-700"></i>
-                                    <span>يجب أن يتكون كود كارت التعبئة من 13 رقم بالضبط.</span>
+                                <div class="flex items-center gap-2 p-2.5 rounded-xl bg-white border border-amber-200 text-xs">
+                                    <i class="fa-solid fa-phone text-amber-600"></i>
+                                    <div>
+                                        <span class="font-bold text-slate-600">رقم استقبال التحويل: </span>
+                                        <span class="font-black text-slate-900 font-mono">0920541749</span>
+                                        <span class="text-slate-500 font-medium"> (عطيه موسى عطيه مفتاح)</span>
+                                    </div>
+                                </div>
+                                <div class="flex items-start gap-2 p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-[11px] text-emerald-900 font-bold">
+                                    <i class="fa-solid fa-check-circle text-emerald-600 mt-0.5 flex-shrink-0"></i>
+                                    <span>بعد الاتصال الناجح ستصلك رسالة تأكيد من ليبيانا — ارفق سكرين شوت الرسالة أدناه لتأكيد طلبك فوراً.</span>
                                 </div>
                             </div>
 
-                            <!-- Dedicated Banking Transfer Reference Input (Applies to LyPay & OnePay) -->
+<!-- Dedicated Banking Transfer Reference Input (Applies to LyPay & OnePay) -->
                             <div id="bank-transfer-field-container" class="hidden space-y-1.5 p-3.5 rounded-2xl bg-sky-50/90 border-2 border-sky-300 transition-all">
                                 <div class="flex items-center justify-between">
                                     <label for="bank-transfer-ref-input" id="bank-transfer-label-text" class="text-xs font-black text-sky-950 flex items-center gap-1.5">

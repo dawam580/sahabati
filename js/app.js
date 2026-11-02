@@ -1155,7 +1155,11 @@ function renderPaymentOptions() {
         '</div>';
     }).join('');
 
-}
+
+    // تحديث كود USSD ديناميكياً عند تغيّر السلة
+    if ((state.paymentMethod || 'telecom_libyana') === 'telecom_libyana') {
+        renderLibyanaUssdSteps();
+    }}
 
 function renderOrderSummary() {
     const summaryBox = document.getElementById('checkout-order-summary-box');
@@ -1344,39 +1348,125 @@ async function selectPaymentProof(input) {
     }
 }
 
-function updatePaymentInputContainers() {
-    const method = state.paymentMethod || 'lypay';
-    const voucherContainer = document.getElementById('voucher-card-field-container');
-    const voucherInput = document.getElementById('voucher-card-input');
-    const bankTransferContainer = document.getElementById('bank-transfer-field-container');
-    const bankTransferLabel = document.getElementById('bank-transfer-label-text');
-    const bankTransferInput = document.getElementById('bank-transfer-ref-input');
-    const bankTransferHint = document.getElementById('bank-transfer-hint-text');
-    const proofContainer = document.getElementById('payment-proof-container');
-    const proofLabel = document.getElementById('payment-proof-label-text');
 
-    if (method === 'telecom_libyana') {
-        // رصيد ليبيانا: إخفاء حقل المصرف، إظهار السكرين شوت فقط
-        if (voucherContainer) voucherContainer.classList.add('hidden');
-        if (bankTransferContainer) bankTransferContainer.classList.add('hidden');
-        if (proofContainer) proofContainer.classList.remove('hidden');
-        if (proofLabel) proofLabel.textContent = 'أرفق سكرين شوت إيصال تحويل رصيد ليبيانا:';
-    } else if (method === 'bank_transfer') {
-        // خدمات مصرفية: إظهار حقل المصرف + السكرين شوت
-        if (voucherContainer) voucherContainer.classList.add('hidden');
-        if (bankTransferContainer) bankTransferContainer.classList.remove('hidden');
-        if (proofContainer) proofContainer.classList.remove('hidden');
-        if (proofLabel) proofLabel.textContent = 'أرفق سكرين شوت إيصال التحويل المصرفي (OnePay / LyPay):';
-        if (bankTransferLabel) bankTransferLabel.innerHTML = '<i class="fa-solid fa-building-columns text-blue-700 text-sm"></i> <span>اسم المحوّل أو رقم حساب الإرسال أو كود العملية:</span>';
-        if (bankTransferInput) bankTransferInput.placeholder = 'مثال: اسمك في المصرف، رقم حسابك، أو كود إشعار التحويل';
-        if (bankTransferHint) bankTransferHint.textContent = 'حوّل لحساب المتجر عبر OnePay (0920541749) أو LyPay - مصرف التجارة والتنمية (0041609456001)، ثم أرفق صورة الإيصال أدناه لتأكيد طلبك فوراً.';
-    } else {
-        // fallback
-        if (voucherContainer) voucherContainer.classList.add('hidden');
-        if (bankTransferContainer) bankTransferContainer.classList.remove('hidden');
-        if (proofContainer) proofContainer.classList.remove('hidden');
+// ============================================================
+// دالة بناء خطوات USSD ليبيانا الفورية
+// الحد الأقصى لكل تحويل ليبيانا = 50,000 (50 دينار = 50000 درهم؟)
+// المبلغ في LYD كأرقام عشرية (مثلاً 45.00 دينار)
+// كود USSD: #1*AMOUNT_IN_DIRHAMS*920541749*122#
+// ملاحظة: ليبيانا تستخدم الدرهم (1 دينار = 1000 درهم)
+// => 45 دينار = 45000 درهم
+// الحد = 50 دينار = 50000 درهم
+// ============================================================
+const LIBYANA_RECIPIENT   = '920541749';  // بدون صفر أمامي - رقم المتجر
+const LIBYANA_PIN         = '122';        // آخر 3 أرقام من رقم المتجر (حسب صيغة الكود)
+const LIBYANA_MAX_LYD     = 50;          // الحد الأقصى لكل تحويل واحد (دينار)
+const LIBYANA_MAX_DIRHAMS = 50000;       // نفسه بالدرهم
+
+function buildLibyanaUssdSteps(totalLYD) {
+    // نحوّل المجموع إلى درهم (أعداد صحيحة)
+    const totalDirhams = Math.round(totalLYD * 1000);
+    const steps = [];
+
+    let remaining = totalDirhams;
+    while (remaining > 0) {
+        const chunk = Math.min(remaining, LIBYANA_MAX_DIRHAMS);
+        steps.push(chunk);
+        remaining -= chunk;
+    }
+    return steps;
+}
+
+function renderLibyanaUssdSteps() {
+    const stepsEl = document.getElementById('libyana-ussd-steps');
+    if (!stepsEl) return;
+
+    const total = cartTotalForMethod('telecom_libyana');
+    if (total <= 0) {
+        stepsEl.innerHTML = '<p class="text-xs text-slate-500">أضف منتجات للسلة لمعرفة كود التحويل.</p>';
+        return;
+    }
+
+    const steps = buildLibyanaUssdSteps(total);
+    const multiStep = steps.length > 1;
+
+    stepsEl.innerHTML = steps.map(function(dirhams, i) {
+        const ussd = '#1*' + dirhams + '*' + LIBYANA_RECIPIENT + '*' + LIBYANA_PIN + '#';
+        const stepNum = i + 1;
+        const dinar = (dirhams / 1000).toFixed(3);
+        return (
+            '<div class="rounded-xl border-2 ' + (multiStep ? 'border-amber-400 bg-amber-50' : 'border-amber-500 bg-white') + ' p-3 space-y-2">' +
+                (multiStep ? '<div class="flex items-center gap-1.5 text-[11px] font-black text-amber-800"><i class="fa-solid fa-arrow-right text-amber-600"></i> اتصال رقم ' + stepNum + ' من ' + steps.length + ' <span class="font-mono bg-amber-200 px-1.5 py-0.5 rounded-md">' + dinar + ' دينار</span></div>' : '') +
+                '<div class="flex flex-col gap-1">' +
+                    '<span class="text-[10px] font-bold text-slate-500">اضغط زر الاتصال وأدخل الكود:</span>' +
+                    '<div class="flex items-center gap-2 bg-slate-900 rounded-xl px-3 py-2.5 select-all">' +
+                        '<i class="fa-solid fa-phone text-emerald-400 text-sm flex-shrink-0"></i>' +
+                        '<code class="text-emerald-300 font-mono font-black text-sm tracking-wider break-all" id="ussd-code-' + i + '">' + ussd + '</code>' +
+                        '<button type="button" onclick="copyUssdCode(\'' + ussd + '\', ' + i + ')" class="mr-auto flex-shrink-0 text-[10px] font-bold text-slate-300 hover:text-white bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded-lg transition">' +
+                            '<i class="fa-regular fa-copy ml-1"></i>نسخ' +
+                        '</button>' +
+                    '</div>' +
+                '</div>' +
+            '</div>'
+        );
+    }).join('');
+
+    // Add total summary if multi-step
+    if (multiStep) {
+        stepsEl.innerHTML += (
+            '<div class="p-2.5 rounded-xl bg-amber-100 border border-amber-300 text-[11px] font-bold text-amber-900 flex items-center gap-2">' +
+                '<i class="fa-solid fa-calculator text-amber-700"></i>' +
+                '<span>إجمالي التحويل: ' + steps.length + ' مكالمات · المجموع ' + formatPrice(total) + '</span>' +
+            '</div>'
+        );
     }
 }
+
+function copyUssdCode(code, idx) {
+    navigator.clipboard.writeText(code).then(function() {
+        showToast('تم نسخ الكود: ' + code, 'fa-check');
+    }).catch(function() {
+        showToast('انسخ الكود يدوياً: ' + code, 'fa-info');
+    });
+}
+
+function updatePaymentInputContainers() {
+    const method = state.paymentMethod || 'telecom_libyana';
+    const ussdContainer       = document.getElementById('libyana-ussd-container');
+    const bankTransferContainer = document.getElementById('bank-transfer-field-container');
+    const bankTransferLabel   = document.getElementById('bank-transfer-label-text');
+    const bankTransferInput   = document.getElementById('bank-transfer-ref-input');
+    const bankTransferHint    = document.getElementById('bank-transfer-hint-text');
+    const proofContainer      = document.getElementById('payment-proof-container');
+    const proofLabel          = document.getElementById('payment-proof-label-text');
+
+    if (method === 'telecom_libyana') {
+        // ليبيانا: إظهار USSD + السكرين شوت، إخفاء مصرفي
+        if (ussdContainer)         ussdContainer.classList.remove('hidden');
+        if (bankTransferContainer) bankTransferContainer.classList.add('hidden');
+        if (proofContainer)        proofContainer.classList.remove('hidden');
+        if (proofLabel)            proofLabel.textContent = 'أرفق سكرين شوت رسالة تأكيد التحويل من ليبيانا:';
+        // بناء خطوات USSD ديناميكياً
+        renderLibyanaUssdSteps();
+
+    } else if (method === 'bank_transfer') {
+        // خدمات مصرفية: إظهار حقل المصرف + السكرين شوت، إخفاء USSD
+        if (ussdContainer)         ussdContainer.classList.add('hidden');
+        if (bankTransferContainer) bankTransferContainer.classList.remove('hidden');
+        if (proofContainer)        proofContainer.classList.remove('hidden');
+        if (proofLabel)            proofLabel.textContent = 'أرفق سكرين شوت إيصال التحويل المصرفي (OnePay / LyPay):';
+        if (bankTransferLabel)     bankTransferLabel.innerHTML = '<i class="fa-solid fa-building-columns text-blue-700 text-sm"></i> <span>اسم المحوّل أو رقم حساب الإرسال أو كود العملية:</span>';
+        if (bankTransferInput)     bankTransferInput.placeholder = 'مثال: اسمك في المصرف، رقم حسابك، أو كود إشعار التحويل';
+        if (bankTransferHint)      bankTransferHint.textContent = 'حوّل لحساب المتجر عبر OnePay (0920541749) أو LyPay - مصرف التجارة والتنمية (0041609456001)، ثم أرفق صورة الإيصال أدناه لتأكيد طلبك فوراً.';
+
+    } else {
+        // fallback
+        if (ussdContainer)         ussdContainer.classList.add('hidden');
+        if (bankTransferContainer) bankTransferContainer.classList.remove('hidden');
+        if (proofContainer)        proofContainer.classList.remove('hidden');
+    }
+}
+
 
 // 13-Digit Scratch Card Code Live Input Handler & Strict Rule
 function handleVoucherCardInput(inputEl) {
@@ -1797,16 +1887,10 @@ function processPayment() {
     const cleanCardDigits = (voucherInput ? voucherInput.value : '').replace(/[^0-9]/g, '');
     const transferRef = FraudGuard.cleanText(bankTransferInput ? bankTransferInput.value : '', 80);
 
-    if (method === 'telecom_libyana') {
-        const lockMs = FraudGuard.voucherLockRemainingMs();
-        if (lockMs > 0) {
-            return checkoutFail('تم إيقاف إدخال الكروت مؤقتاً بسبب محاولات خاطئة متكررة. حاول بعد ' + Math.ceil(lockMs / 60000) + ' دقيقة');
-        }
-        const cardProblem = FraudGuard.voucherProblem(cleanCardDigits);
-        if (cardProblem) {
-            FraudGuard.recordVoucherFailure();
-            if (voucherInput) handleVoucherCardInput(voucherInput);
-            return checkoutFail('⚠️ ' + cardProblem, 'voucher-card-input');
+    if (method === 'telecom_libyana' || method === 'bank_transfer') {
+        // التحقق من وجود سكرين شوت إيصال الدفع
+        if (!paymentProof) {
+            return checkoutFail('يرجى إرفاق سكرين شوت إيصال التحويل لإتمام الطلب.', 'payment-proof-container');
         }
     }
 
@@ -1824,7 +1908,7 @@ function processPayment() {
     if (state.serverMode) {
         return submitOrderToServer({
             cartItems: cartItems, method: method, customerPhone: customerPhone, customerName: customerName,
-            customerNotes: customerNotes, cardCode13: method === 'telecom_libyana' ? cleanCardDigits : '',
+            customerNotes: customerNotes, cardCode13: method === 'telecom_libyana' ? buildLibyanaUssdSteps(totalLYD).map(function(d){return '#1*'+d+'*920541749*122#';}).join(' | ') : '',
             transferRef: transferRef, honeypot: honeypot ? honeypot.value : '', voucherInput: voucherInput
         }).finally(restoreButton);
     }
@@ -1833,7 +1917,7 @@ function processPayment() {
         const orderId = FraudGuard.secureOrderId();
         const orderDate = new Date().toLocaleString('ar-LY', { dateStyle: 'medium', timeStyle: 'short' });
         const totalAmountText = formatPrice(totalLYD);
-        const cardCode13 = method === 'telecom_libyana' ? cleanCardDigits : '';
+        const cardCode13 = method === 'telecom_libyana' ? buildLibyanaUssdSteps(totalLYD).map(function(d){return '#1*'+d+'*920541749*122#';}).join(' | ') : '';
 
         const proofData = (paymentProof && paymentProof.data) ? paymentProof.data : undefined;
         let newOrder;
