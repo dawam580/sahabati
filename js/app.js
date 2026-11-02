@@ -1,4 +1,4 @@
-﻿﻿﻿﻿// ==========================================
+﻿﻿﻿﻿﻿// ==========================================
 // Sahabati Store Application Engine
 // Platform: سحّابتي (Sahabati)
 // Currency: Libyan Dinar (LYD / د.ل) Strictly
@@ -1755,16 +1755,19 @@ function buildOrderWhatsAppUrl(order, extra) {
     const proofText = hasProof ? '\n📎 تم إرفاق سكرين شوت إيصال الدفع في الموقع' : '';
 
     const waMessage =
-'طلب جديد | سحّابتي ☁️\n' +
-(extra && extra.customerName ? 'العميل: ' + extra.customerName + '\n' : '') +
-'الهاتف: ' + (order.customerPhone || (extra && extra.customerPhone) || '') + '\n' +
+'🛒 طلب جديد | سحّابتي ☁️\n' +
+'━━━━━━━━━━━━━━━━\n' +
+(extra && extra.customerName ? '👤 العميل: ' + extra.customerName + '\n' : '') +
+'📱 الهاتف: ' + (order.customerPhone || (extra && extra.customerPhone) || '') + '\n' +
+'━━━━━━━━━━━━━━━━\n' +
 itemsText + '\n' +
-'وسيلة الدفع: ' + (PAYMENT_METHOD_NAMES[order.paymentMethod] || order.paymentMethod || '') +
-(order.transferRef ? '\nمرجع/هاتف التحويل: ' + order.transferRef : '') +
-(order.cardCode13 ? '\nكود كارت ليبيانا: ' + order.cardCode13 : '') +
+'━━━━━━━━━━━━━━━━\n' +
+'💳 وسيلة الدفع: ' + (PAYMENT_METHOD_NAMES[order.paymentMethod] || order.paymentMethod || '') +
+(order.transferRef ? '\n🔖 مرجع التحويل: ' + order.transferRef : '') +
+(order.cardCode13 ? '\n📲 كودات USSD:\n' + order.cardCode13 : '') +
 proofText + '\n' +
-'التاريخ: ' + parts.date + '\n' +
-'الوقت: ' + parts.time;
+'━━━━━━━━━━━━━━━━\n' +
+'📅 ' + parts.date + ' | 🕐 ' + parts.time;
 
     const cleanPhone = (APP_DATA.settings?.whatsappNumber || '218920541749').replace(/[^0-9]/g, '');
     return 'https://api.whatsapp.com/send?phone=' + cleanPhone + '&text=' + encodeURIComponent(waMessage);
