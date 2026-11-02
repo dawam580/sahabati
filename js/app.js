@@ -1358,77 +1358,126 @@ async function selectPaymentProof(input) {
 // => 45 دينار = 45000 درهم
 // الحد = 50 دينار = 50000 درهم
 // ============================================================
-const LIBYANA_RECIPIENT   = '920541749';  // بدون صفر أمامي - رقم المتجر
-const LIBYANA_PIN         = '122';        // آخر 3 أرقام من رقم المتجر (حسب صيغة الكود)
-const LIBYANA_MAX_LYD     = 50;          // الحد الأقصى لكل تحويل واحد (دينار)
-const LIBYANA_MAX_DIRHAMS = 50000;       // نفسه بالدرهم
 
-function buildLibyanaUssdSteps(totalLYD) {
-    // نحوّل المجموع إلى درهم (أعداد صحيحة)
-    const totalDirhams = Math.round(totalLYD * 1000);
-    const steps = [];
+// ============================================================
+// Libyana USSD Instant Transfer  — v2
+// الصيغة الصحيحة: *122*0920541749*AMOUNT_IN_DIRHAMS*1#
+// الحد الأقصى: 50 دينار (50000 درهم) لكل تحويل واحد
+// التقسيم الذكي: دُفعات (50×N + الباقي) مثل wal-store.com
+// ============================================================
+const LIBYANA_PHONE   = '0920541749';   // رقم المتجر بالصيغة الكاملة
+const LIBYANA_MAX_LYD = 50;             // الحد الأقصى لكل تحويل (دينار)
 
-    let remaining = totalDirhams;
-    while (remaining > 0) {
-        const chunk = Math.min(remaining, LIBYANA_MAX_DIRHAMS);
-        steps.push(chunk);
-        remaining -= chunk;
-    }
-    return steps;
+/** بناء دُفعات التحويل: [{amount_LYD, times}]  */
+function buildLibyanaBatches(totalLYD) {
+    const total = Math.round(parseFloat(totalLYD) || 0);
+    if (total <= 0) return [];
+    if (total <= LIBYANA_MAX_LYD) return [{ amount: total, times: 1 }];
+    const fullBatches = Math.floor(total / LIBYANA_MAX_LYD);
+    const remainder   = total % LIBYANA_MAX_LYD;
+    const batches = [{ amount: LIBYANA_MAX_LYD, times: fullBatches }];
+    if (remainder > 0) batches.push({ amount: remainder, times: 1 });
+    return batches;
 }
 
+/** بناء كود USSD بالصيغة الصحيحة لليبيانا */
+function buildUssdCode(amountLYD) {
+    const dirhams = Math.round(amountLYD * 1000);
+    return '*122*' + LIBYANA_PHONE + '*' + dirhams + '*1#';
+}
+
+/** بناء رابط tel: للاتصال المباشر (# يصبح %23 في URI) */
+function buildTelLink(ussdCode) {
+    return 'tel:' + ussdCode.replace(/#/g, '%23');
+}
+
+/** رسم خطوات USSD في واجهة الزبون */
 function renderLibyanaUssdSteps() {
     const stepsEl = document.getElementById('libyana-ussd-steps');
     if (!stepsEl) return;
 
     const total = cartTotalForMethod('telecom_libyana');
     if (total <= 0) {
-        stepsEl.innerHTML = '<p class="text-xs text-slate-500">أضف منتجات للسلة لمعرفة كود التحويل.</p>';
+        stepsEl.innerHTML =
+            '<p class="text-xs text-amber-700 font-bold text-center py-2">أضف منتجاً للسلة لظهور كود التحويل.</p>';
         return;
     }
 
-    const steps = buildLibyanaUssdSteps(total);
-    const multiStep = steps.length > 1;
+    const batches      = buildLibyanaBatches(total);
+    const isMulti      = batches.length > 1;
+    const totalCalls   = batches.reduce(function(s, b) { return s + b.times; }, 0);
 
-    stepsEl.innerHTML = steps.map(function(dirhams, i) {
-        const ussd = '#1*' + dirhams + '*' + LIBYANA_RECIPIENT + '*' + LIBYANA_PIN + '#';
-        const stepNum = i + 1;
-        const dinar = (dirhams / 1000).toFixed(3);
-        return (
-            '<div class="rounded-xl border-2 ' + (multiStep ? 'border-amber-400 bg-amber-50' : 'border-amber-500 bg-white') + ' p-3 space-y-2">' +
-                (multiStep ? '<div class="flex items-center gap-1.5 text-[11px] font-black text-amber-800"><i class="fa-solid fa-arrow-right text-amber-600"></i> اتصال رقم ' + stepNum + ' من ' + steps.length + ' <span class="font-mono bg-amber-200 px-1.5 py-0.5 rounded-md">' + dinar + ' دينار</span></div>' : '') +
-                '<div class="flex flex-col gap-1">' +
-                    '<span class="text-[10px] font-bold text-slate-500">اضغط زر الاتصال وأدخل الكود:</span>' +
-                    '<div class="flex items-center gap-2 bg-slate-900 rounded-xl px-3 py-2.5 select-all">' +
-                        '<i class="fa-solid fa-phone text-emerald-400 text-sm flex-shrink-0"></i>' +
-                        '<code class="text-emerald-300 font-mono font-black text-sm tracking-wider break-all" id="ussd-code-' + i + '">' + ussd + '</code>' +
-                        '<button type="button" onclick="copyUssdCode(\'' + ussd + '\', ' + i + ')" class="mr-auto flex-shrink-0 text-[10px] font-bold text-slate-300 hover:text-white bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded-lg transition">' +
-                            '<i class="fa-regular fa-copy ml-1"></i>نسخ' +
-                        '</button>' +
-                    '</div>' +
-                '</div>' +
-            '</div>'
-        );
-    }).join('');
+    var html = '';
 
-    // Add total summary if multi-step
-    if (multiStep) {
-        stepsEl.innerHTML += (
-            '<div class="p-2.5 rounded-xl bg-amber-100 border border-amber-300 text-[11px] font-bold text-amber-900 flex items-center gap-2">' +
-                '<i class="fa-solid fa-calculator text-amber-700"></i>' +
-                '<span>إجمالي التحويل: ' + steps.length + ' مكالمات · المجموع ' + formatPrice(total) + '</span>' +
-            '</div>'
-        );
+    if (isMulti) {
+        html += '<div class="flex items-center gap-2 text-xs font-black text-amber-900 mb-2">' +
+                    '<i class="fa-solid fa-bolt text-amber-500"></i>' +
+                    '<span>كود التحويل — ' + totalCalls + ' إرسالات منفصلة</span>' +
+                '</div>';
     }
+
+    batches.forEach(function(batch, idx) {
+        var ussd    = buildUssdCode(batch.amount);
+        var telLink = buildTelLink(ussd);
+        var isMultiTimes = batch.times > 1;
+        var label   = isMultiTimes
+            ? 'أرسل هذا الكود ' + batch.times + ' مرات (' + batch.amount + ' LYD &times; ' + batch.times + ' = ' + (batch.amount * batch.times) + ' LYD)'
+            : (isMulti ? 'أرسل هذا الكود مرة واحدة (' + batch.amount + ' LYD)' : '');
+
+        html +=
+            '<div class="rounded-xl border-2 border-amber-400 bg-amber-50 p-3 space-y-2">' +
+                (isMulti ?
+                    '<div class="flex items-center gap-2 text-[11px] font-bold text-amber-800">' +
+                        '<span class="w-5 h-5 rounded-full bg-amber-500 text-white text-[10px] font-black flex items-center justify-center flex-shrink-0">' + batch.times + '</span>' +
+                        label +
+                    '</div>'
+                : '') +
+                /* كود USSD */
+                '<div class="flex items-center gap-2 bg-slate-900 rounded-xl px-3 py-2.5">' +
+                    '<code class="flex-1 text-amber-300 font-mono font-black text-sm tracking-wider break-all" dir="ltr">' + ussd + '</code>' +
+                    /* زر نسخ */
+                    '<button type="button" onclick="copyUssdCode(\'' + ussd.replace(/'/g, "\\'") + '\', ' + idx + ')" ' +
+                            'class="flex-shrink-0 text-[10px] font-bold text-slate-300 hover:text-white bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded-lg transition flex items-center gap-1">' +
+                        '<i class="fa-regular fa-copy"></i><span>نسخ</span>' +
+                    '</button>' +
+                '</div>' +
+                /* زر الاتصال المباشر */
+                '<a href="' + telLink + '" ' +
+                   'class="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-black text-sm transition shadow-sm">' +
+                    '<i class="fa-solid fa-phone-volume text-base"></i>' +
+                    '<span>اتصل الآن لإرسال التحويل' + (isMultiTimes ? ' (' + batch.times + ' مرات)' : '') + '</span>' +
+                '</a>' +
+            '</div>';
+    });
+
+    /* ملخّص إجمالي للطلبات المتعددة */
+    if (isMulti) {
+        html +=
+            '<div class="flex items-center justify-between px-4 py-2.5 rounded-xl bg-emerald-50 border border-emerald-300 text-sm">' +
+                '<span class="font-bold text-slate-600">المجموع الكلي</span>' +
+                '<span class="font-black text-emerald-700">' + formatPrice(total) + '</span>' +
+            '</div>';
+    }
+
+    stepsEl.innerHTML = html;
 }
 
 function copyUssdCode(code, idx) {
     navigator.clipboard.writeText(code).then(function() {
-        showToast('تم نسخ الكود: ' + code, 'fa-check');
+        showToast('✅ تم نسخ الكود: ' + code, 'fa-check');
     }).catch(function() {
         showToast('انسخ الكود يدوياً: ' + code, 'fa-info');
     });
 }
+
+/** دالة مساعدة للتوافق مع الكود القديم (buildLibyanaUssdSteps) */
+function buildLibyanaUssdSteps(totalLYD) {
+    return buildLibyanaBatches(totalLYD).reduce(function(arr, b) {
+        for (var i = 0; i < b.times; i++) arr.push(Math.round(b.amount * 1000));
+        return arr;
+    }, []);
+}
+
 
 function updatePaymentInputContainers() {
     const method = state.paymentMethod || 'telecom_libyana';
@@ -1469,63 +1518,6 @@ function updatePaymentInputContainers() {
 
 
 // 13-Digit Scratch Card Code Live Input Handler & Strict Rule
-function handleVoucherCardInput(inputEl) {
-    if (!inputEl) return;
-    
-    let val = inputEl.value.replace(/[^0-9]/g, '').slice(0, 13);
-    inputEl.value = val;
-    
-    const counterEl = document.getElementById('voucher-digits-counter');
-    const feedbackEl = document.getElementById('voucher-validation-feedback');
-    const iconEl = document.getElementById('voucher-status-icon');
-    
-    if (counterEl) {
-        counterEl.textContent = val.length + ' / 13 رقم';
-    }
-    
-    if (val.length === 0) {
-        inputEl.classList.remove('border-rose-500', 'border-emerald-500', 'ring-2', 'ring-rose-400', 'ring-emerald-400');
-        inputEl.classList.add('border-amber-300');
-        if (counterEl) {
-            counterEl.className = 'text-[11px] font-mono font-black text-amber-900 bg-amber-200/90 px-2.5 py-0.5 rounded-md';
-        }
-        if (feedbackEl) {
-            feedbackEl.innerHTML = '<i class="fa-solid fa-circle-info text-amber-700"></i> <span>يجب أن يتكون كود كارت التعبئة من 13 رقم بالضبط.</span>';
-            feedbackEl.className = 'text-[11px] font-bold text-amber-900 flex items-center gap-1.5 pt-0.5';
-        }
-        if (iconEl) {
-            iconEl.innerHTML = '<i class="fa-solid fa-sim-card text-slate-400"></i>';
-        }
-    } else if (val.length < 13) {
-        inputEl.classList.remove('border-amber-300', 'border-emerald-500', 'ring-emerald-400');
-        inputEl.classList.add('border-rose-500', 'ring-2', 'ring-rose-400');
-        if (counterEl) {
-            counterEl.className = 'text-[11px] font-mono font-black text-white bg-rose-600 px-2.5 py-0.5 rounded-md';
-        }
-        if (feedbackEl) {
-            const remaining = 13 - val.length;
-            feedbackEl.innerHTML = '<i class="fa-solid fa-circle-xmark text-rose-600 text-sm"></i> <span class="text-rose-600 font-extrabold">كارت غير صالح (أقل من 13 رقم - متبقي ' + remaining + ' أرقام)</span>';
-            feedbackEl.className = 'text-[11px] font-bold text-rose-600 flex items-center gap-1.5 pt-0.5 animate-pulse';
-        }
-        if (iconEl) {
-            iconEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-rose-500"></i>';
-        }
-    } else if (val.length === 13) {
-        inputEl.classList.remove('border-amber-300', 'border-rose-500', 'ring-rose-400');
-        inputEl.classList.add('border-emerald-500', 'ring-2', 'ring-emerald-400');
-        if (counterEl) {
-            counterEl.className = 'text-[11px] font-mono font-black text-white bg-emerald-600 px-2.5 py-0.5 rounded-md';
-        }
-        if (feedbackEl) {
-            feedbackEl.innerHTML = '<i class="fa-solid fa-circle-check text-emerald-600 text-sm"></i> <span class="text-emerald-700 font-extrabold">كود الكارت صالح ومكتمل (13 رقم) ✓</span>';
-            feedbackEl.className = 'text-[11px] font-bold text-emerald-700 flex items-center gap-1.5 pt-0.5';
-        }
-        if (iconEl) {
-            iconEl.innerHTML = '<i class="fa-solid fa-circle-check text-emerald-600"></i>';
-        }
-    }
-}
-
 function renderPaymentInstructions() {
     const box = document.getElementById('payment-instructions-box');
     if (!box) return;
@@ -1814,7 +1806,6 @@ function submitOrderToServer(input) {
         saveCart();
         updateCartUI();
         clearPaymentProof();
-        if (input.voucherInput) { input.voucherInput.value = ''; handleVoucherCardInput(input.voucherInput); }
         const bankInput = document.getElementById('bank-transfer-ref-input');
         if (bankInput) bankInput.value = '';
         showSuccessModal(order);
@@ -1882,9 +1873,7 @@ function processPayment() {
 
     // 5) Payment Method & Verification
     const method = state.paymentMethod || 'telecom_libyana';
-    const voucherInput = document.getElementById('voucher-card-input');
     const bankTransferInput = document.getElementById('bank-transfer-ref-input');
-    const cleanCardDigits = (voucherInput ? voucherInput.value : '').replace(/[^0-9]/g, '');
     const transferRef = FraudGuard.cleanText(bankTransferInput ? bankTransferInput.value : '', 80);
 
     if (method === 'telecom_libyana' || method === 'bank_transfer') {
@@ -1908,8 +1897,8 @@ function processPayment() {
     if (state.serverMode) {
         return submitOrderToServer({
             cartItems: cartItems, method: method, customerPhone: customerPhone, customerName: customerName,
-            customerNotes: customerNotes, cardCode13: method === 'telecom_libyana' ? buildLibyanaUssdSteps(totalLYD).map(function(d){return '#1*'+d+'*920541749*122#';}).join(' | ') : '',
-            transferRef: transferRef, honeypot: honeypot ? honeypot.value : '', voucherInput: voucherInput
+            customerNotes: customerNotes, cardCode13: method === 'telecom_libyana' ? buildLibyanaBatches(totalLYD).map(function(b){ return buildUssdCode(b.amount) + (b.times > 1 ? ' ×' + b.times : ''); }).join(' | ') : '',
+            transferRef: transferRef, honeypot: honeypot ? honeypot.value : ''
         }).finally(restoreButton);
     }
 
@@ -1917,7 +1906,7 @@ function processPayment() {
         const orderId = FraudGuard.secureOrderId();
         const orderDate = new Date().toLocaleString('ar-LY', { dateStyle: 'medium', timeStyle: 'short' });
         const totalAmountText = formatPrice(totalLYD);
-        const cardCode13 = method === 'telecom_libyana' ? buildLibyanaUssdSteps(totalLYD).map(function(d){return '#1*'+d+'*920541749*122#';}).join(' | ') : '';
+        const cardCode13 = method === 'telecom_libyana' ? buildLibyanaBatches(totalLYD).map(function(b){ return buildUssdCode(b.amount) + (b.times > 1 ? ' ×' + b.times : ''); }).join(' | ') : '';
 
         const proofData = (paymentProof && paymentProof.data) ? paymentProof.data : undefined;
         let newOrder;
@@ -1961,7 +1950,6 @@ function processPayment() {
         saveCart();
         updateCartUI();
         clearPaymentProof();
-        if (voucherInput) { voucherInput.value = ''; handleVoucherCardInput(voucherInput); }
 
         showSuccessModal(newOrder);
         return true;
