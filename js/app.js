@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿// ==========================================
+// ==========================================
 // Sahabati Store Application Engine
 // Platform: سحّابتي (Sahabati)
 // Currency: Libyan Dinar (LYD / د.ل) Strictly
