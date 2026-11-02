@@ -1,11 +1,25 @@
-// ==========================================
+﻿// ==========================================
 // Sahabati Store Application Engine
 // Platform: سحّابتي (Sahabati)
 // Currency: Libyan Dinar (LYD / د.ل) Strictly
 // Compatible with: شاشات - هواتف - جميع الأجهزة
 // ==========================================
 
-let state = {\r\n    'telecom_libyana': 'رصيد ليبيانا (تحويل فوري USSD)',\r\n    'bank_transfer': 'خدمات مصرفية (OnePay / مصرف التجارة)'\r\n};
+let state = {
+    lang: 'ar',
+    currency: 'LYD',
+    currentTab: 'home',
+    selectedGame: 'pubg',
+    verifiedPlayerId: '',
+    verifiedPlayerName: '',
+    selectedPackage: null,
+    cart: (typeof localStorage !== 'undefined' ? JSON.parse(localStorage.getItem('sahabati_cart') || '[]') : []),
+    orders: (typeof localStorage !== 'undefined' ? JSON.parse(localStorage.getItem('sahabati_orders') || '[]') : []),
+    appliedPromo: null,
+    paymentMethod: 'telecom_libyana',
+    serverMode: false,
+    isAdminAuth: (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('sahabati_admin_auth') === 'true' : false)
+};
 
 // Cart limits come from js/security.js; fall back to safe defaults if it failed to load
 function guardLimit(name, fallback) {
