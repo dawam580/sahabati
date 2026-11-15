@@ -115,6 +115,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (reqUrl === '/' || reqUrl === '') reqUrl = '/index.html';
+    if (reqUrl === '/admin' || reqUrl === '/admin/') reqUrl = '/admin.html';
 
     // ظ…ظ†ط¹ Path Traversal: ط­ظ„ ط§ظ„ظ…ط³ط§ط± ظˆطھط£ظƒط¯ ط£ظ†ظ‡ ط¯ط§ط®ظ„ __dirname
     const safeJoined = path.join(__dirname, reqUrl);
