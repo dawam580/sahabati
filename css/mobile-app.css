@@ -21,11 +21,58 @@
 html { background: var(--app-bg); }
 
 body {
-    padding-bottom: calc(var(--tabbar-h) + var(--safe-b) + 12px);
+    padding-bottom: calc(var(--tabbar-h) + var(--safe-b) + 32px);
     font-size: 15px;
 }
 @media (min-width: 640px) {
     body { padding-bottom: 32px; }
+}
+
+@media (max-width: 639px) {
+    footer {
+        padding-bottom: calc(var(--tabbar-h) + var(--safe-b) + 36px) !important;
+        margin-top: 24px !important;
+    }
+    .app-header {
+        padding: calc(env(safe-area-inset-top, 0px) + 6px) 12px 8px;
+    }
+    .app-brand-logo {
+        width: 36px;
+        height: 36px;
+    }
+    .app-brand-text strong {
+        font-size: 16px;
+    }
+    .app-brand-text small {
+        display: none !important;
+    }
+    .app-pill-btn {
+        height: 34px;
+        padding: 0 10px;
+        font-size: 11.5px;
+        gap: 5px;
+    }
+    .app-icon-btn {
+        width: 34px;
+        height: 34px;
+        font-size: 14px;
+    }
+    .app-search {
+        margin-top: 6px;
+        padding: 2px 4px 2px 10px;
+        border-radius: 12px;
+    }
+    .app-search input {
+        font-size: 12px;
+    }
+    .app-search-btn {
+        padding: 5px 10px;
+        font-size: 11px;
+    }
+    #app-main-wrapper {
+        padding-top: 8px;
+        padding-bottom: 8px;
+    }
 }
 
 /* Utility: Tailwind's .hidden must win over component display rules */
@@ -237,17 +284,26 @@ body {
     color: #fff;
 }
 @media (max-width: 640px) {
-    .promo-slide { aspect-ratio: 16 / 9; max-height: 250px; }
+    .promo-slide { aspect-ratio: 16 / 9; max-height: 210px; min-height: 145px; }
 }
 .promo-official {
     position: relative;
     background: #030822;
     overflow: hidden;
+    aspect-ratio: 1280 / 482;
+    max-height: 260px;
+}
+@media (max-width: 640px) {
+    .promo-slide.promo-official {
+        aspect-ratio: 1280 / 482;
+        max-height: 160px;
+        min-height: auto;
+    }
 }
 .promo-official-img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
     object-position: center;
     display: block;
     transition: transform .5s cubic-bezier(0.16, 1, 0.3, 1);
@@ -257,12 +313,24 @@ body {
 }
 .hero-floating-badges {
     position: absolute;
-    top: 12px;
-    right: 12px;
+    top: 10px;
+    right: 10px;
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
     z-index: 5;
+    pointer-events: none;
+}
+@media (max-width: 640px) {
+    .hero-floating-badges {
+        top: auto;
+        bottom: 8px;
+        right: 8px;
+        left: 8px;
+        justify-content: center;
+        gap: 4px;
+    }
+}
     pointer-events: none;
 }
 .hero-badge-status, .hero-badge-speed, .hero-badge-currency {
@@ -392,8 +460,32 @@ body {
     color: #38bdf8;
 }
 @media (max-width: 639px) {
+    .quick-pick-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 10px;
+    }
+    .quick-pick-card {
+        padding: 9px 12px;
+        border-radius: 14px;
+        width: 100%;
+        min-width: 0;
+    }
     .quick-pick-grid .quick-pick-card:nth-child(3) {
-        grid-column: span 2;
+        grid-column: auto;
+    }
+    .qp-icon-wrap {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        font-size: 14px;
+    }
+    .qp-title {
+        font-size: 13px;
+    }
+    .qp-sub {
+        font-size: 11px;
     }
 }
 .promo-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -451,6 +543,32 @@ body {
 .trust-strip i { color: #38bdf8; font-size: 17px; filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.5)); }
 .trust-strip span { color: #f1f5ff; font-size: 11px; font-weight: 800; line-height: 1.3; }
 
+@media (max-width: 639px) {
+    .trust-strip {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px 12px;
+        padding: 10px 14px;
+        border-radius: 16px;
+    }
+    .trust-strip div {
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-start;
+        text-align: right;
+        gap: 8px;
+    }
+    .trust-strip i {
+        font-size: 15px;
+        width: 20px;
+        text-align: center;
+        flex-shrink: 0;
+    }
+    .trust-strip span {
+        font-size: 11px;
+        white-space: nowrap;
+    }
+}
+
 /* Category chips */
 .cat-row {
     display: flex;
@@ -461,6 +579,21 @@ body {
 }
 .cat-row::-webkit-scrollbar { display: none; }
 .cat-chip { flex: 0 0 auto; min-width: 64px; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+
+@media (max-width: 639px) {
+    .cat-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px 8px;
+        padding: 4px 0;
+        justify-content: stretch;
+    }
+    .cat-chip {
+        min-width: 0;
+        width: 100%;
+        gap: 6px;
+    }
+}
 .cat-icon {
     width: 58px; height: 58px; border-radius: 20px;
     display: flex; align-items: center; justify-content: center;
@@ -705,8 +838,8 @@ body {
 /* WhatsApp FAB */
 .wa-fab {
     position: fixed;
-    right: 14px;
-    bottom: calc(var(--tabbar-h) + var(--safe-b) + 14px);
+    right: 20px;
+    bottom: 24px;
     z-index: 44;
     width: 52px; height: 52px; border-radius: 999px;
     background: #22c55e; color: #fff;
@@ -717,7 +850,16 @@ body {
     transition: transform .15s ease;
 }
 .wa-fab:active { transform: scale(.92); }
-@media (min-width: 640px) { .wa-fab { bottom: 24px; right: 24px; } }
+@media (max-width: 639px) {
+    .wa-fab {
+        left: 14px;
+        right: auto;
+        bottom: calc(var(--tabbar-h) + var(--safe-b) + 12px);
+        width: 48px;
+        height: 48px;
+        font-size: 24px;
+    }
+}
 /* Hide FAB while the buy bar is open so they don't overlap */
 body:has(.buy-bar:not(.hidden)) .wa-fab { display: none; }
 
