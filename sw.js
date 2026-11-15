@@ -3,7 +3,7 @@
 // Enables Offline Caching & Google Play PWA / TWA Compatibility
 // ==========================================
 
-const CACHE_NAME = 'sahabati-v3.9';
+const CACHE_NAME = 'sahabati-v3.11';
 const PRECACHE_URLS = [
   './',
   './index.html',

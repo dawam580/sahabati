@@ -1727,6 +1727,7 @@ function renderPaymentInstructions() {
         ussdHtml += '</p></div>';
 
         box.innerHTML = ussdHtml;
+    }
 }
 
 const PAYMENT_METHOD_NAMES = {
