@@ -22,12 +22,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Readex+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <!-- Tailwind CSS CDN -->
-    <link rel="stylesheet" href="css/tailwind.css?v=3.10">
+    <link rel="stylesheet" href="css/tailwind.css?v=3.12">
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="vendor/fontawesome/css/all.min.css">
     <!-- Custom Styles -->
-    <link rel="stylesheet" href="css/style.css?v=3.10">
-    <link rel="stylesheet" href="css/mobile-app.css?v=3.10">
+    <link rel="stylesheet" href="css/style.css?v=3.12">
+    <link rel="stylesheet" href="css/mobile-app.css?v=3.12">
 </head>
 <body class="antialiased selection:bg-emerald-500 selection:text-white" dir="rtl">
     <!-- خلفية سماء متحركة (زخرفية فقط) -->
@@ -41,10 +41,10 @@
     <header class="app-header">
         <div class="app-header-inner">
             <a href="#home" onclick="navigateTo('home'); return false;" class="app-brand" aria-label="سحّابتي - الرئيسية">
-                <img src="logo.jpg" alt="" class="app-brand-logo" width="40" height="40">
+                <img src="logo.jpg" alt="" class="app-brand-logo" width="42" height="42">
                 <span class="app-brand-text">
-                    <strong>سحّابتي</strong>
-                    <small>شحن ألعاب · اشتراكات · بطاقات</small>
+                    <strong>سحّابتي <span class="brand-badge-ly">LY</span></strong>
+                    <small>عالم رقمي بين يديك | شحن ألعاب واشتراكات</small>
                 </span>
             </a>
             <div class="app-header-actions">
@@ -61,8 +61,9 @@
         <div class="app-search">
             <i class="fa-solid fa-magnifying-glass"></i>
             <input type="search" id="global-search-input" dir="rtl" enterkeyhint="search" autocomplete="off" maxlength="60"
-                   placeholder="ابحث: ببجي، نتفليكس، شاهد، تيك توك...">
-            <button type="button" onclick="handleSearch(document.getElementById('global-search-input').value)" aria-label="بحث">
+                   placeholder="فليكس، شاهد، تيك توك، سناب بلس، ببجي...">
+            <button type="button" onclick="handleSearch(document.getElementById('global-search-input').value)" aria-label="بحث" class="app-search-btn">
+                <span>بحث</span>
                 <i class="fa-solid fa-arrow-left"></i>
             </button>
         </div>
@@ -108,6 +109,10 @@
                     <i class="fa-solid fa-receipt nav-icon text-slate-600"></i>
                     <span>طلباتي</span>
                 </button>
+                <a href="https://wa.me/218920541749" target="_blank" rel="noopener" class="nav-item-btn text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-2xl text-xs sm:text-sm font-bold transition flex-shrink-0 border border-emerald-200 mr-auto">
+                    <i class="fa-brands fa-whatsapp text-emerald-600 text-sm"></i>
+                    <span>تواصل مباشر</span>
+                </a>
             </div>
 
         </section>
@@ -115,46 +120,89 @@
         <!-- ================= PAGE 1: HOME ================= -->
         <section id="page-home" class="view-page home-page" dir="rtl">
 
-            <!-- Promo Carousel (بنرات قابلة للسحب) -->
-            <div class="promo-carousel" id="promo-carousel" aria-label="العروض">
-                <div class="promo-track" id="promo-track">
-                    <div class="promo-slide promo-netflix" onclick="navigateTo('giftcards'); filterGiftCards('netflix');">
-                        <div class="promo-content">
-                            <span class="promo-chip">📺 شاشات وهواتف</span>
-                            <h2>نتفليكس 4K وشاهد VIP</h2>
-                            <p>اشتراك شهري بضمان كامل المدة</p>
-                            <span class="promo-cta">تصفّح الاشتراكات <i class="fa-solid fa-arrow-left"></i></span>
+            <!-- Official Grand Hero & Promo Carousel -->
+            <div class="official-hero-wrapper">
+                <div class="promo-carousel" id="promo-carousel" aria-label="العروض">
+                    <div class="promo-track" id="promo-track">
+                        <!-- Slide 1: Official Flagship Banner (خدماتك الرقمية في مكان واحد) -->
+                        <div class="promo-slide promo-official" onclick="navigateTo('games'); selectGame('pubg');">
+                            <img src="services-official.jpeg" alt="سحّابتي - أكثر من مجرد خدمات.. عالم رقمي بين يديك" class="promo-official-img" loading="eager" fetchpriority="high">
+                            <div class="hero-floating-badges">
+                                <span class="hero-badge-status"><span class="hero-live-dot"></span> متوفر الآن</span>
+                                <span class="hero-badge-speed"><i class="fa-solid fa-bolt text-amber-400"></i> تسليم 5-30 دقيقة</span>
+                                <span class="hero-badge-currency">🇱🇾 الدينار الليبي</span>
+                            </div>
                         </div>
-                        <span class="promo-art" data-brand="netflix">N</span>
+                        <div class="promo-slide promo-pubg" onclick="navigateTo('games'); selectGame('pubg');">
+                            <div class="promo-content">
+                                <span class="promo-chip">🎮 الأكثر طلباً</span>
+                                <h2>شدات ببجي UC</h2>
+                                <p>أكواد وشحن فوري يبدأ من 10 د.ل</p>
+                                <span class="promo-cta">اشحن شداتك <i class="fa-solid fa-arrow-left"></i></span>
+                            </div>
+                            <span class="promo-art" data-brand="pubg">UC</span>
+                        </div>
+                        <div class="promo-slide promo-netflix" onclick="navigateTo('giftcards'); filterGiftCards('netflix');">
+                            <div class="promo-content">
+                                <span class="promo-chip">📺 شاشات وهواتف</span>
+                                <h2>نتفليكس 4K وشاهد VIP</h2>
+                                <p>اشتراك شهري بضمان كامل المدة</p>
+                                <span class="promo-cta">تصفّح الاشتراكات <i class="fa-solid fa-arrow-left"></i></span>
+                            </div>
+                            <span class="promo-art" data-brand="netflix">N</span>
+                        </div>
+                        <div class="promo-slide promo-tiktok" onclick="navigateTo('games'); selectGame('tiktok_coins');">
+                            <div class="promo-content">
+                                <span class="promo-chip">🔥 عملات وسوشيال</span>
+                                <h2>عملات تيك توك وسناب بلس</h2>
+                                <p>ادعم صنّاع المحتوى بأفضل سعر في ليبيا</p>
+                                <span class="promo-cta">شحن فوري <i class="fa-solid fa-arrow-left"></i></span>
+                            </div>
+                            <span class="promo-art" data-brand="tiktok"><i class="fa-brands fa-tiktok"></i></span>
+                        </div>
                     </div>
-                    <div class="promo-slide promo-pubg" onclick="navigateTo('games'); selectGame('pubg');">
-                        <div class="promo-content">
-                            <span class="promo-chip">🎮 الأكثر طلباً</span>
-                            <h2>شدات ببجي UC</h2>
-                            <p>أكواد أصلية تبدأ من 10 د.ل</p>
-                            <span class="promo-cta">اشحن شداتك <i class="fa-solid fa-arrow-left"></i></span>
+                    <div class="promo-dots" id="promo-dots"></div>
+                </div>
+
+                <!-- Quick Pick Cards (مباشرة أسفل البانر مثل تصميم الشاشة) -->
+                <div class="quick-pick-grid">
+                    <div onclick="navigateTo('games'); selectGame('pubg');" class="quick-pick-card qp-pubg">
+                        <div class="qp-icon-wrap qp-pubg-icon">UC</div>
+                        <div class="qp-info">
+                            <span class="qp-title">شدات ببجي</span>
+                            <span class="qp-sub">من 10 د.ل · شحن فوري بالـ ID</span>
                         </div>
-                        <span class="promo-art" data-brand="pubg">UC</span>
+                        <i class="fa-solid fa-chevron-left qp-arrow"></i>
                     </div>
-                    <div class="promo-slide promo-tiktok" onclick="navigateTo('games'); selectGame('tiktok_coins');">
-                        <div class="promo-content">
-                            <span class="promo-chip">🔥 عملات</span>
-                            <h2>عملات تيك توك</h2>
-                            <p>ادعم صنّاع المحتوى بأفضل سعر</p>
-                            <span class="promo-cta">اشحن العملات <i class="fa-solid fa-arrow-left"></i></span>
+                    <div onclick="navigateTo('giftcards'); filterGiftCards('entertainment');" class="quick-pick-card qp-shahid">
+                        <div class="qp-icon-wrap qp-shahid-icon">
+                            <i class="fa-solid fa-play"></i>
                         </div>
-                        <span class="promo-art" data-brand="tiktok"><i class="fa-brands fa-tiktok"></i></span>
+                        <div class="qp-info">
+                            <span class="qp-title">شاهد VIP و نتفليكس</span>
+                            <span class="qp-sub">حساب كامل · ضمان 100%</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-left qp-arrow"></i>
+                    </div>
+                    <div onclick="navigateTo('games'); selectGame('tiktok_coins');" class="quick-pick-card qp-tiktok">
+                        <div class="qp-icon-wrap qp-tiktok-icon">
+                            <i class="fa-brands fa-tiktok"></i>
+                        </div>
+                        <div class="qp-info">
+                            <span class="qp-title">عملات تيك توك وسناب</span>
+                            <span class="qp-sub">شحن العملات وباقات بلس</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-left qp-arrow"></i>
                     </div>
                 </div>
-                <div class="promo-dots" id="promo-dots"></div>
             </div>
 
             <!-- Trust strip -->
             <div class="trust-strip">
-                <div><i class="fa-solid fa-bolt"></i><span>تسليم فوري</span></div>
-                <div><i class="fa-solid fa-shield-halved"></i><span>منتجات أصلية</span></div>
-                <div><i class="fa-solid fa-sim-card"></i><span>دفع ليبيانا</span></div>
-                <div><i class="fa-solid fa-headset"></i><span>دعم 24/7</span></div>
+                <div><i class="fa-solid fa-bolt"></i><span>تسليم 5-30 دقيقة</span></div>
+                <div><i class="fa-solid fa-shield-halved"></i><span>ضمان أصلي 100%</span></div>
+                <div><i class="fa-solid fa-sim-card"></i><span>رصيد ليبيانا ومصرفي</span></div>
+                <div><i class="fa-solid fa-headset"></i><span>دعم مباشر 24/7</span></div>
             </div>
 
             <!-- Category chips (أقسام دائرية) -->
@@ -777,12 +825,12 @@
     <div id="toast-container"></div>
 
     <!-- Scripts -->
-    <script src="js/assets.js?v=3.11"></script>
-    <script src="js/data.js?v=3.11"></script>
-    <script src="js/database.js?v=3.11"></script>
-    <script src="js/security.js?v=3.11"></script>
-    <script src="js/brand-icons.js?v=3.11"></script>
-    <script src="js/app.js?v=3.11"></script>
+    <script src="js/assets.js?v=3.12"></script>
+    <script src="js/data.js?v=3.12"></script>
+    <script src="js/database.js?v=3.12"></script>
+    <script src="js/security.js?v=3.12"></script>
+    <script src="js/brand-icons.js?v=3.12"></script>
+    <script src="js/app.js?v=3.12"></script>
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
