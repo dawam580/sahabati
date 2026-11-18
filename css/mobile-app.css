@@ -996,3 +996,118 @@ body { background: transparent !important; }
 .b-chatgpt .brand-svg { color: #2dd4bf; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.35)); width: 48%; max-width: 58px; }
 .b-netflix .brand-svg { color: #e50914; filter: drop-shadow(0 3px 12px rgba(229,9,20,0.4)); width: 50%; max-width: 64px; }
 .b-apple .brand-svg { color: #ffffff; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.3)); width: 44%; max-width: 54px; }
+
+/* ---------- Official Product Artwork & Unified Responsive Sizing ---------- */
+.tile-art.has-img {
+    padding: 0;
+    overflow: hidden;
+    background: #0b1120;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+}
+.tile-art.has-img .product-tile-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+    transition: transform 0.25s ease;
+}
+.tile:hover .tile-art.has-img .product-tile-img {
+    transform: scale(1.05);
+}
+
+.mini-card {
+    flex: 0 0 164px;
+}
+@media (min-width: 640px) {
+    .mini-card {
+        flex: 0 0 184px;
+    }
+}
+.mini-card-art {
+    height: 106px;
+    overflow: hidden;
+}
+@media (min-width: 640px) {
+    .mini-card-art {
+        height: 116px;
+    }
+}
+.mini-card-art.has-img,
+.gc-art.has-img {
+    padding: 0;
+    overflow: hidden;
+    background: #090d16;
+}
+.gc-art {
+    height: 120px;
+    overflow: hidden;
+}
+@media (min-width: 640px) {
+    .gc-art {
+        height: 136px;
+    }
+}
+.product-card-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+    transition: transform 0.28s ease;
+}
+.mini-card:hover .product-card-img,
+.gc-tile:hover .product-card-img {
+    transform: scale(1.04);
+}
+.mini-card-art.has-img em,
+.gc-art.has-img em {
+    z-index: 3;
+    background: rgba(9, 13, 22, 0.78);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+.gc-art.has-img small {
+    z-index: 3;
+    background: rgba(9, 13, 22, 0.72);
+    padding: 2px 6px;
+    border-radius: 6px;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+
+/* Package tiles with game emblem thumbnail */
+.pkg-thumb-wrap {
+    position: relative;
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    overflow: visible;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 2px;
+}
+.pkg-thumb-img {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    object-fit: cover;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
+    border: 1.5px solid rgba(2, 132, 199, 0.25);
+}
+.pkg-thumb-badge {
+    position: absolute;
+    bottom: -4px;
+    left: -6px;
+    background: #0f172a;
+    color: #fde68a;
+    font-size: 11px;
+    font-weight: 900;
+    padding: 1px 5px;
+    border-radius: 999px;
+    border: 1.5px solid #fff;
+    line-height: 1.2;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}

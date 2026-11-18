@@ -199,6 +199,7 @@ const TR_ITUNES_CARD = {
     id: 'apple_itunes_tr_100',
     brand: 'apple',
     category: 'gift_cards',
+    image: 'images/products/apple_itunes_tr.svg',
     nameAr: 'بطاقة آيتونز تركي 100 ليرة (Apple iTunes TR)',
     nominal: '100 TL Apple Gift Card',
     priceLYD: 25.00,
@@ -225,7 +226,8 @@ const DEFAULT_APP_DATA = {
             nameAr: 'ببجي موبايل (PUBG Mobile UC)',
             nameEn: 'PUBG Mobile',
             badge: 'كود شدات ببجي ⚡',
-            icon: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/pubg.png',
+            image: 'images/products/pubg.svg',
+            icon: 'images/products/pubg.svg',
             logoSvg: '<span class="text-amber-400 font-black text-xs tracking-wider">PUBG</span>',
             deliveryNoteAr: 'اختر باقة الشدات وأرسل الطلب عبر واتساب. لا تحتاج لإدخال معرف داخل الموقع.',
             packages: [
@@ -249,7 +251,8 @@ const DEFAULT_APP_DATA = {
             nameAr: 'فري فاير (Free Fire Diamonds)',
             nameEn: 'Free Fire',
             badge: 'تسليم يدوي ⚡',
-            icon: '01_photo_5809670474982690366_y.jpg',
+            image: 'images/products/freefire.svg',
+            icon: 'images/products/freefire.svg',
             logoSvg: '<span class="text-orange-400 font-black text-xs">FREE FIRE</span>',
             deliveryNoteAr: 'اختر باقة الجواهر وأرسل الطلب عبر واتساب. لا تحتاج لإدخال معرف داخل الموقع.',
             packages: [
@@ -267,7 +270,8 @@ const DEFAULT_APP_DATA = {
             nameAr: 'عملات تيك توك (TikTok Coins)',
             nameEn: 'TikTok Coins',
             badge: 'شحن يوزر مباشر 🎵',
-            icon: 'https://upload.wikimedia.org/wikipedia/en/a/a9/TikTok_logo.svg',
+            image: 'images/products/tiktok_coins.svg',
+            icon: 'images/products/tiktok_coins.svg',
             logoSvg: '<i class="fa-brands fa-tiktok text-rose-400 text-lg"></i>',
             deliveryNoteAr: 'الشحن عبر رمز QR: بعد إرسال الطلب، افتح تيك توك ← الملف الشخصي ← القائمة ← الرصيد، وأرسل لنا صورة رمز QR عبر واتساب لنشحن العملات مباشرة.',
             packages: [
@@ -288,7 +292,8 @@ const DEFAULT_APP_DATA = {
             nameAr: 'روبلوكس (Roblox Robux)',
             nameEn: 'Roblox Robux',
             badge: 'شحن فوري باليوزر 🧱',
-            icon: '07_roblox_promotion_banner.png',
+            image: 'images/products/roblox.svg',
+            icon: 'images/products/roblox.svg',
             logoSvg: '<span class="text-sky-400 font-black text-xs">ROBLOX</span>',
             deliveryNoteAr: 'الشحن عبر تسجيل الدخول: بعد إرسال الطلب يتواصل معك فريقنا عبر واتساب الرسمي لتسجيل الدخول إلى حسابك وشحن الروبوكس. لا تُحفظ بيانات حسابك في الموقع.',
             packages: [
@@ -304,7 +309,8 @@ const DEFAULT_APP_DATA = {
             nameAr: 'إي فوتبول بيس (eFootball™ Coins)',
             nameEn: 'eFootball PES',
             badge: 'تسليم يدوي ⚽',
-            icon: 'https://upload.wikimedia.org/wikipedia/commons/e/e0/EFootball_Logo.svg',
+            image: 'images/products/efootball.svg',
+            icon: 'images/products/efootball.svg',
             logoSvg: '<span class="text-blue-400 font-black text-xs">eFootball</span>',
             deliveryNoteAr: 'اختر باقة الكوينز وأرسل الطلب عبر واتساب. لا تحتاج لإدخال ID داخل الموقع.',
             packages: [
@@ -320,7 +326,8 @@ const DEFAULT_APP_DATA = {
             nameAr: 'كلاش أوف كلانس (Clash of Clans)',
             nameEn: 'Clash of Clans',
             badge: 'جواهر وباس ⚔️',
-            icon: 'https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/clash-of-clans.png',
+            image: 'images/products/clashofclans.svg',
+            icon: 'images/products/clashofclans.svg',
             logoSvg: '<span class="text-amber-300 font-black text-xs">CLASH</span>',
             deliveryNoteAr: 'الشحن عبر تسجيل الدخول: بعد إرسال الطلب يتواصل معك فريقنا عبر واتساب الرسمي لتسجيل الدخول إلى حسابك (Supercell ID) وشحن الجواهر. لا تُحفظ بيانات حسابك في الموقع.',
             packages: [
@@ -337,6 +344,7 @@ const DEFAULT_APP_DATA = {
             id: 'netflix_4k_1m',
             brand: 'netflix',
             category: 'entertainment',
+            image: 'images/products/netflix.svg',
             nameAr: 'اشتراك نتفليكس (Netflix 4K) - شهر واحد',
             nominal: '1 Month - Profile User 4K',
             priceLYD: 45.00,
@@ -350,6 +358,7 @@ const DEFAULT_APP_DATA = {
             id: 'shahid_vip_full',
             brand: 'shahid',
             category: 'entertainment',
+            image: 'images/products/shahid_full.svg',
             nameAr: 'اشتراك شاهد VIP (Shahid VIP) - حساب كامل',
             nominal: 'Full Account - جميع الأجهزة',
             priceLYD: 30.00,
@@ -368,6 +377,7 @@ const DEFAULT_APP_DATA = {
             id: 'disney_plus_1m',
             brand: 'disney',
             category: 'entertainment',
+            image: 'images/products/disney_plus.svg',
             nameAr: 'اشتراك ديزني بلس (Disney+) - شهر كامل',
             nominal: '1 Month Subscription',
             priceLYD: 35.00,
@@ -378,6 +388,7 @@ const DEFAULT_APP_DATA = {
             id: 'watchit_1m',
             brand: 'watchit',
             category: 'entertainment',
+            image: 'images/products/watchit.svg',
             nameAr: 'اشتراك واتش إت (WATCH IT) - شهر كامل',
             nominal: '1 Month Subscription',
             priceLYD: 30.00,
@@ -388,6 +399,7 @@ const DEFAULT_APP_DATA = {
             id: 'crunchyroll_1m',
             brand: 'crunchyroll',
             category: 'entertainment',
+            image: 'images/products/crunchyroll.svg',
             nameAr: 'اشتراك كرانشي رول (Crunchyroll) - شهر كامل',
             nominal: '1 Month Premium',
             priceLYD: 30.00,
@@ -400,6 +412,7 @@ const DEFAULT_APP_DATA = {
             id: 'snapchat_plus_3m',
             brand: 'snapchat',
             category: 'social',
+            image: 'images/products/snapchat_plus_3m.svg',
             nameAr: 'اشتراك سناب شات بلس (Snapchat+) - 3 أشهر',
             nominal: '3 Months Subscription',
             priceLYD: 50.00,
@@ -411,6 +424,7 @@ const DEFAULT_APP_DATA = {
             id: 'snapchat_plus_6m',
             brand: 'snapchat',
             category: 'social',
+            image: 'images/products/snapchat_plus_6m.svg',
             nameAr: 'اشتراك سناب شات بلس (Snapchat+) - 6 أشهر',
             nominal: '6 Months Subscription',
             priceLYD: 80.00,
@@ -422,6 +436,7 @@ const DEFAULT_APP_DATA = {
             id: 'telegram_premium_3m',
             brand: 'telegram',
             category: 'social',
+            image: 'images/products/telegram_premium.svg',
             nameAr: 'اشتراك تيليجرام بريميوم (Telegram Premium) - 3 أشهر',
             nominal: '3 Months Subscription',
             priceLYD: 65.00,
@@ -434,6 +449,7 @@ const DEFAULT_APP_DATA = {
             id: 'chatgpt_plus_1m',
             brand: 'chatgpt',
             category: 'ai_cards',
+            image: 'images/products/chatgpt_plus.svg',
             nameAr: 'اشتراك ChatGPT Plus الذكاء الاصطناعي - شهر كامل',
             nominal: 'Official GPT-4o / Plus',
             priceLYD: 120.00,
@@ -444,6 +460,7 @@ const DEFAULT_APP_DATA = {
             id: 'claude_pro_1m',
             brand: 'claude',
             category: 'ai_cards',
+            image: 'images/products/claude_pro.svg',
             nameAr: 'اشتراك Claude Pro كلود - شهر كامل',
             nominal: 'Claude Pro - 1 Month',
             priceLYD: 120.00,
@@ -454,6 +471,7 @@ const DEFAULT_APP_DATA = {
             id: 'apple_itunes_10_us',
             brand: 'apple',
             category: 'gift_cards',
+            image: 'images/products/apple_itunes_us.svg',
             nameAr: 'بطاقة آيتونز أمريكي 10 دولار (Apple iTunes $10 US)',
             nominal: '$10 Apple Gift Card',
             priceLYD: 68.00,
@@ -465,6 +483,124 @@ const DEFAULT_APP_DATA = {
 };
 
 DEFAULT_APP_DATA.games = DEFAULT_APP_DATA.games.concat(buildChatApps());
+
+// خريطة الصور الرسمية لكل منتج أو علامة تجارية داخل الموقع (روابط محلية ثابتة لا تنتهي صلاحيتها)
+const PRODUCT_IMAGE_BY_ID = {
+    pubg: 'images/products/pubg.svg',
+    freefire: 'images/products/freefire.svg',
+    tiktok_coins: 'images/products/tiktok_coins.svg',
+    roblox: 'images/products/roblox.svg',
+    efootball: 'images/products/efootball.svg',
+    clashofclans: 'images/products/clashofclans.svg',
+    netflix_4k_1m: 'images/products/netflix.svg',
+    shahid_vip_full: 'images/products/shahid_full.svg',
+    disney_plus_1m: 'images/products/disney_plus.svg',
+    watchit_1m: 'images/products/watchit.svg',
+    crunchyroll_1m: 'images/products/crunchyroll.svg',
+    snapchat_plus_3m: 'images/products/snapchat_plus_3m.svg',
+    snapchat_plus_6m: 'images/products/snapchat_plus_6m.svg',
+    telegram_premium_3m: 'images/products/telegram_premium.svg',
+    chatgpt_plus_1m: 'images/products/chatgpt_plus.svg',
+    claude_pro_1m: 'images/products/claude_pro.svg',
+    apple_itunes_10_us: 'images/products/apple_itunes_us.svg',
+    apple_itunes_tr_100: 'images/products/apple_itunes_tr.svg'
+};
+
+function resolveProductImage(item) {
+    if (!item) return '';
+    if (item.category === 'chat') {
+        if (item.image && /^(https:\/\/|images\/)[^"'<>\s]+$/i.test(String(item.image).trim())) {
+            return String(item.image).trim();
+        }
+        return CHAT_APP_IMAGES.includes(item.id) ? ('images/chat/' + item.id + '.webp') : '';
+    }
+    const existing = String(item.image || '').trim();
+    if (existing && /^images\/(products|chat)\/[^"'<>\s]+$/i.test(existing)) {
+        return existing;
+    }
+    if (existing && /^https:\/\/[^"'<>\s]+$/i.test(existing) && !/walkxcode|wikimedia/i.test(existing)) {
+        return existing;
+    }
+    if (PRODUCT_IMAGE_BY_ID[item.id]) return PRODUCT_IMAGE_BY_ID[item.id];
+
+    const txt = [item.id, item.brand, item.nameAr, item.nameEn, item.nominal, item.badge].filter(Boolean).join(' ').toLowerCase();
+    if (/نتفلكس|نتفليكس|netflix/.test(txt)) return 'images/products/netflix.svg';
+    if (/شاهد|shahid/.test(txt)) {
+        return /كامل|full/.test(txt) ? 'images/products/shahid_full.svg' : 'images/products/shahid_vip.svg';
+    }
+    if (/ديزني|disney/.test(txt)) return 'images/products/disney_plus.svg';
+    if (/واتش|watch\s*it|watchit/.test(txt)) return 'images/products/watchit.svg';
+    if (/كرانشي|crunchyroll/.test(txt)) return 'images/products/crunchyroll.svg';
+    if (/\bosn\b|او اس ان|أو إس إن/.test(txt)) return 'images/products/osn.svg';
+    if (/سناب|snapchat/.test(txt)) {
+        return /6\s*أشهر|6\s*اشهر|6\s*month/.test(txt) ? 'images/products/snapchat_plus_6m.svg' : 'images/products/snapchat_plus_3m.svg';
+    }
+    if (/تيليجرام|تيلي\s*قرام|تليغرام|telegram/.test(txt)) {
+        return /sms|رسالة|فتح/.test(txt) ? 'images/products/telegram_sms.svg' : 'images/products/telegram_premium.svg';
+    }
+    if (/chatgpt|شات\s*جي\s*بي\s*تي|\bgpt\b/.test(txt)) {
+        return /\bgo\b/.test(txt) ? 'images/products/chatgpt_go.svg' : 'images/products/chatgpt_plus.svg';
+    }
+    if (/claude|كلود|كود\s*-\s*شهر/.test(txt)) return 'images/products/claude_pro.svg';
+    if (/آيتونز|ايتونز|آبل|ابل|itunes|apple/.test(txt)) {
+        return /تركي|ليرة|\btr\b|\btl\b/.test(txt) ? 'images/products/apple_itunes_tr.svg' : 'images/products/apple_itunes_us.svg';
+    }
+    if (/ببجي|pubg/.test(txt)) return 'images/products/pubg.svg';
+    if (/فري\s*فاير|free\s*fire|freefire/.test(txt)) return 'images/products/freefire.svg';
+    if (/تيك\s*توك|tiktok/.test(txt)) return 'images/products/tiktok_coins.svg';
+    if (/روبلوكس|روبوكس|roblox|robux/.test(txt)) return 'images/products/roblox.svg';
+    if (/فوتبول|بيس|efootball|\bpes\b/.test(txt)) return 'images/products/efootball.svg';
+    if (/كلاش|clash/.test(txt)) return 'images/products/clashofclans.svg';
+    return 'images/products/default_card.svg';
+}
+
+function resolveProductBrand(item) {
+    if (!item) return '';
+    const b = String(item.brand || '').trim().toLowerCase();
+    if (b && !['entertainment', 'ai_cards', 'gift_cards', 'social', 'games', 'chat'].includes(b)) {
+        return b;
+    }
+    const txt = [item.id, item.nameAr, item.nameEn, item.nominal, item.badge].filter(Boolean).join(' ').toLowerCase();
+    if (/نتفلكس|نتفليكس|netflix/.test(txt)) return 'netflix';
+    if (/شاهد|shahid/.test(txt)) return 'shahid';
+    if (/ديزني|disney/.test(txt)) return 'disney';
+    if (/واتش|watch\s*it|watchit/.test(txt)) return 'watchit';
+    if (/كرانشي|crunchyroll/.test(txt)) return 'crunchyroll';
+    if (/\bosn\b|او اس ان|أو إس إن/.test(txt)) return 'osn';
+    if (/سناب|snapchat/.test(txt)) return 'snapchat';
+    if (/تيليجرام|تيلي\s*قرام|تليغرام|telegram/.test(txt)) return 'telegram';
+    if (/chatgpt|شات\s*جي\s*بي\s*تي|\bgpt\b/.test(txt)) return 'chatgpt';
+    if (/claude|كلود|كود\s*-\s*شهر/.test(txt)) return 'claude';
+    if (/آيتونز|ايتونز|آبل|ابل|itunes|apple/.test(txt)) return 'apple';
+    return b || 'default';
+}
+
+function ensureCatalogProductImages(data) {
+    if (!data) return false;
+    let changed = false;
+    (data.games || []).forEach(g => {
+        if (g.category === 'chat') return;
+        const img = resolveProductImage(g);
+        if (img && g.image !== img) {
+            g.image = img;
+            g.icon = img;
+            changed = true;
+        }
+    });
+    (data.giftCards || []).forEach(c => {
+        const img = resolveProductImage(c);
+        if (img && c.image !== img) {
+            c.image = img;
+            changed = true;
+        }
+        const resolvedBrand = resolveProductBrand(c);
+        if (resolvedBrand && (!c.brand || ['entertainment', 'ai_cards', 'gift_cards', 'social'].includes(c.brand))) {
+            c.brand = resolvedBrand;
+            changed = true;
+        }
+    });
+    return changed;
+}
 
 // ترقية كتالوج محفوظ بدل حذفه: تبقى أسعار وتعديلات المدير كما هي
 function migrateCatalog(data) {
@@ -515,6 +651,7 @@ function migrateCatalog(data) {
         data.catalogVersion = 9;
     }
 
+    ensureCatalogProductImages(data);
     return data;
 }
 
@@ -530,11 +667,17 @@ function loadAppData() {
         const stored = localStorage.getItem('sahabati_catalog_data');
         if (stored) {
             const parsed = JSON.parse(stored);
-            if (parsed && parsed.games && parsed.giftCards) migrateCatalog(parsed);
-            if (parsed && parsed.games && parsed.giftCards && parsed.catalogVersion === DEFAULT_APP_DATA.catalogVersion) {
-                parsed.settings = { ...DEFAULT_STORE_SETTINGS, ...(parsed.settings || {}) };
-                parsed.settings.paymentMethodsInfo = Object.assign({}, DEFAULT_STORE_SETTINGS.paymentMethodsInfo, parsed.settings.paymentMethodsInfo || {});
-                return parsed;
+            if (parsed && parsed.games && parsed.giftCards) {
+                const hadChanges = ensureCatalogProductImages(parsed);
+                migrateCatalog(parsed);
+                if (parsed.catalogVersion === DEFAULT_APP_DATA.catalogVersion) {
+                    parsed.settings = { ...DEFAULT_STORE_SETTINGS, ...(parsed.settings || {}) };
+                    parsed.settings.paymentMethodsInfo = Object.assign({}, DEFAULT_STORE_SETTINGS.paymentMethodsInfo, parsed.settings.paymentMethodsInfo || {});
+                    if (hadChanges) {
+                        try { localStorage.setItem('sahabati_catalog_data', JSON.stringify(parsed)); } catch (e) {}
+                    }
+                    return parsed;
+                }
             }
         }
     } catch (e) {

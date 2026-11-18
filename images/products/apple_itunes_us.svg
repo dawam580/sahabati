@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 260" width="400" height="260">
+  <defs>
+    <linearGradient id="apbg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="50%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#1d4ed8"/>
+    </linearGradient>
+    <linearGradient id="apGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="50%" stop-color="#a855f7"/>
+      <stop offset="100%" stop-color="#ec4899"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="260" fill="url(#apbg)"/>
+  <circle cx="200" cy="88" r="54" fill="url(#apGrad)"/>
+  <g transform="translate(167, 52) scale(2.75)">
+    <path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701" fill="#ffffff"/>
+  </g>
+  <text x="200" y="175" text-anchor="middle" font-family="'Arial Black', sans-serif" font-size="22" font-weight="900" fill="#ffffff">Apple Gift Card</text>
+  <rect x="118" y="190" width="164" height="30" rx="15" fill="#2563eb" stroke="#93c5fd" stroke-width="1.5"/>
+  <text x="200" y="210" text-anchor="middle" font-family="Cairo, 'Arial Black', sans-serif" font-size="14" font-weight="900" fill="#ffffff">🇺🇸 $10 US • آيتونز أمريكي</text>
+</svg>

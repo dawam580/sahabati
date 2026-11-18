@@ -26,8 +26,8 @@
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="vendor/fontawesome/css/all.min.css">
     <!-- Custom Styles -->
-    <link rel="stylesheet" href="css/style.css?v=3.13">
-    <link rel="stylesheet" href="css/mobile-app.css?v=3.13">
+    <link rel="stylesheet" href="css/style.css?v=3.14">
+    <link rel="stylesheet" href="css/mobile-app.css?v=3.14">
 </head>
 <body class="antialiased selection:bg-emerald-500 selection:text-white" dir="rtl">
     <!-- خلفية سماء متحركة (زخرفية فقط) -->
@@ -167,16 +167,18 @@
                 <!-- Quick Pick Cards (مباشرة أسفل البانر مثل تصميم الشاشة) -->
                 <div class="quick-pick-grid">
                     <div onclick="navigateTo('games'); selectGame('pubg');" class="quick-pick-card qp-pubg">
-                        <div class="qp-icon-wrap qp-pubg-icon">UC</div>
+                        <div class="qp-icon-wrap qp-pubg-icon overflow-hidden p-0">
+                            <img src="images/products/pubg.svg" alt="شدات ببجي" class="w-full h-full object-cover" loading="lazy">
+                        </div>
                         <div class="qp-info">
                             <span class="qp-title">شدات ببجي</span>
-                            <span class="qp-sub">من 10 د.ل · شحن فوري بالـ ID</span>
+                            <span class="qp-sub">من 10 د.ل · شحن فوري</span>
                         </div>
                         <i class="fa-solid fa-chevron-left qp-arrow"></i>
                     </div>
                     <div onclick="navigateTo('giftcards'); filterGiftCards('entertainment');" class="quick-pick-card qp-shahid">
-                        <div class="qp-icon-wrap qp-shahid-icon">
-                            <i class="fa-solid fa-play"></i>
+                        <div class="qp-icon-wrap qp-shahid-icon overflow-hidden p-0">
+                            <img src="images/products/shahid_vip.svg" alt="شاهد VIP و نتفليكس" class="w-full h-full object-cover" loading="lazy">
                         </div>
                         <div class="qp-info">
                             <span class="qp-title">شاهد VIP و نتفليكس</span>
@@ -185,8 +187,8 @@
                         <i class="fa-solid fa-chevron-left qp-arrow"></i>
                     </div>
                     <div onclick="navigateTo('games'); selectGame('tiktok_coins');" class="quick-pick-card qp-tiktok">
-                        <div class="qp-icon-wrap qp-tiktok-icon">
-                            <i class="fa-brands fa-tiktok"></i>
+                        <div class="qp-icon-wrap qp-tiktok-icon overflow-hidden p-0">
+                            <img src="images/products/tiktok_coins.svg" alt="عملات تيك توك وسناب" class="w-full h-full object-cover" loading="lazy">
                         </div>
                         <div class="qp-info">
                             <span class="qp-title">عملات تيك توك وسناب</span>
@@ -285,12 +287,15 @@
 
             <!-- Selected Game Hero Card -->
             <div class="glass-panel rounded-3xl overflow-hidden shadow-xl border border-white/80">
-                <div class="relative p-6 sm:p-8 bg-gradient-to-r from-slate-950 via-sky-950 to-slate-900 text-white flex items-center justify-between flex-wrap gap-4">
-                    <div>
-                        <span id="game-method-badge" class="bg-emerald-500 text-white text-[10px] sm:text-xs font-black px-3 py-1 rounded-full mb-2 inline-block">
-                            🇱🇾 شحن فوري بالمعرّف - دينار ليبي
-                        </span>
-                        <h2 id="game-title-text" class="text-2xl sm:text-3xl font-black text-white">ببجي موبايل (PUBG Mobile UC)</h2>
+                <div class="relative p-5 sm:p-7 bg-gradient-to-r from-slate-950 via-sky-950 to-slate-900 text-white flex items-center justify-between gap-4">
+                    <div class="flex items-center gap-4 min-w-0">
+                        <img id="game-hero-img" src="images/products/pubg.svg" alt="ببجي موبايل" class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border-2 border-sky-400/40 shadow-lg flex-shrink-0">
+                        <div class="min-w-0">
+                            <span id="game-method-badge" class="bg-emerald-500 text-white text-[10px] sm:text-xs font-black px-3 py-1 rounded-full mb-2 inline-block">
+                                🇱🇾 شحن فوري بالمعرّف - دينار ليبي
+                            </span>
+                            <h2 id="game-title-text" class="text-xl sm:text-3xl font-black text-white leading-tight">ببجي موبايل (PUBG Mobile UC)</h2>
+                        </div>
                     </div>
                 </div>
 
@@ -825,12 +830,12 @@
     <div id="toast-container"></div>
 
     <!-- Scripts -->
-    <script src="js/assets.js?v=3.12"></script>
-    <script src="js/data.js?v=3.12"></script>
-    <script src="js/database.js?v=3.12"></script>
-    <script src="js/security.js?v=3.12"></script>
-    <script src="js/brand-icons.js?v=3.12"></script>
-    <script src="js/app.js?v=3.12"></script>
+    <script src="js/assets.js?v=3.14"></script>
+    <script src="js/data.js?v=3.14"></script>
+    <script src="js/database.js?v=3.14"></script>
+    <script src="js/security.js?v=3.14"></script>
+    <script src="js/brand-icons.js?v=3.14"></script>
+    <script src="js/app.js?v=3.14"></script>
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {

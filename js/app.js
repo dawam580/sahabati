@@ -137,6 +137,7 @@ function connectToServer() {
     if (!/^https?:$/.test(window.location.protocol) || /github\.io$/.test(window.location.hostname)) return;
     apiFetch('/api/catalog').then(catalog => {
         if (!catalog || !Array.isArray(catalog.games) || !Array.isArray(catalog.giftCards)) return;
+        if (typeof ensureCatalogProductImages === 'function') ensureCatalogProductImages(catalog);
         state.serverMode = true;
         APP_DATA = catalog;
         APP_DATA.settings = Object.assign({}, DEFAULT_STORE_SETTINGS, catalog.settings || {});
@@ -407,6 +408,16 @@ function manualBadge(item) {
 function shortName(nameAr) {
     return String(nameAr || '').split('(')[0].trim();
 }
+function productImageUrl(item) {
+    if (!item) return '';
+    const direct = safeImageUrl(item.image);
+    if (direct) return direct;
+    if (typeof resolveProductImage === 'function') {
+        const resolved = safeImageUrl(resolveProductImage(item));
+        if (resolved) return resolved;
+    }
+    return safeImageUrl(item.icon);
+}
 
 // Home page product blocks
 function renderHome() {
@@ -414,9 +425,13 @@ function renderHome() {
     if (gamesGrid) {
         gamesGrid.innerHTML = APP_DATA.games.filter(g => gameCategory(g) === 'games' && isAvailable(g)).map(game => {
             const look = brandLook(game.id);
+            const img = productImageUrl(game);
             const minPrice = Math.min.apply(null, (game.packages || []).map(p => Number(p.priceLYD) || 0).filter(Boolean));
+            const artHtml = img
+                ? '<img src="' + escapeAttr(img) + '" alt="' + escapeAttr(shortName(game.nameAr)) + '" class="product-tile-img" loading="lazy">'
+                : look.mark;
             return '<button type="button" class="tile" onclick="selectGame(\'' + escapeAttr(game.id) + '\'); navigateTo(\'games\');">' +
-                '<span class="tile-art ' + look.cls + '">' + look.mark + manualBadge(game) + '</span>' +
+                '<span class="tile-art ' + look.cls + (img ? ' has-img' : '') + '">' + artHtml + manualBadge(game) + '</span>' +
                 '<span class="tile-name">' + escapeHtml(shortName(game.nameAr)) + '</span>' +
                 (isFinite(minPrice) ? '<span class="tile-price">من ' + formatPrice(minPrice) + '</span>' : '') +
             '</button>';
@@ -424,9 +439,14 @@ function renderHome() {
     }
 
     const cardTile = card => {
-        const look = brandLook(card.brand);
+        const brandKey = (typeof resolveProductBrand === 'function') ? resolveProductBrand(card) : card.brand;
+        const look = brandLook(brandKey);
+        const img = productImageUrl(card);
+        const artHtml = img
+            ? '<img src="' + escapeAttr(img) + '" alt="' + escapeAttr(shortName(card.nameAr)) + '" class="product-card-img" loading="lazy">'
+            : look.mark;
         return '<button type="button" class="mini-card" onclick="openCardDetailsModal(\'' + escapeAttr(card.id) + '\')">' +
-            '<span class="mini-card-art ' + look.cls + '">' + look.mark + manualBadge(card) +
+            '<span class="mini-card-art ' + look.cls + (img ? ' has-img' : '') + '">' + artHtml + manualBadge(card) +
                 (card.badge ? '<em>' + escapeHtml(card.badge) + '</em>' : '') +
             '</span>' +
             '<span class="mini-card-name">' + escapeHtml(shortName(card.nameAr)) + '</span>' +
@@ -533,18 +553,14 @@ function renderGamesNav() {
         const activeClass = isActive 
             ? 'bg-sky-600 text-white shadow-lg shadow-sky-600/30 scale-105 border-sky-600' 
             : 'bg-white text-slate-700 hover:bg-sky-50 border-slate-200';
-        
-        let logoBadge = game.nameAr.split('(')[0];
-        if (game.id === 'pubg') logoBadge = '🎮 PUBG Mobile';
-        else if (game.id === 'freefire') logoBadge = '🔥 Free Fire';
-        else if (game.id === 'tiktok_coins') logoBadge = '🎵 TikTok Coins';
-        else if (game.id === 'roblox') logoBadge = '🧱 Roblox Robux';
-        else if (game.id === 'efootball') logoBadge = '⚽ eFootball';
-        else if (game.id === 'clashofclans') logoBadge = '⚔️ Clash of Clans';
+        const gImg = productImageUrl(game);
+        const thumbHtml = gImg ? '<img src="' + escapeAttr(gImg) + '" alt="" class="w-6 h-6 rounded-lg object-cover flex-shrink-0 shadow-sm">' : '';
+        const cleanTitle = game.nameAr.split('(')[0].trim();
 
-        return '<button onclick="selectGame(\'' + game.id + '\')" class="px-4 py-2.5 rounded-2xl flex items-center gap-2 transition-all text-xs sm:text-sm font-black flex-shrink-0 border ' + activeClass + '">' +
-            '<span>' + logoBadge + '</span>' +
-            (game.badge ? '<span class="text-[10px] px-2 py-0.5 rounded-md ' + (isActive ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-800') + '">' + game.badge + '</span>' : '') +
+        return '<button onclick="selectGame(\'' + escapeAttr(game.id) + '\')" class="px-3.5 py-2 rounded-2xl flex items-center gap-2 transition-all text-xs sm:text-sm font-black flex-shrink-0 border ' + activeClass + '">' +
+            thumbHtml +
+            '<span>' + escapeHtml(cleanTitle) + '</span>' +
+            (game.badge ? '<span class="text-[10px] px-2 py-0.5 rounded-md ' + (isActive ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-800') + '">' + escapeHtml(game.badge) + '</span>' : '') +
         '</button>';
     }).join('');
 }
@@ -572,6 +588,18 @@ function renderGameDetail(gameId) {
     const titleEl = document.getElementById('game-title-text');
     if (titleEl) {
         titleEl.textContent = game.nameAr;
+    }
+
+    const heroImgEl = document.getElementById('game-hero-img');
+    const gameImg = productImageUrl(game);
+    if (heroImgEl) {
+        if (gameImg) {
+            heroImgEl.src = gameImg;
+            heroImgEl.alt = shortName(game.nameAr);
+            heroImgEl.classList.remove('hidden');
+        } else {
+            heroImgEl.classList.add('hidden');
+        }
     }
 
     const idLabelEl = document.getElementById('player-id-label');
@@ -604,19 +632,6 @@ function renderGameDetail(gameId) {
         note.classList.toggle('hidden', needsId);
     }
 
-    const curCatalogMethod = state.catalogPaymentMethod || state.paymentMethod || 'telecom_libyana';
-    const lyBtn = null;
-    const onepayBtn = null;
-    if (lyBtn && onepayBtn) {
-        if (curCatalogMethod === 'onepay') {
-            onepayBtn.className = 'px-3 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-1.5 bg-emerald-600 text-white shadow-sm';
-            lyBtn.className = 'px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 text-slate-700 hover:text-slate-900';
-        } else {
-            lyBtn.className = 'px-3 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-1.5 bg-sky-600 text-white shadow-sm';
-            onepayBtn.className = 'px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 text-slate-700 hover:text-slate-900';
-        }
-    }
-
     state.selectedPackage = null;
     updateBuyBar();
 
@@ -624,7 +639,11 @@ function renderGameDetail(gameId) {
     if (packagesContainer) {
         packagesContainer.innerHTML = game.packages.filter(isAvailable).map(pkg => {
             const tag = pkg.popular ? '<span class="pkg-tag hot">الأكثر طلباً</span>' : (pkg.bestValue ? '<span class="pkg-tag value">أفضل قيمة</span>' : '');
-            
+            const pkgImg = safeImageUrl(pkg.image) || gameImg;
+            const iconHtml = pkgImg
+                ? '<span class="pkg-thumb-wrap"><img src="' + escapeAttr(pkgImg) + '" alt="" class="pkg-thumb-img" loading="lazy"><span class="pkg-thumb-badge">' + escapeHtml(pkg.icon || '💎') + '</span></span>'
+                : '<span class="pkg-icon">' + escapeHtml(pkg.icon || '💎') + '</span>';
+
             const activePrice = (typeof FraudGuard !== 'undefined' && FraudGuard.getProductPrice)
                 ? (FraudGuard.getProductPrice(pkg, APP_DATA, state.paymentMethod || 'telecom_libyana') || pkg.priceLYD)
                 : pkg.priceLYD;
@@ -632,7 +651,7 @@ function renderGameDetail(gameId) {
 
             return '<button type="button" class="pkg-tile" data-pkg="' + escapeAttr(pkg.id) + '" onclick="selectPackage(\'' + escapeAttr(game.id) + '\', \'' + escapeAttr(pkg.id) + '\')">' +
                 tag +
-                '<span class="pkg-icon">' + escapeHtml(pkg.icon || '💎') + '</span>' +
+                iconHtml +
                 '<span class="pkg-name">' + escapeHtml(pkg.nameAr) + '</span>' +
                 priceDisplay +
             '</button>';
@@ -780,17 +799,21 @@ function renderGiftCards(filter) {
         cards = cards.filter(c => c.category === filter);
     }
 
-    const curCatalogMethod = state.catalogPaymentMethod || state.paymentMethod || 'telecom_libyana';
     container.innerHTML = cards.map(card => {
-        const look = brandLook(card.brand);
+        const brandKey = (typeof resolveProductBrand === 'function') ? resolveProductBrand(card) : card.brand;
+        const look = brandLook(brandKey);
+        const img = productImageUrl(card);
         const activePrice = (typeof FraudGuard !== 'undefined' && FraudGuard.getProductPrice)
             ? (FraudGuard.getProductPrice(card, APP_DATA, state.paymentMethod || 'telecom_libyana') || card.priceLYD)
             : card.priceLYD;
         const priceDisplay = '<strong>' + formatPrice(activePrice) + '</strong>';
+        const artInner = img
+            ? '<img src="' + escapeAttr(img) + '" alt="' + escapeAttr(shortName(card.nameAr)) + '" class="product-card-img" loading="lazy">'
+            : '<span class="gc-mark">' + look.mark + '</span>';
 
         return '<div class="gc-tile">' +
-            '<button type="button" class="gc-art ' + look.cls + '" onclick="openCardDetailsModal(\'' + escapeAttr(card.id) + '\')" aria-label="تفاصيل ' + escapeAttr(card.nameAr) + '">' + manualBadge(card) +
-                '<span class="gc-mark">' + look.mark + '</span>' +
+            '<button type="button" class="gc-art ' + look.cls + (img ? ' has-img' : '') + '" onclick="openCardDetailsModal(\'' + escapeAttr(card.id) + '\')" aria-label="تفاصيل ' + escapeAttr(card.nameAr) + '">' + manualBadge(card) +
+                artInner +
                 (card.badge ? '<em>' + escapeHtml(card.badge) + '</em>' : '') +
                 '<small>' + escapeHtml(card.nominal || '') + '</small>' +
             '</button>' +
@@ -922,12 +945,20 @@ function openCardDetailsModal(cardId) {
         '</div>'
     ) : '';
 
-    content.innerHTML = '<div class="text-center mb-4">' +
-        '<div class="w-full h-28 rounded-2xl bg-gradient-to-br from-sky-600 to-indigo-800 p-4 text-white flex flex-col justify-between shadow-lg mb-3">' +
+    const cardImg = productImageUrl(card);
+    const modalBannerHtml = cardImg
+        ? '<div class="relative w-full h-36 sm:h-40 rounded-2xl overflow-hidden shadow-lg mb-3 bg-slate-950 border border-slate-200/60">' +
+            '<img src="' + escapeAttr(cardImg) + '" alt="' + escapeAttr(card.nameAr) + '" class="w-full h-full object-cover">' +
+            '<span class="absolute top-2.5 right-2.5 text-[11px] font-black bg-slate-900/80 text-white backdrop-blur-md px-2.5 py-1 rounded-lg border border-white/15">' + (method === 'manual' ? '✋ تسليم يدوي' : '⚡ تسليم مباشر') + '</span>' +
+          '</div>'
+        : '<div class="w-full h-28 rounded-2xl bg-gradient-to-br from-sky-600 to-indigo-800 p-4 text-white flex flex-col justify-between shadow-lg mb-3">' +
             '<span class="text-xs uppercase tracking-wider bg-white/20 self-start px-2 py-0.5 rounded">سحّابتي My Cloud</span>' +
             '<span class="text-2xl font-black">' + escapeHtml(card.nominal || card.nameAr) + '</span>' +
             '<span class="text-xs text-white/90 text-left font-bold">' + (method === 'manual' ? 'تسليم يدوي' : 'تسليم مباشر') + '</span>' +
-        '</div>' +
+          '</div>';
+
+    content.innerHTML = '<div class="text-center mb-4">' +
+        modalBannerHtml +
         '<h3 class="text-xl font-black text-slate-900">' + escapeHtml(card.nameAr) + '</h3>' +
         '<p id="card-modal-price" class="text-2xl font-black text-emerald-700 mt-1">' + formatPrice(currentPrice) + '</p>' +
     '</div>' +
@@ -1129,7 +1160,7 @@ function renderPaymentOptions() {
             '</div>' +
         '</div>';
     }).join('');
-
+
 
     // تحديث كود USSD ديناميكياً عند تغيّر السلة
     if ((state.paymentMethod || 'telecom_libyana') === 'telecom_libyana') {

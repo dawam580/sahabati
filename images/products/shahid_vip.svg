@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 260" width="400" height="260">
+  <defs>
+    <linearGradient id="shbg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#022c22"/>
+      <stop offset="50%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#064e3b"/>
+    </linearGradient>
+    <linearGradient id="shGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#00e676"/>
+      <stop offset="50%" stop-color="#00bfa5"/>
+      <stop offset="100%" stop-color="#00b0ff"/>
+    </linearGradient>
+    <linearGradient id="vipG" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#fde68a"/>
+      <stop offset="100%" stop-color="#f59e0b"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="260" fill="url(#shbg)"/>
+  <!-- Shahid 3 Iconic Brand Dots -->
+  <circle cx="176" cy="54" r="8" fill="#00e676"/>
+  <circle cx="200" cy="44" r="8" fill="#00bfa5"/>
+  <circle cx="224" cy="54" r="8" fill="#00b0ff"/>
+  <!-- Official Shahid Arabic & English Branding -->
+  <text x="200" y="118" text-anchor="middle" font-family="Cairo, 'Arial Black', sans-serif" font-size="48" font-weight="900" fill="#ffffff">شاهد</text>
+  <rect x="148" y="136" width="104" height="32" rx="16" fill="url(#shGrad)"/>
+  <text x="200" y="158" text-anchor="middle" font-family="'Arial Black', sans-serif" font-size="19" font-weight="900" fill="#022c22" letter-spacing="2">VIP</text>
+  <text x="200" y="198" text-anchor="middle" font-family="'Arial Black', sans-serif" font-size="16" font-weight="900" fill="#34d399" letter-spacing="3">SHAHID VIP</text>
+  <text x="200" y="226" text-anchor="middle" font-family="Cairo, Arial, sans-serif" font-size="13" font-weight="800" fill="#a7f3d0">يوزر خاص • شهر كامل FHD/4K</text>
+</svg>

@@ -437,8 +437,9 @@ function renderAdminPanel(){
                     (c.prices.onepay ? '<span class="text-[10px] font-black text-emerald-800 bg-emerald-100/90 px-1.5 py-0.5 rounded border border-emerald-200">💳 OnePay: ' + formatPrice(c.prices.onepay) + '</span>' : '') +
                 '</div>';
             }
+            const cImg = c.image || (typeof resolveProductImage === 'function' ? resolveProductImage(c) : '');
             return '<div class="adm-row'+(c.hidden?' is-hidden':'')+'">'+
-                '<div class="adm-row-name"><span>'+escapeHtml(c.nameAr)+'</span><small>'+escapeHtml(ADMIN_SECTION_NAMES[c.category]||c.category||'')+' · مبيع: '+(sales.idx['c:'+c.id]||0)+(c.hidden?' · مخفي':'')+'</small>' + dualPricesHtml + '</div>'+
+                '<div class="adm-row-name">'+(cImg?'<img class="adm-thumb" src="'+escapeAttr(cImg)+'" alt="" referrerpolicy="no-referrer" style="display:inline-block;vertical-align:middle;margin-left:6px">':'')+'<span>'+escapeHtml(c.nameAr)+'</span><small>'+escapeHtml(ADMIN_SECTION_NAMES[c.category]||c.category||'')+' · مبيع: '+(sales.idx['c:'+c.id]||0)+(c.hidden?' · مخفي':'')+'</small>' + dualPricesHtml + '</div>'+
                 '<div class="adm-row-tools">'+adminMethodSelect('card', c.id, c.deliveryMethod||'code', ADMIN_CARD_METHODS)+adminPriceInput('card', c.id, '', c.priceLYD)+adminRowActions('card', c.id, '', !!c.hidden)+'</div>'+
             '</div>';
         }).join('')+'</div>';
@@ -567,6 +568,8 @@ function handleAdminAddItem(e){
         else if(name.includes('آبل')||name.includes('ايتونز')||name.includes('آيتونز')||name.toLowerCase().includes('apple')||name.toLowerCase().includes('itunes')) finalBrand='apple';
         else if(name.includes('تيليجرام')||name.toLowerCase().includes('telegram')) finalBrand='telegram';
         const cardObj = { id:newId, brand:finalBrand, nameAr:name, nominal:name, priceLYD:price, category:category, badge:badge||'جديد ✨', image:image, instructionsAr: instructions||'يتم تسليم الكود وتفعيله فوراً بعد تأكيد الطلب بالدينار الليبي.' };
+        if (!cardObj.image && typeof resolveProductImage === 'function') cardObj.image = resolveProductImage(cardObj);
+        if (typeof resolveProductBrand === 'function') cardObj.brand = resolveProductBrand(cardObj);
         if (pricesObj) cardObj.prices = pricesObj;
         APP_DATA.giftCards.push(cardObj);
     } else if(type==='new_game'){

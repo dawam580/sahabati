@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 260" width="400" height="260">
+  <defs>
+    <radialGradient id="nfbg" cx="50%" cy="45%" r="65%">
+      <stop offset="0%" stop-color="#450a0a"/>
+      <stop offset="55%" stop-color="#111111"/>
+      <stop offset="100%" stop-color="#050505"/>
+    </radialGradient>
+  </defs>
+  <rect width="400" height="260" fill="url(#nfbg)"/>
+  <!-- Official Netflix N Ribbon -->
+  <g transform="translate(164, 34) scale(3.8)">
+    <path d="M5.398 0v24c1.873-.225 2.81-.312 4.715-.398V0H5.398z" fill="#b1060f"/>
+    <path d="M13.887 0v22.502l4.715 1.498V0h-4.715z" fill="#b1060f"/>
+    <path d="m5.398 0 8.348 23.602c2.346.059 4.856.398 4.856.398L10.113 0H5.398z" fill="#e50914"/>
+  </g>
+  <!-- NETFLIX Official Wordmark -->
+  <text x="200" y="166" text-anchor="middle" font-family="'Arial Black', Impact, sans-serif" font-size="30" font-weight="900" fill="#e50914" letter-spacing="4">NETFLIX</text>
+  <rect x="128" y="182" width="144" height="28" rx="6" fill="#e50914"/>
+  <text x="200" y="201" text-anchor="middle" font-family="'Arial Black', sans-serif" font-size="13" font-weight="900" fill="#ffffff" letter-spacing="1.5">4K ULTRA HD</text>
+  <text x="200" y="232" text-anchor="middle" font-family="Cairo, Arial, sans-serif" font-size="13" font-weight="800" fill="#fca5a5">اشتراك نتفليكس الرسمي</text>
+</svg>

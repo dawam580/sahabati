@@ -347,3 +347,27 @@ test('admin-chosen delivery method: a card by ID needs an account ID, a manual c
     assert.equal(game.status, 201);
     assert.equal(game.order.items[0].meta, 'تسليم يدوي');
 });
+
+test('all default and admin-added products automatically resolve distinct local product images without changing prices or names', () => {
+    const store = freshStore();
+    const cat = store.publicCatalog();
+    for (const item of cat.games.concat(cat.giftCards)) {
+        assert.ok(item.image && item.image.startsWith('images/'), item.id + ' must have a local image');
+        assert.ok(fs.existsSync(path.join(__dirname, '..', item.image)), item.image + ' must exist on disk');
+    }
+    // Simulate custom admin cards saved with empty images
+    cat.giftCards.push(
+        { id: 'card_nf', brand: 'entertainment', nameAr: 'نتفلكس - يوزر خاص شهر كامل', priceLYD: 35, category: 'entertainment', image: '' },
+        { id: 'card_osn', brand: 'entertainment', nameAr: 'اشتراك OSN - شهر كامل', priceLYD: 30, category: 'entertainment', image: '' },
+        { id: 'card_tgsms', brand: 'ai_cards', nameAr: 'دفع رسالة SMS للتيلي قرام', priceLYD: 30, category: 'ai_cards', image: '' },
+        { id: 'card_gptgo', brand: 'chatgpt', nameAr: 'اشتراك ChatGPT Go الذكاء الاصطناعي - شهر', priceLYD: 120, category: 'ai_cards', image: '' }
+    );
+    fs.writeFileSync(path.join(process.env.DATA_DIR, 'catalog.json'), JSON.stringify(cat));
+    delete require.cache[require.resolve('../store')];
+    const reloaded = require('../store').createStore().publicCatalog();
+    assert.equal(reloaded.giftCards.find(c => c.id === 'card_nf').image, 'images/products/netflix.svg');
+    assert.equal(reloaded.giftCards.find(c => c.id === 'card_nf').priceLYD, 35);
+    assert.equal(reloaded.giftCards.find(c => c.id === 'card_osn').image, 'images/products/osn.svg');
+    assert.equal(reloaded.giftCards.find(c => c.id === 'card_tgsms').image, 'images/products/telegram_sms.svg');
+    assert.equal(reloaded.giftCards.find(c => c.id === 'card_gptgo').image, 'images/products/chatgpt_go.svg');
+});
