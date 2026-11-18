@@ -515,7 +515,7 @@ function resolveProductImage(item) {
         return CHAT_APP_IMAGES.includes(item.id) ? ('images/chat/' + item.id + '.webp') : '';
     }
     const existing = String(item.image || '').trim();
-    if (existing && /^images\/(products|chat)\/[^"'<>\s]+$/i.test(existing)) {
+    if (existing && /^images\/chat\/[^"'<>\s]+$/i.test(existing)) {
         return existing;
     }
     if (existing && /^https:\/\/[^"'<>\s]+$/i.test(existing) && !/walkxcode|wikimedia/i.test(existing)) {
@@ -526,7 +526,7 @@ function resolveProductImage(item) {
     const txt = [item.id, item.brand, item.nameAr, item.nameEn, item.nominal, item.badge].filter(Boolean).join(' ').toLowerCase();
     if (/نتفلكس|نتفليكس|netflix/.test(txt)) return 'images/products/netflix.svg';
     if (/شاهد|shahid/.test(txt)) {
-        return /كامل|full/.test(txt) ? 'images/products/shahid_full.svg' : 'images/products/shahid_vip.svg';
+        return /حساب\s*كامل|full\s*account/.test(txt) ? 'images/products/shahid_full.svg' : 'images/products/shahid_vip.svg';
     }
     if (/ديزني|disney/.test(txt)) return 'images/products/disney_plus.svg';
     if (/واتش|watch\s*it|watchit/.test(txt)) return 'images/products/watchit.svg';
